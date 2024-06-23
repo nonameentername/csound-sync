@@ -1189,15 +1189,28 @@ template <typename T>
 int plugin(Csound *csound, const char *name, const char *oargs,
            const char *iargs, uint32_t thr, uint32_t flags = 0) {
   CSOUND *cs = (CSOUND *)csound;
-  if(thr == thread::ia || thr == thread::a) {
+  if(thr == thread::a) 
   return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags, 
-                          (char *)oargs, (char *)iargs, (SUBR)init<T>,
+                          (char *)oargs, (char *)iargs, (SUBR) NULL,
                           (SUBR)aperf<T>, (SUBR)deinit<T>);
-  }
-  else
-  return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
-                          (char *)oargs, (char *)iargs, (SUBR)init<T>,
+  else if(thr == thread::k)
+    return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
+                          (char *)oargs, (char *)iargs, (SUBR)NULL,
                           (SUBR)kperf<T>, (SUBR)deinit<T>);
+  else if(thr == thread::i) {
+    return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
+                          (char *)oargs, (char *)iargs, (SUBR)init<T>,
+                          (SUBR) NULL, (SUBR)deinit<T>);
+  }
+  else if(thr == thread::ia)
+     return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags, 
+                          (char *)oargs, (char *)iargs, (SUBR) init<T>,
+                          (SUBR)aperf<T>, (SUBR)deinit<T>);
+  else if(thr == thread::ik)
+     return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags, 
+                          (char *)oargs, (char *)iargs, (SUBR) init<T>,
+                             (SUBR) kperf<T>, (SUBR)deinit<T>);
+  else return CSOUND_ERROR;
 }
 
 /** plugin registration function template
@@ -1207,17 +1220,29 @@ template <typename T>
 int plugin(Csound *csound, const char *name, uint32_t thr,
            uint32_t flags = 0) {
   CSOUND *cs = (CSOUND *)csound;
-  if(thr == thread::ia || thr == thread::a) {
+  if(thr == thread::ia) 
   return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
                           (char *)T::otypes, (char *)T::itypes, (SUBR)init<T>,
                           (SUBR)aperf<T>, (SUBR)deinit<T>);
 
-  }
-  else
-  return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags, 
+  else if(thr == thread::ik) 
+  return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
                           (char *)T::otypes, (char *)T::itypes, (SUBR)init<T>,
                           (SUBR)kperf<T>, (SUBR)deinit<T>);
-
+  else if(thr == thread::i) 
+  return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
+                          (char *)T::otypes, (char *)T::itypes, (SUBR)init<T>,
+                          (SUBR)NULL, (SUBR)deinit<T>);
+  else if(thr == thread::k) 
+  return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
+                          (char *)T::otypes, (char *)T::itypes, (SUBR)NULL,
+                          (SUBR)kperf<T>, (SUBR)deinit<T>);
+  
+  else if(thr == thread::a) 
+  return cs->AppendOpcode(cs, (char *)name, sizeof(T), flags,
+                          (char *)T::otypes, (char *)T::itypes, (SUBR)NULL,
+                          (SUBR)aperf<T>, (SUBR)deinit<T>);
+  else return CSOUND_ERROR;
 }
 
 /** utility constructor function template for member classes: \n

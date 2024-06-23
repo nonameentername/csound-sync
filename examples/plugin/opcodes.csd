@@ -35,7 +35,7 @@ od
 endin
 
 instr 5
-tprint "Hello World !!\n"
+tprint "Hello World !!!!!!\n"
 endin
 
 instr 6

@@ -70,7 +70,6 @@ struct SimpleArray : csnd::Plugin<1, 1> {
     csnd::Vector<MYFLT> &out = outargs.vector_data<MYFLT>(0);
     csnd::Vector<MYFLT> &in = inargs.vector_data<MYFLT>(0);
     out.init(csound, in.len());
-    csound->plugin_deinit(this);
     return OK;
   }
 
@@ -119,9 +118,9 @@ struct SimpleArrayA : csnd::Plugin<1, 1> {
     with only 1 input \n
     tprint Sin
  */
-struct Tprint : csnd::Plugin<0, 1> {
+struct Tprint : csnd::InPlug<1> {
   int init() {
-    csound->message(inargs.str_data(0).data);
+    csound->message(args.str_data(0).data);
     return OK;
   }
 };
@@ -135,7 +134,7 @@ struct DelayLine : csnd::Plugin<1, 2> {
   csnd::AuxMem<MYFLT>::iterator iter;
 
   int init() {
-    delay.allocate(csound, csound->sr() * inargs[1]);
+    delay.allocate(csound, sr() * inargs[1]);
     iter = delay.begin();
     return OK;
   }
@@ -165,7 +164,7 @@ struct Oscillator : csnd::Plugin<1, 3> {
 
   int init() {
     tab.init(csound, inargs(2));
-    scl = tab.len() / csound->sr();
+    scl = tab.len() / sr();
     x = 0.;
     return OK;
   }
@@ -237,7 +236,7 @@ public:
     while(on) {
       lock();
       if(old.compare(message)) {
-       csound->message(message.c_str());
+        //csound->message(message.c_str());
        old = message;
       } 
       unlock(); 
@@ -258,30 +257,28 @@ public:
   void stop() { on = false; }
 };
 
-struct AsyncPrint : csnd::Plugin<0, 1> {
-  static constexpr char const *otypes = "";
-  static constexpr char const *itypes = "S";
+struct AsyncPrint : csnd::Plugin<1,1> {
   PrintThread t;
 
   int init() {
-    csound->plugin_deinit(this);
     csnd::constr(&t, csound);
+    outargs[0] = 1;
     return OK;
   }
 
   int deinit() {
-    t.stop();
-    t.join();
-    csnd::destr(&t);
+     t.stop();
+     t.join();
+     csnd::destr(&t);
     return OK;
   }
 
-  int kperf() {
+   int kperf() {
     t.lock();
     t.set_message(inargs.str_data(0).data);
     t.unlock();
     return OK;
-  }
+    } 
 };
 
 
@@ -314,7 +311,6 @@ struct AsyncGauss : csnd::Plugin<1, 2> {
   MYFLT res;
 
   int init() {
-    csound->plugin_deinit(this);
     csnd::constr(&t, csound, inargs[0], inargs[1], &res);
     return OK;
   }
@@ -353,7 +349,6 @@ struct GaussianP : csnd::Plugin<1, 3> {
   int init() {
     csnd::constr(&norm, inargs[0], inargs[1]);
     csnd::constr(&gen, inargs[2]);
-    csound->plugin_deinit(this);
     return OK;
   }
 
