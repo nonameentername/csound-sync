@@ -8,6 +8,7 @@ vcpkg_from_sourceforge(
         00001-msvc-upgrade-solution-up-to-vc11.patch
         remove_lame_init_old_from_symbol_list.patch # deprecated https://github.com/zlargon/lame/blob/master/include/lame.h#L169
         add-macos-universal-config.patch
+        disable-ios-capterm.patch
 )
 
 if(VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_MINGW)
@@ -101,6 +102,10 @@ else()
 
     if(VCPKG_TARGET_IS_OSX AND VCPKG_CROSSCOMPILING AND VCPKG_OSX_ARCHITECTURES STREQUAL "x86_64")
         list(APPEND OPTIONS --host "${VCPKG_OSX_ARCHITECTURES}-apple-darwin")
+    endif()
+
+    if(VCPKG_TARGET_IS_IOS AND VCPKG_CROSSCOMPILING)
+        list(APPEND OPTIONS "IOS=1")
     endif()
 
     vcpkg_configure_make(
