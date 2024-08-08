@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - 'pr/*'
+      - 'pr/**'
   workflow_dispatch:
 
 jobs:
