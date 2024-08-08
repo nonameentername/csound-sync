@@ -1,0 +1,13 @@
+on:
+  push:
+    branches:
+      - 'pr/*'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run test on commit to a pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
