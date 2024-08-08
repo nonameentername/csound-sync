@@ -1,13 +1,15 @@
-on:
-  push:
-    branches:
-      - '**'
-  workflow_dispatch:
+name: My Target Workflow
 
+on:
+  repository_dispatch:
+    types: [trigger-workflow]
+    
 jobs:
-  test:
-    name: Run test on commit to a pr
+  build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+        ref: ${{ github.event.client_payload.sha }}
