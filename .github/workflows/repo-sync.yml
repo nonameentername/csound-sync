@@ -11,10 +11,11 @@ jobs:
       with:
         persist-credentials: false
     - name: repo-sync
-      uses: repo-sync/github-sync@v2
+      uses: nonameentername/github-sync@v1
       with:
         source_repo: "https://github.com/csound/csound.git"
         source_branch: "*"
         destination_branch: "*"
         sync_tags: "true"
+        sync_prs: "true"
         github_token: ${{ secrets.PAT }}
