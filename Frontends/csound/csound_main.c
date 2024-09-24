@@ -38,10 +38,9 @@
 #ifdef LINUX
 extern int set_rt_priority(int argc, const char **argv);
 #endif
-
 extern int csoundErrCnt(CSOUND*);
-
 static FILE *logFile = NULL;
+static int perf_flag = 1;
 
 static void msg_callback(CSOUND *csound,
                          int attr, const char *format, va_list args)
@@ -219,14 +218,18 @@ static void signal_handler(int sig)
 {
 #if defined(SIGPIPE)
     if (sig == (int) SIGPIPE) {
+#ifndef __wasm__
       psignal(sig, "Csound ignoring SIGPIPE");
+#endif
       return;
     }
 #endif
+#ifndef __wasm__
     psignal(sig, "\ncsound command");
+#endif
     if ((sig == (int) SIGINT || sig == (int) SIGTERM)) {
       if (_csound) {
-        csoundStop(_csound);
+        perf_flag = 0;
         csoundDestroy(_csound);
       }
       //_result = -1;
@@ -321,13 +324,15 @@ int main(int argc, char **argv)
       csoundSetDefaultMessageCallback(nomsg_callback);
   
     /*  Create Csound. */
-    csound = csoundCreate(NULL);
+    csound = csoundCreate(NULL, NULL);
     _csound = csound;
     /*  One complete performance cycle. */
-    result = csoundCompile(csound, argc, (const char **)argv);
-
-     if (!result) result = csoundPerform(csound);
-     // csoundMessage(csound, "**** result = %d\n", result);
+     result = csoundCompile(csound, argc, (const char **)argv);
+     if(!result) {
+      result = csoundStart(csound); 
+      while (!result && perf_flag)
+        result = csoundPerformKsmps(csound);
+     }
      errs = csoundErrCnt(csound);
     /* delete Csound instance */
      

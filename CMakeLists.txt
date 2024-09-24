@@ -51,11 +51,20 @@ if (USE_VCPKG)
         set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/toolchains/mingw.cmake)
         set(VCPKG_CMAKE_SYSTEM_NAME MinGW)
         set(VCPKG_TARGET_ARCHITECTURE x64)
+    elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+        set(VCPKG_TARGET_TRIPLET "wasm32-emscripten")
+        set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/platform/wasm/wasm32.cmake)
+        set(VCPKG_CMAKE_SYSTEM_NAME Emscripten)
     elseif (WIN32)
         set(VCPKG_TARGET_TRIPLET "x64-windows-static")
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     elseif(APPLE)
-        set(VCPKG_TARGET_TRIPLET "x64-osx")
+        execute_process(COMMAND uname -m OUTPUT_VARIABLE ARCH)
+        if (ARCH STREQUAL "arm64\n")
+            set(VCPKG_TARGET_TRIPLET "arm64-osx")
+        else()
+            set(VCPKG_TARGET_TRIPLET "x64-osx")
+        endif()
     elseif (UNIX)
         set(VCPKG_TARGET_TRIPLET "x64-linux")
     endif()
@@ -111,6 +120,10 @@ if(OSXCROSS_TARGET)
     set(CS_FRAMEWORK_DEST "${CMAKE_INSTALL_PREFIX}/Library/Frameworks" CACHE PATH "Csound framework path")
 else()
     set(CS_FRAMEWORK_DEST "$ENV{HOME}/Library/Frameworks" CACHE PATH "Csound framework path")
+endif()
+
+if(APPLE)
+    set(CMAKE_INSTALL_RPATH ${CS_FRAMEWORK_DEST})
 endif()
 
 include(TestBigEndian)
@@ -179,7 +192,7 @@ option(USE_LRINT "Use lrint/lrintf for converting floating point values to integ
 option(USE_CURL "Use CURL library" ON)
 option(BUILD_RELEASE "Build for release" ON)
 option(BUILD_INSTALLER "Build installer" OFF)
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 option(LEXER_DEBUG "Build lexer with debug option" OFF)
 option(USE_GIT_COMMIT "Show the git commit in version information" ON)
 option(REQUIRE_PTHREADS "For non-Windows systems, set whether Csound will use threads or not" ON)
@@ -188,18 +201,7 @@ option(DEBUG_ERROR_ON_WARNING "For a debug build, error on a compiler# warning" 
 option(BARE_METAL "To configure for bare metal build" OFF)
 option(CUSTOM_MALLOC "Use custom malloc in bare metal builds" OFF)
 option(BUILD_PLUGINS "Build external opcodes as plugins" OFF)
-
-
-
-if(BARE_METAL)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DBARE_METAL")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBARE_METAL")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DNO_CSOUND_SERVER")
-    if(CUSTOM_MALLOC)
-     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DCUSTOM_MALLOC")
-    # the default is for STM32H7: -DMALLOC_BASE=0xC0000000
-    endif()
-endif()
+option(BUILD_WITH_LTO "Build with link-time optimisations" OFF)
 
 # secret rabbit code
 if (USE_VCPKG)
@@ -225,6 +227,28 @@ if(CUSTOM_CMAKE)
     include(${CUSTOM_CMAKE})
 else()
     message(STATUS "Not using Custom.cmake file.")
+endif()
+
+
+if(BUILD_WITH_LTO)
+set(CSOUNDLIB_SHARED_LINK_OPTIONS -flto -Werror=odr
+-Werror=lto-type-mismatch -Werror=strict-aliasing)
+message(STATUS "Building with link-time optimisations")
+else()
+set(CSOUNDLIB_SHARED_LINK_OPTIONS "")
+message(STATUS "Not building with link-time optimisations")
+endif()
+
+if(BARE_METAL)
+message(STATUS "Building for bare metal")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DBARE_METAL")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBARE_METAL")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DNO_CSOUND_SERVER")
+
+    if(CUSTOM_MALLOC)
+     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DCUSTOM_MALLOC")
+    # the default is for STM32H7: -DMALLOC_BASE=0xC0000000
+    endif()
 endif()
 
 # in Release configuration, set NDEBUG
@@ -480,7 +504,7 @@ list(APPEND libcsound_private_include_dirs ${SndFile_INCLUDE_DIR})
 if(USE_LIBSNDFILE)
     add_compile_definitions("USE_LIBSNDFILE")
 
-    if(EMSCRIPTEN)
+    if(NOT USE_VCPKG AND EMSCRIPTEN)
         list(APPEND libcsound_private_include_dirs ${Csound_SOURCE_DIR}/emscripten/deps/libsndfile-1.0.25/src/)
     endif()
 
@@ -923,6 +947,10 @@ set(hrtf_ops_SRCS
     Opcodes/hrtferX.c
 )
 
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    list(APPEND stdopcod_SRCS Opcodes/socksend.c Opcodes/sockrecv.c)
+endif()
+
 set(cs_pvs_ops_SRCS
     Opcodes/ifd.c
     Opcodes/partials.c
@@ -997,6 +1025,7 @@ if(NOT BUILD_PLUGINS)
  ${gens_SRCS} ${cs_pvs_ops_SRCS} ${newgabops_SRCS}  ${oldpvoc_SRCS}
  ${pitch_ops_SRCS} ${vbap_ops} ${stdopcod_SRCS}
 )
+ list(APPEND libcsound_CFLAGS -DCS_INTERNAL)
 endif()
 
 if(UNIX)
@@ -1306,7 +1335,7 @@ check_function_exists(sprintf_l HAVE_SPRINTF_L)
 if(HAVE_STRTOK_R)
     add_definitions(-DHAVE_STRTOK_R)
 endif()
-if(HAVE_STRTOD_L)
+if(HAVE_STRTOD_L AND NOT EMSCRIPTEN)
     add_definitions(-DHAVE_STRTOD_L)
 endif()
 if(HAVE_SPRINTF_L)
@@ -1381,10 +1410,13 @@ if(USE_LIBSNDFILE)
 endif()
 
 if(SampleRate_FOUND)
+    if(NOT IOS)
   target_link_libraries(${CSOUNDLIB} PUBLIC SampleRate::samplerate)
+      endif()
 endif()
 
 if(NOT IOS)
+   target_link_options(${CSOUNDLIB} PUBLIC ${CSOUNDLIB_SHARED_LINK_OPTIONS})
     set_target_properties(${CSOUNDLIB} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BUILD_BIN_DIR}
         LIBRARY_OUTPUT_DIRECTORY ${BUILD_LIB_DIR}
@@ -1397,6 +1429,9 @@ if(BUILD_STATIC_LIBRARY)
     target_include_directories(${CSOUNDLIB_STATIC} PUBLIC ${libcsound_public_include_dirs})
     SET_TARGET_PROPERTIES(${CSOUNDLIB_STATIC} PROPERTIES OUTPUT_NAME ${CSOUNDLIB})
     SET_TARGET_PROPERTIES(${CSOUNDLIB_STATIC} PROPERTIES PREFIX "lib")
+    if(BUILD_PLUGINS)
+     list(APPEND libcsound_CFLAGS -DCS_INTERNAL)
+     endif()
     target_compile_options(${CSOUNDLIB_STATIC} PRIVATE
     ${libcsound_CFLAGS})
 
