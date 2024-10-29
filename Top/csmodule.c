@@ -607,12 +607,7 @@ int32_t csoundLoadModules(CSOUND *csound)
 
   /* opcodedir GLOBAL override **experimental** */
   if (csound->opcodedir != NULL) {
-    char *opcdir = cs_strdup(csound, csound->opcodedir);
-    // csound->opcodedir was strdup'd so we free it here now
-    // after we copied the data.
-    free(csound->opcodedir);
-    csound->opcodedir = opcdir;
-    dname = opcdir;
+    dname = csound->opcodedir;
     csound->Message(csound, "OPCODEDIR overridden to %s \n", dname);
   }
   size_t pos = strlen(dname);
