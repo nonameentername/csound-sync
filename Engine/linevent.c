@@ -449,6 +449,7 @@ static void sensLine(CSOUND *csound, void *userData)
 
 }
 
+MYFLT named_instr_find(CSOUND *csound, char *s);
 /* send a lineevent from the orchestra -matt 2001/12/07 */
 
 static const char *errmsg_1 =
@@ -480,20 +481,19 @@ int32_t eventOpcode_(CSOUND *csound, LINEVENT *p, int32_t insname, char p1)
     /* IV - Oct 31 2002: allow string argument */
     if (evt.pcnt > 0) {
       if (insname) {
-        int32_t res;
+        MYFLT res;
         if (UNLIKELY(evt.opcod != 'i' && evt.opcod != 'q' && opcod != 'd'))
           return csound->PerfError(csound, &(p->h), "%s", Str(errmsg_2));
-        res = csound->StringArg2Insno(csound, ((STRINGDAT*) p->args[1])->data, 1);
-        if (UNLIKELY(res == NOT_AN_INSTRUMENT)) return NOTOK;
+        res = named_instr_find(csound, ((STRINGDAT *)p->args[1])->data);
+        if (UNLIKELY(res == FL(0.0))) return NOTOK;
         evt.p[1] = (MYFLT) res;
         evt.strarg = NULL; evt.scnt = 0;
       }
       else {
-        int32_t res;
+        MYFLT res;
         if (IsStringCode(*p->args[1])) {
-          res = csound->StringArg2Insno(csound,
-                                     get_arg_string(csound, *p->args[1]), 1);
-          if (UNLIKELY(res == NOT_AN_INSTRUMENT)) return NOTOK;
+          res = named_instr_find(csound, ((STRINGDAT *)p->args[1])->data);
+          if (UNLIKELY(res == FL(0.0))) return NOTOK;
           evt.p[1] = (MYFLT)res;
         } else {                  /* Should check for valid instr num here */
           MYFLT insno = FABS(*p->args[1]);
@@ -565,12 +565,12 @@ int32_t eventOpcodeI_(CSOUND *csound, LINEVENT *p, int32_t insname, char p1)
     /* IV - Oct 31 2002: allow string argument */
     if (evt.pcnt > 0) {
       if (insname) {
-        int32_t res;
+        MYFLT res;
         if (UNLIKELY(evt.opcod != 'i' && evt.opcod != 'q' && opcod != 'd'))
           return csound->InitError(csound, "%s", Str(errmsg_2));
-        res = csound->StringArg2Insno(csound,((STRINGDAT *)p->args[1])->data, 1);
-        if (UNLIKELY(res == NOT_AN_INSTRUMENT)) return NOTOK;
-        evt.p[1] = (MYFLT)res;
+        res = named_instr_find(csound, ((STRINGDAT *)p->args[1])->data);
+        if (UNLIKELY(res == FL(0.0))) return NOTOK;
+        evt.p[1] = res;
         evt.strarg = NULL; evt.scnt = 0;
         for (i = 2; i <= evt.pcnt; i++)
            evt.p[i] = *p->args[i];
@@ -578,10 +578,9 @@ int32_t eventOpcodeI_(CSOUND *csound, LINEVENT *p, int32_t insname, char p1)
       else {
         evt.strarg = NULL; evt.scnt = 0;
         if (IsStringCode(*p->args[1])) {
-          int32_t res = csound->StringArg2Insno(csound,
-                                         get_arg_string(csound, *p->args[1]), 1);
+          MYFLT res = named_instr_find(csound, ((STRINGDAT *)p->args[1])->data);
           if (UNLIKELY(evt.p[1] == (MYFLT) NOT_AN_INSTRUMENT)) return NOTOK;
-          evt.p[1] = (MYFLT)res;
+          evt.p[1] = res;
         }
         else {                  /* Should check for valid instr num here */
           MYFLT insno = FABS(*p->args[1]);

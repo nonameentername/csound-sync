@@ -1370,6 +1370,7 @@ int32_t insert_score_event_at_sample(CSOUND *csound, EVTBLK *evt, int64_t time_o
       evt->p3orig = (MYFLT) ((double) evt->p3orig / st->ibeatTime);
     /* fall through */
   case 'q':                         /* mute instrument */
+    
     /* check for a valid instrument number or name */
     if (evt->opcod=='d') {
       if (evt->strarg != NULL && IsStringCode(p[1])) {
@@ -1385,10 +1386,10 @@ int32_t insert_score_event_at_sample(CSOUND *csound, EVTBLK *evt, int64_t time_o
     else if (evt->strarg != NULL && IsStringCode(p[1])) {
       MYFLT n = named_instr_find(csound, evt->strarg);
       p[1] = n;
-      i =(int32_t) n;
+      i = (int32_t) n;
       if (n<0) {i= -i;}
     }
-    else
+    else 
       i = (int32_t) fabs((double) p[1]);
     if (UNLIKELY((uint32_t) (i - 1) >=
                  (uint32_t) csound->engineState.maxinsno ||
@@ -1400,7 +1401,7 @@ int32_t insert_score_event_at_sample(CSOUND *csound, EVTBLK *evt, int64_t time_o
         csoundErrorMsg(csound, Str("insert_score_event(): invalid instrument "
                                   "number or name %d\n" ), i);
       goto err_return;
-    }
+    } 
     break;
   case 'a':                         /* advance score time */
     /* calculate the length in beats */
