@@ -403,8 +403,8 @@ static int32_t pconvset_(CSOUND *csound, PCONVOLVE *p, int32_t stringname)
   }
 
   if (UNLIKELY(csound->FileOpen(csound, &infd, CSFILE_SND_R, sfname, &IRinfo,
-                           "SFDIR;SSDIR", CSFTYPE_UNKNOWN_AUDIO, 0) == NULL)) {
-    return csound->InitError(csound, "%s", Str("pconvolve: error while impulse file"));
+                           "SFDIR;SSDIR;SADIR", CSFTYPE_UNKNOWN_AUDIO, 0) == NULL)) {
+    return csound->InitError(csound, "%s", Str("pconvolve: error while opening impulse file"));
   }
 
   if (UNLIKELY(IRinfo.frames < 0)) {
