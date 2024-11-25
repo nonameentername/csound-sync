@@ -128,7 +128,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install --only-dependencies csound
+          brew install libogg flac lame libvorbis mpg123 opus libsndfile portaudio libsamplerate liblo portmidi
           brew install bison flex jack googletest
 
       - name: Configure build
