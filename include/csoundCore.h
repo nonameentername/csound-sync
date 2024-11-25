@@ -711,14 +711,6 @@ static inline double PHMOD1(double p) {
     INSDS   *insdshead;
   } OPDS;
 
-  typedef struct {
-    char        *opname;
-    char        *outypes;
-    char        *intypes;
-    int32_t         flags;
-  } opcodeListEntry;
-
-
   typedef struct lblblk {
     OPDS    h;
     OPDS    *prvi;

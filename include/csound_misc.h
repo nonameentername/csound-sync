@@ -38,6 +38,14 @@ extern "C" {
     uint32_t    mt[624];
   } CsoundRandMTState;
 
+  typedef struct {
+    char        *opname;
+    char        *outypes;
+    char        *intypes;
+    int32_t         flags;
+  } opcodeListEntry;
+
+
   /** @defgroup MISCELLANEOUS Miscellaneous functions
    *
    *  @{ */
