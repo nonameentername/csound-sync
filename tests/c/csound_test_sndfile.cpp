@@ -46,12 +46,15 @@ public:
 void *sfile_open(CSOUND *csound, const char *path, int32_t mode,
                  SFLIB_INFO *sfinfo) {
   FILE *fp = fopen(path, mode == SFM_READ ? "rb" : "wb");
+  printf("soundfile opened %p\n", fp);
   if (fp != NULL) {
       sfile *file = (sfile *) csound->Calloc(csound, sizeof(sfile));
-      sfinfo->samplerate = (int32_t) csoundGetSr(csound);
-      sfinfo->channels = (int32_t) csoundGetNchnls(csound);
+      file->sfinfo = (SFLIB_INFO *) csound->Calloc(csound, sizeof(SFLIB_INFO));
+      sfinfo->samplerate =
+        file->sfinfo->samplerate = (int32_t) csoundGetSr(csound);
+      sfinfo->channels =
+      file->sfinfo->channels = (int32_t) csoundGetChannels(csound, 0);
       file->fp = fp;
-      file->sfinfo = sfinfo;
       return file;
    }
   else return NULL;
@@ -63,7 +66,11 @@ void *sfile_open_fd(CSOUND *csound, int32_t fd, int32_t mode, SFLIB_INFO *sfinfo
   if (fp != NULL) {
       sfile *file = (sfile *) csound->Calloc(csound, sizeof(sfile));
       file->fp = fp;
-      file->sfinfo = sfinfo;
+      file->sfinfo = (SFLIB_INFO *) csound->Calloc(csound, sizeof(SFLIB_INFO));
+      sfinfo->samplerate =
+        file->sfinfo->samplerate = (int32_t) csoundGetSr(csound);
+      sfinfo->channels =
+      file->sfinfo->channels = (int32_t) csoundGetChannels(csound, 0); 
       return file;
    }
   else return NULL;
@@ -73,12 +80,14 @@ void *sfile_open_fd(CSOUND *csound, int32_t fd, int32_t mode, SFLIB_INFO *sfinfo
 int32_t sfile_close(CSOUND *csound, void *p) {
     sfile *file = (sfile *) p;
     fclose(file->fp);
+    csound->Free(csound, file->sfinfo);
     csound->Free(csound, file);
     return CSOUND_SUCCESS;
 }
 
 int64_t sfile_write(CSOUND *csound, void *p, MYFLT *data, int64_t frames) {
   sfile *file = (sfile *) p;
+   printf("writing soundfile %p\n", p);
   return fwrite(data, sizeof(MYFLT)*file->sfinfo->channels, frames, file->fp);
 }
 
@@ -89,6 +98,7 @@ int64_t sfile_read(CSOUND *csound, void *p, MYFLT *data, int64_t frames) {
 
 int64_t sfile_write_samples(CSOUND *csound, void *p, MYFLT *data, int64_t samples) {
   sfile *file = (sfile *) p;
+  printf("writing soundfile %p\n", p);
   return fwrite(data, sizeof(MYFLT), samples, file->fp);
 }
 

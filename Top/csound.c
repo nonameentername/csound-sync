@@ -316,14 +316,14 @@ PUBLIC void csoundSetSndfileCallbacks(CSOUND *csound, SNDFILE_CALLBACKS *p){
       p->sndfileWriteSamples : sndfileWriteSamples;
     csound->SndfileReadSamples = p->sndfileReadSamples ?
       p->sndfileReadSamples : sndfileReadSamples;
-    csound->SndfileSeek =  csound->SndfileSeek ?
-      csound->SndfileSeek : sndfileSeek;
-    csound->SndfileSetString = csound->SndfileSetString ?
-      csound->SndfileSetString : sndfileSetString;
-    csound->SndfileStrError = csound->SndfileStrError?
-      csound->SndfileStrError : sndfileStrError;
-    csound->SndfileCommand = csound->SndfileCommand?
-      csound->SndfileCommand :sndfileCommand;
+    csound->SndfileSeek =  p->sndfileSeek ?
+      p->sndfileSeek : sndfileSeek;
+    csound->SndfileSetString = p->sndfileSetString ?
+      p->sndfileSetString : sndfileSetString;
+    csound->SndfileStrError = p->sndfileStrError?
+      p->sndfileStrError : sndfileStrError;
+    csound->SndfileCommand = p->sndfileCommand?
+      p->sndfileCommand : sndfileCommand;
   }
 }
 
