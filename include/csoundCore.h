@@ -89,6 +89,22 @@ extern "C" {
     void    *useropinfo; /* user opcode parameters */
   } OENTRY;
 
+ /* Holds UDO information, when an instrument is
+     defined as a UDO
+  */
+  typedef struct opcodinfo {
+    int32    instno;
+    char    *name, *intypes, *outtypes;
+    int16   inchns, outchns;
+    bool newStyle;
+    bool passByRef;
+    CS_VAR_POOL* out_arg_pool;
+    CS_VAR_POOL* in_arg_pool;
+    struct instr *ip;
+    struct opcodinfo *prv;
+  } OPCODINFO;
+
+
   /**
    * Storage for parsed orchestra code, for each opcode in an INSTRTXT.
    */
