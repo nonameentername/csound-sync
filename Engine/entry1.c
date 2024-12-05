@@ -100,10 +100,10 @@ OENTRY opcodlst_1[] = {
   { "##userOpcode", S(UOPCODE),0,  "", "", useropcdset, useropcd, NULL, NULL },
   /* IV - Sep 10 2002: removed perf time routines of xin and xout */
   { "xin",  S(XIN_MAX),0,     "****************", "",  xinset,  NULL, NULL, NULL },
-  /* { "xin.64",   S(XIN_HIGH),0,  
+  /* { "xin.64",   S(XIN_HIGH),0,
      "****************************************************************", "",
      xinset,  NULL, NULL },
-     { "##xin256",  S(XIN_MAX),0,   
+     { "##xin256",  S(XIN_MAX),0,
      "****************************************************************"
      "****************************************************************"
      "****************************************************************"
@@ -134,6 +134,7 @@ OENTRY opcodlst_1[] = {
   { "midglobal",S(MIDGLOBAL),0,   "",     "Sm", midglobal, NULL, NULL, NULL},
   { "ihold",  S(LINK),0,          "",     "",     ihold, NULL, NULL, NULL  },
   { "turnoff",S(LINK),0,           "",     "",     NULL,   turnoff, NULL, NULL },
+  { "str", S(IREF_NUM) ,0,  "S", ":InstrDef;", (SUBR) get_instr_name},
   /* VL: 10.2.22 this was thread  but with parser3 we need to make string assignment on threads 1 & 2 */
   {  "=.S",   S(STRCPY_OP),0,     "S",    "S",
      (SUBR) strcpy_opcode_S, (SUBR) strassign_k, (SUBR) NULL, NULL    },
@@ -143,6 +144,10 @@ OENTRY opcodlst_1[] = {
   {  "=.T",   S(STRCPY_OP),0,     "S",    "i",
      (SUBR) strcpy_opcode_p, (SUBR) NULL, (SUBR) NULL, NULL                 },
   { "=.r",    S(ASSIGN),0,        "r",    "i",    rassign, NULL, NULL, NULL },
+  { "=.Ci",    S(R2CXOP),0,        ":Complex;",    "iio", (SUBR) complex_assign},
+  { "=.C",    S(CXOP),0,        ":Complex;",    ":Complex;", (SUBR) complex_init,
+                                                                (SUBR) complex_init},
+  { "=.Ck",    S(R2CXOP),0,        ":Complex;",    "kkO", NULL, (SUBR) complex_assign},
   { "=.i",    S(ASSIGNM),0,       "IIIIIIIIIIIIIIIIIIIIIIII", "m",
     minit, NULL, NULL, NULL  },
   { "=.k",    S(ASSIGNM),0,        "zzzzzzzzzzzzzzzzzzzzzzzz", "z",
@@ -151,17 +156,21 @@ OENTRY opcodlst_1[] = {
   { "=.l",    S(ASSIGN),0,         "a",    "a",    NULL,   laassign, NULL },
   { "=.up",   S(UPSAMP),0,         "a",    "k",  NULL, (SUBR)upsamp, NULL },
   { "=.down",   S(DOWNSAMP),0,    "k",    "ao",   (SUBR)downset,(SUBR)downsamp },
-  //  { "=.t",    S(ASSIGNT),0,        "t",    "kk",   NULL,   tassign, NULL   },
+  { "init.C",    S(R2CXOP),0,        ":Complex;",    "iio", (SUBR) complex_assign},
+  { "init.C",    S(CXOP),0,        ":Complex;",    ":Complex;", (SUBR) complex_init},
   { "init.S", S(STRCPY_OP),0,       "S", "S", (SUBR) strcpy_opcode_S  },
   { "init.Si", S(STRCPY_OP),0,       "S", "i", (SUBR) strcpy_opcode_p  },
+  { "init", S(IREF_INIT),0,     ":InstrDef;", "i", (SUBR) init_instr_ref},
   { "init.i", S(ASSIGNM),0,       "IIIIIIIIIIIIIIIIIIIIIIII", "m", minit  },
   { "init.k", S(ASSIGNM),0,       "zzzzzzzzzzzzzzzzzzzzzzzz", "m", minit  },
   { "init.a", S(ASSIGNM),0,       "mmmmmmmmmmmmmmmmmmmmmmmm", "m", mainit },
-  /* VL 4.4.24 removing thread field: 
-     These boolean were all marked thread 0, with both init and perf functions. 
+  { "nstrnum",   S(IREF_NUM),0,    "i",    ":InstrDef;",   (SUBR) get_instr_num },
+  { "init.instr", S(ASSIGN) ,0,  ":InstrDef;", ":InstrDef;", (SUBR) copyVarGenericInit},
+  /* VL 4.4.24 removing thread field:
+     These boolean were all marked thread 0, with both init and perf functions.
      At instance(), there was a check for NOT thread 3 (meaning init XOR perf),
      and a check for type 'b' output was made, placing the opcode in the init chain,
-     or else perf chain.  
+     or else perf chain.
      I'm Reinterpreting them as either init or perf by removing the relevant function.
      This should take care of assigning these to the correct chain.
   */
@@ -193,6 +202,51 @@ OENTRY opcodlst_1[] = {
   { "##sub.ii",  S(AOP),0,          "i",    "ii",   subkk                   },
   { "##mul.ii",  S(AOP),0,          "i",    "ii",   mulkk                   },
   { "##div.ii",  S(AOP),0,          "i",    "ii",   divkk                   },
+  { "##add.CC",  S(CXOP),0,          ":Complex;",    ":Complex;:Complex;",
+                                      (SUBR) complex_add, (SUBR) complex_add },
+  { "##sub.CC",  S(CXOP),0,          ":Complex;",    ":Complex;:Complex;",
+                                      (SUBR) complex_sub, (SUBR) complex_sub },
+  { "##mul.CC",  S(CXOP),0,          ":Complex;",    ":Complex;:Complex;",
+                                      (SUBR) complex_prod, (SUBR) complex_prod },
+  { "##div.CC",  S(CXOP),0,          ":Complex;",    ":Complex;:Complex;",
+                                      (SUBR) complex_div, (SUBR) complex_div },
+
+  { "##add.Ci",  S(AOP),0,          ":Complex;",    ":Complex;i",
+                                      (SUBR) complex_add_real},
+  { "##add.Ck",  S(AOP),0,          ":Complex;",    ":Complex;k", NULL,
+                                      (SUBR) complex_add_real},
+ { "##add.iC",  S(AOP),0,          ":Complex;",    "i:Complex;",
+                                      (SUBR) real_add_complex},
+  { "##add.kC",  S(AOP),0,          ":Complex;",    "k:Complex;", NULL,
+                                      (SUBR) real_add_complex},
+
+  { "##sub.Ci",  S(AOP),0,          ":Complex;",    ":Complex;i",
+                                      (SUBR) complex_sub_real},
+  { "##sub.Ck",  S(AOP),0,          ":Complex;",    ":Complex;k", NULL,
+                                      (SUBR) complex_sub_real},
+  { "##sub.iC",  S(AOP),0,          ":Complex;",    "i:Complex;",
+                                      (SUBR) real_sub_complex},
+  { "##sub.kC",  S(AOP),0,          ":Complex;",    "k:Complex;", NULL,
+                                      (SUBR) real_sub_complex},
+
+  
+  { "##mul.Ci",  S(AOP),0,          ":Complex;",    ":Complex;i",
+                                      (SUBR) complex_mul_real},
+  { "##mul.Ck",  S(AOP),0,          ":Complex;",    ":Complex;k", NULL,
+                                      (SUBR) complex_mul_real},
+ { "##mul.iC",  S(AOP),0,          ":Complex;",    "i:Complex;",
+                                      (SUBR) real_mul_complex},
+  { "##mul.kC",  S(AOP),0,          ":Complex;",    "k:Complex;", NULL,
+                                      (SUBR) real_mul_complex},
+
+  { "##div.Ci",  S(AOP),0,          ":Complex;",    ":Complex;i",
+                                      (SUBR) complex_div_real},
+  { "##div.Ck",  S(AOP),0,          ":Complex;",    ":Complex;k", NULL,
+                                      (SUBR) complex_div_real},
+  { "##div.iC",  S(AOP),0,          ":Complex;",    "i:Complex;",
+                                      (SUBR) real_div_complex},
+  { "##div.kC",  S(AOP),0,          ":Complex;",    "k:Complex;", NULL,
+                                      (SUBR) real_div_complex},
   { "##mod.ii",  S(AOP),0,          "i",    "ii",   modkk                   },
   { "##add.kk",  S(AOP),0,           "k",    "kk",   NULL,   addkk           },
   { "##sub.kk",  S(AOP),0,           "k",    "kk",   NULL,   subkk           },
@@ -222,7 +276,20 @@ OENTRY opcodlst_1[] = {
   { "##subin.k", S(ASSIGN),0,        "k",    "k",    NULL,   subin   },
   { "##subin.K", S(ASSIGN),0,        "a",    "k",    NULL,   subinak },
   { "##subin.a", S(ASSIGN),0,        "a",    "a",    NULL,   subina  },
-  //{ "divz",   0xfffc                                                      },
+  { "conj", S(CXOP2R), 0, "i", ":Complex;", (SUBR) complex_conj },
+  { "conj", S(CXOP2R), 0, "k", ":Complex;", NULL,  (SUBR) complex_conj },
+  { "real", S(CXOP2R), 0, "i", ":Complex;", (SUBR) complex_real },
+  { "real", S(CXOP2R), 0, "k", ":Complex;", NULL, (SUBR) complex_real},
+  { "imag", S(CXOP2R), 0, "i", ":Complex;", (SUBR) complex_imag },
+  { "imag", S(CXOP2R), 0, "k", ":Complex;", NULL, (SUBR) complex_imag},
+  { "abs", S(CXOP2R), 0, "i", ":Complex;", (SUBR) complex_abs },
+  { "abs", S(CXOP2R), 0, "k", ":Complex;", NULL, (SUBR) complex_abs},
+  { "arg", S(CXOP2R), 0, "i", ":Complex;", (SUBR) complex_arg },
+  { "arg", S(CXOP2R), 0, "k", ":Complex;", NULL, (SUBR) complex_arg},
+  { "polar", S(CXOP), 0, ":Complex;", ":Complex;", (SUBR) complex_to_polar,
+    (SUBR) complex_to_polar},
+  { "complex", S(CXOP), 0, ":Complex;", ":Complex;", (SUBR) polar_to_complex,
+    (SUBR) polar_to_complex},
   { "divz.ii", S(DIVZ),0,         "i",    "iii",  divzkk, NULL,   NULL    },
   { "divz.kk", S(DIVZ),0,          "k",    "kkk",  NULL,   divzkk, NULL    },
   { "divz.ak", S(DIVZ),0,          "a",    "akk",  NULL,   divzak  },
@@ -490,7 +557,7 @@ OENTRY opcodlst_1[] = {
   { "poscil3.aa", S(OSC), TR, "a", "aajo", (SUBR)posc_set, (SUBR)posc3aa },
   { "lposcil3", S(LPOSC), TR,  "a", "kkkkjo", (SUBR)lposc_set,(SUBR)lposc3},
   { "lposcila", S(LPOSC),      TR,  "a", "akkkio",
-    (SUBR)lposc_set, (SUBR)lposca},    
+    (SUBR)lposc_set, (SUBR)lposca},
   /* end change */
   { "foscil", S(FOSC),TR,        "a",  "xkxxkjo",foscset,   foscil  },
   { "foscili",S(FOSC),TR,        "a",  "xkxxkjo",foscset,   foscili },
@@ -849,8 +916,12 @@ OENTRY opcodlst_1[] = {
   { "xadsr.a", S(EXXPSEG),0,        "a",    "iiiio", xdsrset, expseg    },
   { "mxadsr", S(EXPSEG),0,        "k",    "iiiioj", mxdsrset, kxpsegr, NULL},
   { "mxadsr.a", S(EXPSEG),0,        "a",    "iiiioj", mxdsrset, expsegr},
+  { "schedule.instr", S(SCHED),0,       "",     ":InstrDef;iim",
+    schedule, NULL, NULL },
   { "schedule", S(SCHED),0,       "",     "iiim",
     schedule, NULL, NULL },
+  { "schedule.Ninstr", S(SCHED),0,       "",     ":InstrDef;iiN",
+    schedule_N, NULL, NULL },
   { "schedule.N", S(SCHED),0,       "",     "iiiN",
     schedule_N, NULL, NULL },
   { "schedule.S", S(SCHED),0,       "",     "Siim",
@@ -860,8 +931,12 @@ OENTRY opcodlst_1[] = {
   { "schedule.array", S(SCHED),0,       "",     "i[]",
     schedule_array, NULL, NULL },
   /* **** Experimental schedulek opcodes **** */
-  { "schedulek",   S(SCHED),0,        "",     "kkkM",
+  { "schedulek.instr",   S(SCHED),0,        "",     ":InstrDef;kkM",
     NULL, schedule, NULL },
+  { "schedulek",   S(SCHED),0,        "",     "kkkM",  
+    NULL, schedule, NULL },
+  { "schedulek.Ninstr", S(SCHED),0,        "",     ":InstrDef;kkN",
+    NULL, schedule_N, NULL },  
   { "schedulek.N", S(SCHED),0,        "",     "kkkN",
     NULL, schedule_N, NULL },
   { "schedulek.S", S(SCHED),0,        "",     "SkkM",
@@ -872,8 +947,11 @@ OENTRY opcodlst_1[] = {
     NULL, schedule_array, NULL },
 
   /* **** End of schedulek **** */
+  { "schedwhen.instr", S(WSCHED),0,     "",  ":InstrDef;kkkm",ifschedule, kschedule, NULL },
   { "schedwhen", S(WSCHED),0,     "",     "kkkkm",ifschedule, kschedule, NULL },
   { "schedwhen", S(WSCHED),0,     "",     "kSkkm",ifschedule, kschedule, NULL },
+
+  { "schedkwhen.instr", S(TRIGINSTR),0, "",     ":InstrDef;kkkkz",triginset, ktriginstr, NULL },  
   { "schedkwhen", S(TRIGINSTR),0, "",     "kkkkkz",triginset, ktriginstr, NULL },
   { "schedkwhen.S", S(TRIGINSTR),0, "",    "kkkSkz",
     triginset_S, ktriginstr_S, NULL },
@@ -881,11 +959,15 @@ OENTRY opcodlst_1[] = {
   { "schedkwhennamed.S", S(TRIGINSTR),0, "",
     "kkkSkz",triginset_S, ktriginstr_S, NULL },
   { "trigseq", S(TRIGSEQ),0,      "",     "kkkkkz", trigseq_set, trigseq, NULL },
+  { "event", S(LINEVENT),0,        "",     "S:InstrDef;z",  NULL, eventOpcode_Instr, NULL   },
   { "event", S(LINEVENT),0,        "",     "Skz",  NULL, eventOpcode, NULL   },
+  { "event_i.instr", S(LINEVENT),0,     "",     "S:InstrDef;m",  eventOpcodeI_Instr, NULL, NULL  },
   { "event_i", S(LINEVENT),0,     "",     "Sim",  eventOpcodeI, NULL, NULL  },
   { "event.S", S(LINEVENT),0,        "",    "SSz",  NULL, eventOpcode_S, NULL   },
   { "event_i.S", S(LINEVENT),0,     "",    "SSm",  eventOpcodeI_S, NULL, NULL  },
-  { "nstance", S(LINEVENT2),0,      "k",  "kkz",  NULL, instanceOpcode, NULL   },
+  { "nstance", S(LINEVENT2),0,      "k",  ":InstrDef;kz",  NULL, instanceOpcode, NULL   },
+  { "nstance", S(LINEVENT2),0,      "k",  "kkz",  NULL, instanceOpcode_Instr, NULL   },
+  { "nstance.instr", S(LINEVENT2),0,   "i",  ":InstrDef;iim",  instanceOpcode_Instr, NULL, NULL  },
   { "nstance.i", S(LINEVENT2),0,   "i",  "iiim",  instanceOpcode, NULL, NULL  },
   { "nstance.kS", S(LINEVENT2),0,   "k",  "SSz",  NULL, instanceOpcode_S, NULL },
   { "nstance.S", S(LINEVENT2),0,   "i",  "Siim",  instanceOpcode_S, NULL, NULL},
@@ -982,13 +1064,16 @@ OENTRY opcodlst_1[] = {
   { "nstrstr", S(NSTRSTR),0,        "S",    "i",    nstrstr, NULL, NULL      },
   { "nstrstr.k", S(NSTRSTR),0,       "S",    "k",    NULL, nstrstr, NULL      },
   //{ "turnoff2",   0xFFFB,   _CW,    0, NULL,   NULL,   NULL, NULL, NULL          },
+  { "turnoff2_i.instr",S(TURNOFF2),_CW,     "",  ":InstrDef;oo",  turnoff2Instr, NULL     },
   { "turnoff2_i.S",S(TURNOFF2),_CW,     "",     "Soo",  turnoff2S, NULL     },
   { "turnoff2_i.i",S(TURNOFF2),_CW,     "",     "ioo",  turnoff2k, NULL     },
+  { "turnoff2.Instr",S(TURNOFF2),_CW,      "",     ":InstrDef;kk",  NULL, turnoff2Instr, NULL     },
   { "turnoff2.S",S(TURNOFF2),_CW,      "",     "Skk",  NULL, turnoff2S, NULL     },
   { "turnoff2.c",S(TURNOFF2),_CW,      "",     "ikk",  NULL, turnoff2k, NULL     },
   { "turnoff2.k",S(TURNOFF2),_CW,      "",     "kkk",  NULL, turnoff2k, NULL     },
   { "turnoff2.i",S(TURNOFF2),_CW,      "",     "ikk",  NULL, turnoff2k, NULL     },
   { "turnoff2.r",S(TURNOFF2),_CW,      "",     "ikk",  NULL, turnoff2k, NULL     },
+  { "turnoff3.Instr",S(TURNOFF2),_CW,      "",     ":InstrDef;",  NULL, turnoff3Instr, NULL     },
   { "turnoff3.S",S(TURNOFF2),_CW,      "",     "S",  NULL, turnoff3S, NULL     },
   { "turnoff3.c",S(TURNOFF2),_CW,      "",     "i",  NULL, turnoff3k, NULL     },
   { "turnoff3.k",S(TURNOFF2),_CW,      "",     "k",  NULL, turnoff3k, NULL     },
@@ -1259,6 +1344,9 @@ OENTRY opcodlst_1[] = {
   { "compileorc",  S(COMPILE), 0,  "i", "S",  (SUBR) compile_orc_i, NULL, NULL },
   { "compilecsd",  S(COMPILE), 0,  "i", "S",  (SUBR) compile_csd_i, NULL, NULL },
   { "compilestr",  S(COMPILE), 0,  "i", "S",  (SUBR) compile_str_i, NULL, NULL },
+  { "createinstr",  S(CINSTR), 0,  ":InstrDef;", "S",  (SUBR) compile_instr, NULL, NULL },
+  { "deleteinstr",  S(DELETEIN), 0, "", ":InstrDef;",  NULL, (SUBR) delete_instr, NULL },
+  { "remove",  S(DELETEIN), 0, "", ":InstrDef;",  (SUBR) delete_instr, NULL },
   { "evalstr",  S(COMPILE), 0,  "i", "S",  (SUBR) eval_str_i, NULL, NULL },
   { "evalstr",  S(COMPILE), 0,   "k", "Sk",  NULL, (SUBR) eval_str_k, NULL },
   { "readscore",  S(COMPILE), 0,  "i", "S",  (SUBR) read_score_i, NULL, NULL },
@@ -1416,17 +1504,17 @@ OENTRY opcodlst_1[] = {
   { "slider8table", S(SLIDER8t), 0, "k",  "iii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
     (SUBR)sliderTable_i8, (SUBR)sliderTable8, (SUBR)NULL },
-  { "slider16table", S(SLIDER8t), 0, "k", "iii"
+  { "slider16table", S(SLIDER16t), 0, "k", "iii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
     (SUBR)sliderTable_i16, (SUBR)sliderTable16, (SUBR)NULL },
-  { "slider32table", S(SLIDER8t), 0, "k", "iii"
+  { "slider32table", S(SLIDER32t), 0, "k", "iii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
     (SUBR)sliderTable_i32, (SUBR)sliderTable32, (SUBR)NULL },
-  { "slider64table", S(SLIDER8t), 0, "k", "iii"
+  { "slider64table", S(SLIDER64t), 0, "k", "iii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
     "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
@@ -1466,9 +1554,9 @@ OENTRY opcodlst_1[] = {
   { "ctrl7.a", S(CTRL7a),  0, "a",    "iikkoo",
     (SUBR) ctrl7a_set,    (SUBR) ctrl7a },
   { "cpuprc", S(CPU_PERC),0,      "",     "Si",   (SUBR)cpuperc_S, NULL, NULL   },
-  { "maxalloc", S(CPU_PERC),0,    "",     "Si",   (SUBR)maxalloc_S, NULL, NULL  },
+  { "maxalloc", S(CPU_MAXALLOC),0,"",     "Sio",  (SUBR)maxalloc_S, NULL, NULL  },
   { "cpuprc", S(CPU_PERC),0,      "",     "ii",   (SUBR)cpuperc, NULL, NULL   },
-  { "maxalloc", S(CPU_PERC),0,    "",     "ii",   (SUBR)maxalloc, NULL, NULL  },
+  { "maxalloc", S(CPU_MAXALLOC),0,"",     "iio",  (SUBR)maxalloc, NULL, NULL  },
   { "active.iS", S(INSTCNT),0,    "i",    "Soo",   (SUBR)instcount_S, NULL, NULL },
   { "active.kS", S(INSTCNT),0,    "k",    "Soo",   NULL, (SUBR)instcount_S, NULL },
   { "active.i", S(INSTCNT),0,     "i",    "ioo",   (SUBR)instcount, NULL, NULL },

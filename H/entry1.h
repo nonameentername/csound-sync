@@ -26,6 +26,7 @@
 #include "csoundCore.h"         /*                      ENTRY1.H        */
 #include "insert.h"
 #include "aops.h"
+#include "complex_ops.h"
 #include "midiops.h"
 #include "ugens1.h"
 #include "ugens2.h"
@@ -351,8 +352,10 @@ int32_t triginset(CSOUND *, void *), ktriginstr(CSOUND *, void *);
 int32_t triginset_S(CSOUND *, void *), ktriginstr_S(CSOUND *, void *);
 int32_t trigseq_set(CSOUND *, void *), trigseq(CSOUND *, void *);
 int32_t eventOpcode(CSOUND *, void *), eventOpcodeI(CSOUND *, void *);
+int32_t eventOpcode_Instr(CSOUND *, void *), eventOpcodeI_Instr(CSOUND *, void *);
 int32_t eventOpcode_S(CSOUND *, void *), eventOpcodeI_S(CSOUND *, void *);
 int32_t instanceOpcode(CSOUND *, void *), instanceOpcode_S(CSOUND *, void *);
+int32_t instanceOpcode_Instr(CSOUND *, void *p);
 int32_t kill_instance(CSOUND *csound, void *p);
 int32_t lfoset(CSOUND *, void *);
 int32_t lfok(CSOUND *, void *), lfoa(CSOUND *, void *);
@@ -398,10 +401,12 @@ int32_t mididefault(CSOUND *, void *);
 int32_t subinstrset_S(CSOUND *, void *);
 int32_t subinstrset(CSOUND *, void *), subinstr(CSOUND *, void *);
 int32_t useropcdset(CSOUND *, void *), useropcd(CSOUND *, void *);
+int32_t useropcdset_newstyle(CSOUND *, void *);
 int32_t setksmpsset(CSOUND *, void *);
 int32_t xinset(CSOUND *, void *), xoutset(CSOUND *, void *);
 int32_t ingoto(CSOUND *, void *), kngoto(CSOUND *, void *);
 int32_t nstrnumset(CSOUND *, void *), turnoff2k(CSOUND *, void *);
+int32_t turnoff2Instr(CSOUND *, void *), turnoff3Instr(CSOUND *, void *);
 int32_t nstrnumset_S(CSOUND *, void *), nstrstr(CSOUND *, void *);
 int32_t turnoff2S(CSOUND *, void *) ;
 int32_t turnoff3S(CSOUND *, void *), turnoff3k(CSOUND *, void *);
@@ -619,4 +624,5 @@ int32_t lposc3(CSOUND *csound, void *p);
 int32_t lposca(CSOUND *csound, LPOSC *p);
 int32_t oversampleset(CSOUND *csound, void *p);
 int32_t undersampleset(CSOUND *csound, void *p);
+int32_t schedule_instr(CSOUND *csound, void *p);
 

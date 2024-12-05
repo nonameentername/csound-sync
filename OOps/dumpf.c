@@ -294,7 +294,7 @@ static void nkdump(CSOUND *csound, MYFLT *kp, FILE *ofd, int32_t format,
       }
       snprintf(buf1, 256, "%" PRId64 "\n", (int64_t)*kp);
       strlcat(outbuf, buf1, 256);
-      len = strlen(outbuf);
+      len = (int32_t) strlen(outbuf);
       break;
     case 8: *outbuf = '\0';
       while (--nk) {
@@ -303,7 +303,7 @@ static void nkdump(CSOUND *csound, MYFLT *kp, FILE *ofd, int32_t format,
       }
       CS_SPRINTF(buf1, "%6.4f\n", *kp);
       strlcat(outbuf, buf1, 256);
-      len = strlen(outbuf);
+      len = (int32_t) strlen(outbuf);
       break;
     default:
       csound->PerfError(csound,&(((KDUMP *)p)->h),
@@ -594,7 +594,7 @@ static void nkread(CSOUND *csound, MYFLT *kp, FILE *ifd, int32_t format, int32_t
 {
     int32_t   len;
     char  inbuf[256];
-    int in_comment = 0;
+    int32_t in_comment = 0;
 
     switch(format) {               /* place formatted kvals into outbuf */
     case 1: {
@@ -632,7 +632,7 @@ static void nkread(CSOUND *csound, MYFLT *kp, FILE *ifd, int32_t format, int32_t
     case 7:
       while (nk--) {
         char *bp = inbuf;
-        int c;
+        int32_t c;
         /* NOTE: could use nextval() in Engine/fgens.c instead */
         do {                    /* Skip whitespace and comments */
           c = getc(ifd);
@@ -664,7 +664,7 @@ static void nkread(CSOUND *csound, MYFLT *kp, FILE *ifd, int32_t format, int32_t
     case 8:
       while (nk--) {
         char *bp = inbuf;
-        int c;
+        int32_t c;
         do {                    /* Skip whitespace and comments */
           c = getc(ifd);
           switch (c) {

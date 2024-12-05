@@ -223,7 +223,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
     const char  *envoutyp = NULL;
     uint32_t    outbufsiz = 0U;
     int32_t     nrecs = 0;
-    csound->GetOParms(csound, &O);
+    memcpy(&O, csound->GetOParms(csound), sizeof(OPARMS));
 
 
     /* audio is now normalised after call to getsndin  */
@@ -283,7 +283,6 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
               break;
             case 'h':
               O.filetyp = TYP_RAW;
-              O.sfheader = 0;           /* skip sfheader  */
               break;
             case 'c':
               O.outformat = AE_CHAR;     /* 8-bit char soundfile */
@@ -417,7 +416,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
                       Str("Must have an example noise file (-i name)\n"));
       return -1;
     }
-    if (UNLIKELY((inf = csound->SndInputFileOpen(csound, infile, &p, &beg_time,
+    if (UNLIKELY((inf = (csound->GetUtility(csound))->SndinGetSetSA(csound, infile, &p, &beg_time,
                                             &input_dur, &sr, channel)) == NULL)) {
       csound->Message(csound, Str("error while opening %s"), infile);
       return -1;
@@ -425,11 +424,8 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
     if (O.outformat == 0) O.outformat = p->format;
     O.sfsampsize = csound->SndfileSampleSize(FORMAT2SF(O.outformat));
     if (O.filetyp == TYP_RAW) {
-      O.sfheader = 0;
       O.rewrt_hdr = 0;
     }
-    else
-      O.sfheader = 1;
     if (O.outfilename == NULL)
       O.outfilename = "test";
     {
@@ -445,14 +441,14 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
           csound->Message(csound, Str("cannot open %s.\n"), O.outfilename);
           return -1;
         }
-        outfd = sflib_open(name, SFM_WRITE, &sfinfo);
+        outfd = csound->SndfileOpen(csound,name, SFM_WRITE, &sfinfo);
         if (outfd != NULL)
           csound->NotifyFileOpened(csound, name,
                       csound->Type2CsfileType(O.filetyp, O.outformat), 1, 0);
         csound->Free(csound, name);
       }
       else
-        outfd = sflib_open_fd(1, SFM_WRITE, &sfinfo, 1);
+        outfd = csound->SndfileOpenFd(csound,1, SFM_WRITE, &sfinfo, 1);
       if (UNLIKELY(outfd == NULL)) {
         csound->Message(csound, Str("cannot open %s."), O.outfilename);
         return -1;
@@ -460,11 +456,11 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
       /* register file to be closed by csoundReset() */
       (void)csound->CreateFileHandle(csound, &outfd, CSFILE_SND_W,
                                      O.outfilename);
-      sflib_command(outfd, SFC_SET_CLIPPING, NULL, SFLIB_TRUE);
+      csound->SndfileCommand(csound,outfd, SFC_SET_CLIPPING, NULL, SFLIB_TRUE);
     }
 
-    csound->SetUtilSr(csound, (MYFLT)p->sr);
-    csound->SetUtilNchnls(csound, Chans = p->nchanls);
+    (csound->GetUtility(csound))->SetUtilSr(csound, (MYFLT)p->sr);
+    (csound->GetUtility(csound))->SetUtilNchnls(csound, Chans = p->nchanls);
 
     /* read header info */
     if (R < FL(0.0))
@@ -480,7 +476,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
 
     /* read noise reference file */
 
-    if (UNLIKELY((fp = csound->SndInputFileOpen(csound, nfile, &pn, &beg_ntime,
+    if (UNLIKELY((fp = (csound->GetUtility(csound))->SndinGetSetSA(csound, nfile, &pn, &beg_ntime,
                                            &input_ndur, &srn, channel)) == NULL)) {
       csound->Message(csound, "%s",
                       Str("dnoise: cannot open noise reference file\n"));
@@ -760,7 +756,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
     while (nMin > (int64_t)ibuflen) {
       if (UNLIKELY(!csound->CheckEvents(csound)))
         csound->LongJmp(csound, 1);
-      nread = csound->SndInputRead(csound, fp, ibuf1, ibuflen, pn);
+      nread = (csound->GetUtility(csound))->Sndin(csound, fp, ibuf1, ibuflen, pn);
       for(i=0; i < nread; i++)
         ibuf1[i] *= 1.0/csound->Get0dBFS(csound);
       if (UNLIKELY(nread < ibuflen)) {
@@ -771,7 +767,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
     if (UNLIKELY(!csound->CheckEvents(csound)))
       csound->LongJmp(csound, 1);
     i = (int32_t) nMin;
-    nread = csound->SndInputRead(csound, fp, ibuf1, i, pn);
+    nread = (csound->GetUtility(csound))->Sndin(csound, fp, ibuf1, i, pn);
     for(i=0; i < nread; i++)
         ibuf1[i] *= 1.0/csound->Get0dBFS(csound);
     if (UNLIKELY(nread < i)) {
@@ -783,7 +779,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
       if (UNLIKELY(!csound->CheckEvents(csound)))
         csound->LongJmp(csound, 1);
       lj += (int64_t) N;
-      nread = csound->SndInputRead(csound, fp, fbuf, N, pn);
+      nread = (csound->GetUtility(csound))->Sndin(csound, fp, fbuf, N, pn);
       for(i=0; i < nread; i++)
         fbuf[i] *= 1.0/csound->Get0dBFS(csound);
       if (nread < N)
@@ -826,7 +822,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
     if (UNLIKELY(!csound->CheckEvents(csound)))
       csound->LongJmp(csound, 1);
     /* fill ibuf2 to start */
-    nread = csound->SndInputRead(csound, inf, ibuf2, ibuflen, p);
+    nread = (csound->GetUtility(csound))->Sndin(csound, inf, ibuf2, ibuflen, p);
 /*     nread = read(inf, ibuf2, ibuflen*sizeof(MYFLT)); */
 /*     nread /= sizeof(MYFLT); */
     for(i=0; i < nread; i++)
@@ -842,10 +838,10 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
     invR = FL(1.0) / R;
     nI = -((int64_t)aLen / D) * D;    /* input time (in samples) */
     nO = nI;                 /* output time (in samples) */
-    ibs = ibuflen + Chans * (nI - aLen - 1);    /* starting position in ib1 */
+    ibs = (int32_t) (ibuflen + Chans * (nI - aLen - 1));    /* starting position in ib1 */
     ib1 = ibuf1;        /* filled with zeros to start */
     ib2 = ibuf2;        /* first buffer of speech */
-    obs = Chans * (nO - sLen - 1);    /* starting position in ob1 */
+    obs = (int32_t)(Chans * (nO - sLen - 1));    /* starting position in ob1 */
     while (obs < 0) {
       obs += obuflen;
       first++;
@@ -879,7 +875,7 @@ static int32_t dnoise(CSOUND *csound, int32_t argc, char **argv)
           ib2 = ib0;
           ibs -= ibuflen;
           /* fill ib2 */
-          nread = csound->SndInputRead(csound, inf, ib2, ibuflen, p);
+          nread = (csound->GetUtility(csound))->Sndin(csound, inf, ib2, ibuflen, p);
           for(i=0; i < nread; i++)
                ib2[i] *= 1.0/csound->Get0dBFS(csound);
           lnread += nread;
@@ -1195,14 +1191,15 @@ static int32_t writebuffer(CSOUND *csound, SNDFILE *outfd,
     int32_t n;
 
     if (UNLIKELY(outfd == NULL)) return 0;
-    n = sflib_write_MYFLT(outfd, outbuf, nsmps);
+    n = (int32_t) csound->SndfileWriteSamples(csound, outfd, outbuf, nsmps);
+
     if (UNLIKELY(n < nsmps)) {
-      sflib_close(outfd);
+      csound->SndfileClose(csound,outfd);
       sndwrterr(csound, n, nsmps);
       return -1;
     }
     if (UNLIKELY(O->rewrt_hdr))
-      csound->RewriteHeader(outfd);
+      csound->RewriteHeader(csound, outfd);
 
     (*nrecs)++;                 /* JPff fix */
     switch (O->heartbeat) {
@@ -1247,10 +1244,10 @@ static void hamming(MYFLT *win, int32_t winLen, int32_t even)
 
 int32_t dnoise_init_(CSOUND *csound)
 {
-    int32_t retval = csound->AddUtility(csound, "dnoise", dnoise);
+    int32_t retval = (csound->GetUtility(csound))->AddUtility(csound, "dnoise", dnoise);
     if (!retval) {
       retval =
-        csound->SetUtilityDescription(csound, "dnoise",
+        (csound->GetUtility(csound))->SetUtilityDescription(csound, "dnoise",
                                       Str("Removes noise from a sound file"));
     }
     return retval;

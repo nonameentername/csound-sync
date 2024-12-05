@@ -35,9 +35,5 @@ TEST_F (EngineTests, testUdpServer)
     csoundSetIsGraphable(csound, 1);
     csoundSetOption(csound,"--port=12345");
     csoundStart(csound);
-#ifdef _MSC_VER
-    //Sleep (1);
-#else
-    sleep (1);
-#endif
+    csoundSleep(1000);
 }

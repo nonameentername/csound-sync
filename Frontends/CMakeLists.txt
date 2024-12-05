@@ -1,9 +1,6 @@
 option(BUILD_CSBEATS "Build the beats score frontend" ON)
 option(BUILD_CSOUND_COMMAND "Build the Csound command" ON)
 
-find_path(PD_HEADER_PATH m_pd.h)
-find_library(PD_LIBRARY pd.dll)
-
 ## Csound Commandline Executable ##
 if(BUILD_CSOUND_COMMAND) 
   set(CS_MAIN_SRCS csound/csound_main.c)

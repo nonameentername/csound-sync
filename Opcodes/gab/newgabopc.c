@@ -125,9 +125,9 @@ static int32_t lposca_stereo(CSOUND *csound, LPOSC_ST *p) /* stereo lposcinta */
   uint32_t early  = p->h.insdshead->ksmps_no_end;
   uint32_t n, nsmps = CS_KSMPS;
   int32    loop, end, looplength /* = p->looplength */ ;
-  if ((loop = (int64_t) *p->kloop) < 0) loop=0;/* gab */
-  else if (loop > p->tablen-3) loop = p->tablen-3;
-  if ((end = (int64_t) *p->kend) > p->tablen-1 ) end = p->tablen - 1;
+  if ((loop = (int32_t) *p->kloop) < 0) loop=0;/* gab */
+  else if (loop > p->tablen-3) loop = (int32_t) (p->tablen-3);
+  if ((end = (int32_t) *p->kend) > p->tablen-1 ) end = (int32_t) (p->tablen - 1);
   else if (end <= 2) end = 2;
   if (end < loop+2) end = loop + 2;
   looplength = end - loop;
@@ -294,7 +294,7 @@ PUBLIC  int32_t     csoundModuleInit(CSOUND *csound)
 
 PUBLIC int32_t csoundModuleInfo(void)
 {
-  return ((CS_APIVERSION << 16) + (CS_APISUBVER << 8) + (int32_t) sizeof(MYFLT));
+  return ((CS_VERSION << 16) + (CS_SUBVER << 8) + (int32_t) sizeof(MYFLT));
 }
 
 PUBLIC  int32_t     csoundModuleDestroy(CSOUND *csound)

@@ -26,6 +26,7 @@
 #include "ugens7.h"
 #include <math.h>
 
+
 /* FOG generator */
 
 static int32_t newpulse(CSOUND *, FOGS *, OVERLAP *, MYFLT *, MYFLT *, MYFLT *);
@@ -146,7 +147,7 @@ static int32_t fog(CSOUND *csound, FOGS *p)
       ovp = ovp->nxtact;                     /*  formant waveform  */
       if(floatph) {
         double formphsf = ovp->formphsf;
-        double frac = formphsf - (int) formphsf; 
+        double frac = formphsf - (int32_t) formphsf; 
         ftab = ftp1->ftable + (size_t) (formphsf * ftp1->flen);
         v1 = *ftab++;  
         result = v1 + (*ftab - v1) * frac;
@@ -234,7 +235,8 @@ static int32_t newpulse(CSOUND *csound, FOGS *p, OVERLAP *ovp, MYFLT   *amp,
     return(0);
   if ((oct = *p->koct) > 0.0) {                   /* octaviation */
     int64_t cnst = -1L;
-    int32 ioct = (int32)oct, bitpat = ~(cnst << ioct);
+    int64_t ioct = oct;
+    uint64_t bitpat = ~(cnst << ioct);
     if (bitpat & ++p->fofcount)
       return(0);
     if ((bitpat += 1) & p->fofcount)

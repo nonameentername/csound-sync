@@ -72,11 +72,11 @@ typedef struct _sfontg {
   MYFLT pitches[128];
 } sfontg;
 
-static int SoundFontLoad(CSOUND *csound, char *fname)
+static int32_t SoundFontLoad(CSOUND *csound, char *fname)
 {
     FILE *fil;
     void *fd;
-    int i;
+    int32_t i;
     SFBANK *soundFont;
     sfontg *globals;
     globals = (sfontg *) (csound->QueryGlobalVariable(csound, "::sfontg"));
@@ -135,7 +135,7 @@ static int32_t SfLoad_(CSOUND *csound, SFLOAD *p, int32_t istring)
                                        /* open a file and return its handle */
 {                                      /* the handle is simply a stack index */
     char *fname;
-    int hand;
+    int32_t hand;
     SFBANK *sf;
     sfontg *globals;
     globals = (sfontg *) (csound->QueryGlobalVariable(csound, "::sfontg"));
@@ -418,11 +418,11 @@ static int32_t SfPlay_set(CSOUND *csound, SFPLAY *p)
             /* Suggested fix from steven yi Oct 2002 */
             p->base[spltNum] = sBase + start;
             p->phs[spltNum] = (double) split->startOffset + *p->ioffset;
-            p->end[spltNum] = sample->dwEnd + split->endOffset - start;
-            p->startloop[spltNum] =
-              sample->dwStartloop + split->startLoopOffset  - start;
-            p->endloop[spltNum] =
-              sample->dwEndloop + split->endLoopOffset - start;
+            p->end[spltNum] = (DWORD) (sample->dwEnd + split->endOffset - start);
+            p->startloop[spltNum] =  (DWORD) 
+              (sample->dwStartloop + split->startLoopOffset  - start);
+            p->endloop[spltNum] =  (DWORD) 
+              (sample->dwEndloop + split->endLoopOffset - start);
             p->leftlevel[spltNum] = (MYFLT) sqrt(1.0-pan) * attenuation;
             p->rightlevel[spltNum] = (MYFLT) sqrt(pan) * attenuation;
             p->mode[spltNum]= split->sampleModes;
@@ -768,10 +768,11 @@ static int32_t SfPlayMono_set(CSOUND *csound, SFPLAYMONO *p)
               GLOBAL_ATTENUATION;
             p->base[spltNum] =  sBase+ start;
             p->phs[spltNum] = (double) split->startOffset + *p->ioffset;
-            p->end[spltNum] = sample->dwEnd + split->endOffset - start;
-            p->startloop[spltNum] = sample->dwStartloop +
-              split->startLoopOffset - start;
-            p->endloop[spltNum] = sample->dwEndloop + split->endLoopOffset - start;
+            p->end[spltNum] =  (DWORD) (sample->dwEnd + split->endOffset - start);
+            p->startloop[spltNum] =  (DWORD) (sample->dwStartloop +
+                                              split->startLoopOffset - start);
+            p->endloop[spltNum] =  (DWORD)
+              (sample->dwEndloop + split->endLoopOffset - start);
             p->mode[spltNum]= split->sampleModes;
             p->attack[spltNum] = split->attack*CS_EKR;
             p->decay[spltNum] = split->decay*CS_EKR;
@@ -1033,10 +1034,11 @@ static int32_t SfInstrPlay_set(CSOUND *csound, SFIPLAY *p)
           else if (pan < FL(0.0)) pan = FL(0.0);
           p->base[spltNum] = sBase + start;
           p->phs[spltNum] = (double) split->startOffset + *p->ioffset;
-          p->end[spltNum] = sample->dwEnd + split->endOffset - start;
-          p->startloop[spltNum] = sample->dwStartloop +
-            split->startLoopOffset - start;
-          p->endloop[spltNum] = sample->dwEndloop + split->endLoopOffset - start;
+          p->end[spltNum] =  (DWORD) (sample->dwEnd + split->endOffset - start);
+          p->startloop[spltNum] =  (DWORD) (sample->dwStartloop +
+                                            split->startLoopOffset - start);
+          p->endloop[spltNum] =  (DWORD) (sample->dwEndloop +
+                                          split->endLoopOffset - start);
           p->leftlevel[spltNum] = (FL(1.0)-pan) * attenuation;
           p->rightlevel[spltNum] = pan * attenuation;
           p->mode[spltNum]= split->sampleModes;
@@ -1306,10 +1308,11 @@ static int32_t SfInstrPlayMono_set(CSOUND *csound, SFIPLAYMONO *p)
             * GLOBAL_ATTENUATION;
           p->base[spltNum] = sBase+ start;
           p->phs[spltNum] = (double) split->startOffset + *p->ioffset;
-          p->end[spltNum] = sample->dwEnd + split->endOffset - start;
-          p->startloop[spltNum] = sample->dwStartloop +
-            split->startLoopOffset - start;
-          p->endloop[spltNum] = sample->dwEndloop + split->endLoopOffset - start;
+          p->end[spltNum] =  (DWORD) (sample->dwEnd + split->endOffset - start);
+          p->startloop[spltNum] =  (DWORD) (sample->dwStartloop +
+                                            split->startLoopOffset - start);
+          p->endloop[spltNum] =  (DWORD) (sample->dwEndloop +
+                                          split->endLoopOffset - start);
           p->mode[spltNum]= split->sampleModes;
           p->attack[spltNum] = split->attack*CS_EKR;
           p->decay[spltNum] = split->decay*CS_EKR;
@@ -2100,7 +2103,7 @@ static int32_t chunk_read(CSOUND *csound, FILE *fil, CHUNK *chunk)
     if (chunk->ckDATA==NULL)
       return 0;
     if (chunk->ckSize>0x8fffff00) return 0;
-    return fread(chunk->ckDATA,1,chunk->ckSize,fil);
+    return (int32_t) fread(chunk->ckDATA,1,chunk->ckSize,fil);
 }
 
 static DWORD dword(char *p)
@@ -2388,7 +2391,7 @@ static int32_t sflooper_init(CSOUND *csound, sflooper *p)
             else if (pan < 0.0) pan = 0.0;
             p->sBase[spltNum] = sBase;
             p->sstart[spltNum] = start;
-            p->end[spltNum] = sample->dwEnd + split->endOffset;
+            p->end[spltNum] =  (DWORD) (sample->dwEnd + split->endOffset);
             p->leftlevel[spltNum] = (MYFLT) sqrt(1.0-pan) * attenuation;
             p->rightlevel[spltNum] = (MYFLT) sqrt(pan) * attenuation;
             spltNum++;
@@ -2815,22 +2818,22 @@ int32_t sfont_ModuleDestroy(CSOUND *csound)
 
 #ifdef BUILD_PLUGINS
 
-PUBLIC int csoundModuleCreate(CSOUND *csound){
+PUBLIC int32_t csoundModuleCreate(CSOUND *csound){
   return sfont_ModuleCreate(csound);
 }
 
-PUBLIC int csoundModuleInit(CSOUND *csound){
+PUBLIC int32_t csoundModuleInit(CSOUND *csound){
   return csound->AppendOpcodes(csound, &(localops[0]),
                                (int32_t) (sizeof(localops) / sizeof(OENTRY)));
 }
 
-PUBLIC int csoundModuleDestroy(CSOUND *csound) {
+PUBLIC int32_t csoundModuleDestroy(CSOUND *csound) {
   return sfont_ModuleDestroy(csound);
 }
 
 PUBLIC int32_t csoundModuleInfo(void)
 {
-    return ((CS_APIVERSION << 16) + (CS_APISUBVER << 8) + (int32_t
+    return ((CS_VERSION << 16) + (CS_SUBVER << 8) + (int32_t
 ) sizeof(MYFLT));
 }
 #endif

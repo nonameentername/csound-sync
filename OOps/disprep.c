@@ -37,12 +37,17 @@ int32_t printv(CSOUND *csound, PRINTV *p)
     int32_t    nargs = p->INOCOUNT;
     char   **txtp = p->h.optext->t.inlist->arg;
     MYFLT  **valp = p->iargs;
+   
 
+    if(p->h.insdshead->instr->opcode_info == NULL)
     csound->MessageS(csound, CSOUNDMSG_ORCH,
                      "instr %d:", (int32_t) p->h.insdshead->p1.value);
+    else
+     csound->MessageS(csound, CSOUNDMSG_ORCH,
+                      "UDO %s:", p->h.insdshead->instr->opcode_info->name);     
     while (nargs--) {
       csound->MessageS(csound, CSOUNDMSG_ORCH,
-                       "  %s = %5.3f", *txtp++, **valp++);
+                       "\t%s = %5.3f", *txtp++, **valp++);
     }
     csound->MessageS(csound, CSOUNDMSG_ORCH, "\n");
     return OK;
@@ -623,7 +628,7 @@ int32_t tempest(CSOUND *csound, TEMPEST *p)
         MYFLT *hcur = p->hcur;
         MYFLT *hend = p->hend;
         MYFLT *tblp = p->ftable;
-        int32_t  wrap;
+        long  wrap;
         *hcur++ = kin + expect * p->xfdbak;   /* join insample & expect val */
         if (hcur < hend)  p->hcur = hcur;     /* stor pntr for next insamp  */
         else p->hcur = p->hbeg;
@@ -731,7 +736,7 @@ int32_t tempest(CSOUND *csound, TEMPEST *p)
       MYFLT *linp = p->linexp;
       MYFLT *xcur = p->xcur;
       MYFLT *xend = p->xend;
-      int32_t wrap = xcur - p->xbeg;
+      long wrap = xcur - p->xbeg;
       while (xcur < xend)                   /* lineariz the circ xbuf */
         *linp++ = *xcur++;                  /*  into linexp buf       */
       for (xcur=p->xbeg; wrap--; )

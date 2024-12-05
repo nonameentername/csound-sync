@@ -354,6 +354,8 @@ in pkgs.stdenvNoCC.mkDerivation rec {
       ../Engine/extract.c \
       ../Engine/fgens.c \
       ../Engine/insert.c \
+      ../Engine/srconvert.c \
+      ../Engine/udo.c \
       ../Engine/linevent.c \
       ../Engine/memalloc.c \
       ../Engine/memfiles.c \
@@ -392,6 +394,7 @@ in pkgs.stdenvNoCC.mkDerivation rec {
       ../OOps/aops.c \
       ../OOps/bus.c \
       ../OOps/cmath.c \
+      ../OOps/complex_ops.c \
       ../OOps/compile_ops.c \
       ../OOps/diskin2.c \
       ../OOps/disprep.c \

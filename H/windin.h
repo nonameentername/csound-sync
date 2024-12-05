@@ -24,13 +24,13 @@
 /*                                                      WINDIN.H        */
 
 #pragma once
-
+#include "cwindow.h"
 typedef struct
     {
     OPDS h;
     MYFLT   *kxrslt, *kyrslt;
     MYFLT   *iprd, *ixmin, *ixmax, *iymin, *iymax, *ixinit, *iyinit;
-    int     countdown, timcount;
-    XYINDAT w;          /* window specific data structure */
+    int32_t     countdown, timcount;
+    struct xyindat_ w;          /* window specific data structure */
     } XYIN;
 

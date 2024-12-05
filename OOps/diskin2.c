@@ -22,6 +22,7 @@
 */
 
 #include "csoundCore.h"
+#include "soundfile.h"
 #include "soundio.h"
 #include "diskin2.h"
 #include <math.h>
@@ -68,9 +69,9 @@ static CS_NOINLINE void diskin2_read_buffer(CSOUND *csound,
         if (nsmps > (int32_t) p->bufSize)
           nsmps = (int32_t) p->bufSize;
         nsmps *= (int32_t) p->nChannels;
-        sflib_seek(p->sf, (sf_count_t) p->bufStartPos, SEEK_SET);
+        csound->SndfileSeek(csound, p->sf, (sf_count_t) p->bufStartPos, SEEK_SET);
         /* convert sample count to mono samples and read file */
-        i = (int32_t)sflib_read_MYFLT(p->sf, p->buf, (sf_count_t) nsmps);
+        i = (int32_t) csound->SndfileReadSamples(csound, p->sf, p->buf, (sf_count_t) nsmps);
         if (UNLIKELY(i < 0))  /* error ? */
           i = 0;    /* clear entire buffer to zero */
       }
@@ -342,7 +343,7 @@ static int32_t diskin2_init_(CSOUND *csound, DISKIN2 *p, int32_t stringname)
     if (UNLIKELY(fd == NULL)) {
       return csound->InitError(csound,
                                Str("diskin2: %s: failed to open file (%s)"),
-                               name, Str(sflib_strerror(NULL)));
+                               name, Str(csound->SndfileStrError(csound,NULL)));
     }
     /* record file handle so that it will be closed at note-off */
     memset(&(p->fdch), 0, sizeof(FDCH));
@@ -565,8 +566,8 @@ int32_t diskin2_perf_synchronous(CSOUND *csound, DISKIN2 *p)
 {
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
-    int      nsmps = CS_KSMPS;
-    int      chn, i, nn;
+    int32_t      nsmps = CS_KSMPS;
+    int32_t      chn, i, nn;
     double   d, frac_d, x, c, v, pidwarp_d;
     MYFLT    frac, a0, a1, a2, a3, onedwarp, winFact;
     int32_t  ndx;
@@ -746,7 +747,7 @@ int32_t diskin2_perf_synchronous(CSOUND *csound, DISKIN2 *p)
     return NOTOK;
 }
 
-int checkspace(void *p, int writeCheck);
+int32_t checkspace(void *p, int32_t writeCheck);
 
 int32_t diskin_file_read(CSOUND *csound, DISKIN2 *p)
 {
@@ -1019,7 +1020,7 @@ int32_t soundout_deinit(CSOUND *csound, void *pp)
       MYFLT *p0 = (MYFLT*) &(q->outbuf[0]);
       MYFLT *p1 = (MYFLT*) q->outbufp;
       if (p1 > p0) {
-        sflib_write_MYFLT(q->sf, p0, (sf_count_t) ((MYFLT*) p1 - (MYFLT*) p0));
+        csound->SndfileWriteSamples(csound, q->sf, p0, (sf_count_t) ((MYFLT*) p1 - (MYFLT*) p0));
         q->outbufp = (MYFLT*) &(q->outbuf[0]);
       }
       /* close file */
@@ -1092,13 +1093,13 @@ static int32_t sndo1set_(CSOUND *csound, void *pp, int32_t stringname)
     }
     sfname = csound->GetFileName(q->fd);
     if (format != AE_FLOAT)
-      sflib_command(q->sf, SFC_SET_CLIPPING, NULL, SFLIB_TRUE);
+      csound->SndfileCommand(csound,q->sf, SFC_SET_CLIPPING, NULL, SFLIB_TRUE);
     else
-      sflib_command(q->sf, SFC_SET_CLIPPING, NULL, SFLIB_FALSE);
+      csound->SndfileCommand(csound,q->sf, SFC_SET_CLIPPING, NULL, SFLIB_FALSE);
 #ifdef USE_DOUBLE
-    sflib_command(q->sf, SFC_SET_NORM_DOUBLE, NULL, SFLIB_FALSE);
+    csound->SndfileCommand(csound,q->sf, SFC_SET_NORM_DOUBLE, NULL, SFLIB_FALSE);
 #else
-    sflib_command(q->sf, SFC_SET_NORM_FLOAT, NULL, SFLIB_FALSE);
+    csound->SndfileCommand(csound,q->sf, SFC_SET_NORM_FLOAT, NULL, SFLIB_FALSE);
 #endif
     csound->Warning(csound, Str("%s: opening RAW outfile %s\n"),
                     opname, sfname);
@@ -1130,7 +1131,7 @@ int32_t soundout(CSOUND *csound, SNDOUT *p)
     for (nn = offset; nn < nsmps; nn++) {
       if (UNLIKELY(p->c.outbufp >= p->c.bufend)) {
 
-        sflib_write_MYFLT(p->c.sf, p->c.outbuf, p->c.bufend - p->c.outbuf);
+        csound->SndfileWriteSamples(csound, p->c.sf, p->c.outbuf, p->c.bufend - p->c.outbuf);
         p->c.outbufp = p->c.outbuf;
       }
       *(p->c.outbufp++) = p->asig[nn];
@@ -1151,7 +1152,7 @@ int32_t soundouts(CSOUND *csound, SNDOUTS *p)
     if (UNLIKELY(early)) nsmps -= early;
     for (nn = offset; nn < nsmps; nn++) {
       if (UNLIKELY(p->c.outbufp >= p->c.bufend)) {
-        sflib_write_MYFLT(p->c.sf, p->c.outbuf, p->c.bufend - p->c.outbuf);
+        csound->SndfileWriteSamples(csound, p->c.sf, p->c.outbuf, p->c.bufend - p->c.outbuf);
         p->c.outbufp = p->c.outbuf;
       }
       *(p->c.outbufp++) = p->asig1[nn];
@@ -1196,9 +1197,9 @@ static CS_NOINLINE void diskin2_read_buffer_array(CSOUND *csound,
         if (nsmps > (int32_t) p->bufSize)
           nsmps = (int32_t) p->bufSize;
         nsmps *= (int32_t) p->nChannels;
-        sflib_seek(p->sf, (sf_count_t) p->bufStartPos, SEEK_SET);
+        csound->SndfileSeek(csound, p->sf, (sf_count_t) p->bufStartPos, SEEK_SET);
         /* convert sample count to mono samples and read file */
-        i = (int32_t)sflib_read_MYFLT(p->sf, p->buf, (sf_count_t) nsmps);
+        i = (int32_t) csound->SndfileReadSamples(csound, p->sf, p->buf, (sf_count_t) nsmps);
         if (UNLIKELY(i < 0))  /* error ? */
           i = 0;    /* clear entire buffer to zero */
       }
@@ -1606,7 +1607,7 @@ static int32_t diskin2_init_array(CSOUND *csound, DISKIN2_ARRAY *p,
     if (UNLIKELY(fd == NULL)) {
       return csound->InitError(csound,
                                Str("diskin2: %s: failed to open file: %s"),
-                               name, Str(sflib_strerror(NULL)));
+                               name, Str(csound->SndfileStrError(csound,NULL)));
     }
     /* record file handle so that it will be closed at note-off */
     memset(&(p->fdch), 0, sizeof(FDCH));
@@ -2079,12 +2080,12 @@ static void soundin_read_buffer(CSOUND *csound, SOUNDIN_ *p, int32_t bufReadPos)
       /* number of sample frames to read */
       lsmps = p->fileLength - p->bufStartPos;
       if (lsmps > (int_least64_t) 0) {  /* if there is anything to read: */
-        nsmps = (lsmps < (int_least64_t) p->bufSize ? (int) lsmps : p->bufSize);
+        nsmps = (lsmps < (int_least64_t) p->bufSize ? (int32_t) lsmps : p->bufSize);
         /* convert sample count to mono samples and read file */
         nsmps *= (int32_t) p->nChannels;
         if (csound->oparms->realtime==0){
-          sflib_seek(p->sf, (sf_count_t) p->bufStartPos, SEEK_SET);
-          i = (int32_t) sflib_read_MYFLT(p->sf, p->buf, (sf_count_t) nsmps);
+          csound->SndfileSeek(csound, p->sf, (sf_count_t) p->bufStartPos, SEEK_SET);
+          i = (int32_t) csound->SndfileReadSamples(csound, p->sf, p->buf, (sf_count_t) nsmps);
         }
         else
           i = (int32_t) csound->ReadAsync(csound, p->fdch.fd, p->buf,
@@ -2181,7 +2182,7 @@ static int32_t sndinset_(CSOUND *csound, SOUNDIN_ *p, int32_t stringname)
       if (csound->oparms->realtime==0)
         return csound->InitError(csound,
                                Str("soundin: %s: failed to open file: %s"),
-                                 name, Str(sflib_strerror(NULL)));
+                                 name, Str(csound->SndfileStrError(csound,NULL)));
       else
         return csound->InitError(csound,
                                  Str("soundin: %s: failed to open file"), name);

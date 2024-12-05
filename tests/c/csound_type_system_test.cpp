@@ -33,7 +33,6 @@ public:
 
     virtual void TearDown ()
     {
-        csoundCleanup (csound);
         csoundDestroyMessageBuffer (csound);
         csoundDestroy (csound);
         csound = nullptr;
@@ -47,7 +46,8 @@ TEST_F (TypeSystemTests, testTypeSystem)
   TYPE_POOL* pool = csound->typePool;
   CS_VAR_POOL* varPool = csound->engineState.varPool;
   
-  CS_VARIABLE* var = csoundCreateVariable(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_A, "a1", NULL);
+  CS_VARIABLE* var = csoundCreateVariable(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_A,
+                                          const_cast<char*>("a1"), NULL);
   ASSERT_TRUE (var != NULL);
   
   csoundAddVariable(csound, varPool, var);

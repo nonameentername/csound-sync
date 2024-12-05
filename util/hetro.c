@@ -256,19 +256,19 @@ static int32_t hetro(CSOUND *csound, int32_t argc, char **argv)
     if (UNLIKELY((t->input_dur < 0) || (t->beg_time < 0)))
       return quit(csound,Str("input and begin times cannot be less than zero"));
     /* open sndfil, do skiptime */
-    if (UNLIKELY((infd = csound->SndInputFileOpen(csound, t->infilnam, &p,
+    if (UNLIKELY((infd = (csound->GetUtility(csound))->SndinGetSetSA(csound, t->infilnam, &p,
                                     &t->beg_time, &t->input_dur,
                                              &t->sr, channel)) == NULL)) {
       char errmsg[256];
       snprintf(errmsg, 256, Str("Cannot open %s"), t->infilnam);
       return quit(csound, errmsg);
     }
-    nsamps = p->getframes;
+    nsamps = (int32_t) p->getframes;
     /* alloc for MYFLTs */
     t->auxp = (MYFLT*) csound->Malloc(csound, nsamps * sizeof(MYFLT));
     /* & read them in */
     if (UNLIKELY((t->smpsin =
-                  csound->SndInputRead(csound, infd,
+                  (csound->GetUtility(csound))->Sndin(csound, infd,
                                    t->auxp, nsamps, p)) <= 0)) {
       char errmsg[256];
       csound->Message(csound, "smpsin = %"PRId64"\n", (int64_t) t->smpsin);
@@ -618,7 +618,7 @@ static const char *hetro_usage_txt[] = {
 
 static int32_t quit(CSOUND *csound, char *msg)
 {
-    int i;
+    int32_t i;
     csound->ErrorMsg(csound, Str("hetro:  %s\n\tanalysis aborted"), msg);
     for (i = 0; hetro_usage_txt[i] != NULL; i++)
       csound->Message(csound, "%s\n", Str(hetro_usage_txt[i]));
@@ -753,8 +753,8 @@ static int32_t filedump(HET *t, CSOUND *csound)
         *(fp-1) = *(fp-3);       /*   & zero the freq change      */
       *mp++ = END;                 /* add the sequence delimiters   */
       *fp++ = END;
-      mpoints = ((mp - magout) / 2) - 1;
-      nbytes = (mp - magout) * sizeof(int16);
+      mpoints = (int32_t) ((mp - magout) / 2) - 1;
+      nbytes = (int32_t)((mp - magout) * sizeof(int16));
       if (t->newformat) {
         int32_t i;
         for (i=0; i<(mp - magout); i++)
@@ -773,8 +773,8 @@ static int32_t filedump(HET *t, CSOUND *csound)
       }
 #endif
       lenfil += nbytes;
-      fpoints = ((fp - frqout) / 2) - 1;
-      nbytes = (fp - frqout) * sizeof(int16);
+      fpoints = (int32_t) ((fp - frqout) / 2) - 1;
+      nbytes = (int32_t)((fp - frqout) * sizeof(int16));
       if (t->newformat) {
         int32_t i;
         for (i=0; i<fp - frqout; i++)
@@ -940,9 +940,9 @@ static int32_t is_sdiffile(char *name)
 
 int32_t hetro_init_(CSOUND *csound)
 {
-    int32_t retval = csound->AddUtility(csound, "hetro", hetro);
+    int32_t retval = (csound->GetUtility(csound))->AddUtility(csound, "hetro", hetro);
     if (!retval) {
-      retval = csound->SetUtilityDescription(csound, "hetro",
+      retval = (csound->GetUtility(csound))->SetUtilityDescription(csound, "hetro",
                                              Str("Soundfile analysis for adsyn"));
     }
     return retval;

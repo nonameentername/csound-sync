@@ -226,7 +226,7 @@ static int32_t send_send_Str(CSOUND *csound, SOCKSENDT *p)
     int32_t     buffersize = p->bsize;
     char    *out = (char *) p->aux.auxp;
     char    *q = p->str->data;
-    int32_t     len = p->str->size;
+    size_t     len = p->str->size;
 
     if (UNLIKELY(len>=buffersize)) {
       csound->Warning(csound, "%s", Str("string truncated in socksend"));
@@ -350,7 +350,7 @@ static int32_t send_sendS(CSOUND *csound, SOCKSENDS *p)
 static int32_t stsend_deinit(CSOUND *csound, SOCKSEND *p)
 {
     printf("closing stream\n");
-    int n = close(p->sock);
+    int32_t n = close(p->sock);
     if (n<0) printf("close = %d errno=%d\n", n, errno);
     //shutdown(p->sock, SHUT_RDWR);
     return OK;
@@ -422,8 +422,11 @@ static int32_t send_ssend(CSOUND *csound, SOCKSEND *p)
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
     int32_t n = sizeof(MYFLT) * (CS_KSMPS-offset-early);
-
+#ifndef WIN32
     if (UNLIKELY(n != send(p->sock, &p->asig[offset], n, 0))) {
+#else
+      if (UNLIKELY(n != send(p->sock, (const char *) (&p->asig[offset]), n, 0))) {
+#endif
       csound->Message(csound, Str("Expected %d got %d\n"),
                       (int32_t) (sizeof(MYFLT) * CS_KSMPS), n);
       return csound->PerfError(csound, &(p->h),
@@ -446,9 +449,9 @@ typedef struct {
   int32_t sock, iargs;
   MYFLT   last;
   struct sockaddr_in server_addr;
-  int err_state;
-  int init_done;
-  int fstime;
+  int32_t err_state;
+  int32_t init_done;
+  int32_t fstime;
 } OSCSEND2;
 
 static int32_t oscsend_deinit(CSOUND *csound, OSCSEND2 *p)
@@ -466,7 +469,7 @@ static int32_t oscsend_deinit(CSOUND *csound, OSCSEND2 *p)
 
 static int32_t osc_send2_init(CSOUND *csound, OSCSEND2 *p)
 {
-    uint32_t     bsize;
+    size_t     bsize;
 
     if (p->init_done) {
       csound->Warning(csound, "already initialised");
@@ -589,7 +592,7 @@ static int32_t osc_send2_init(CSOUND *csound, OSCSEND2 *p)
     else {
       memset(p->aux.auxp, 0, bsize);
     }
-    p->iargs = iarg;
+    p->iargs = (int32_t) iarg;
     } else {
       bsize = strlen(p->dest->data)+1;
       bsize = ceil(bsize/4.)*4;
@@ -609,7 +612,7 @@ static int32_t osc_send2_init(CSOUND *csound, OSCSEND2 *p)
     return OK;
 }
 
-static inline int32_t aux_realloc(CSOUND *csound, size_t size, AUXCH *aux) {
+static inline size_t aux_realloc(CSOUND *csound, size_t size, AUXCH *aux) {
     char *p = aux->auxp;
     aux->auxp = csound->ReAlloc(csound, p, size);
     aux->size = size;
@@ -622,13 +625,14 @@ static int32_t osc_send2(CSOUND *csound, OSCSEND2 *p)
     if(*p->kwhen != p->last || p->fstime) {
       const struct sockaddr *to = (const struct sockaddr *) (&p->server_addr);
 
-      int32_t buffersize = 0, size, i, bsize = p->aux.size;
+      int32_t buffersize = 0, i, size;
+      size_t bsize = p->aux.size; 
       char *out = (char *) p->aux.auxp;
       p->fstime = 0;
 
       memset(out,0,bsize);
       /* package destination in 4-byte zero-padded block */
-      size = strlen(p->dest->data)+1;
+      size = (int32_t) strlen(p->dest->data)+1;
       memcpy(out,p->dest->data,size);
       size = ceil(size/4.)*4;
       buffersize += size;
@@ -637,7 +641,7 @@ static int32_t osc_send2(CSOUND *csound, OSCSEND2 *p)
          add a comma to the beginning of the type string.
       */
       out[buffersize] = ',';
-      size = strlen(p->type->data)+1;
+      size = (int32_t) strlen(p->type->data)+1;
       /* check for b type before copying */
       for(i = 0; i < p->iargs; i++) {
         if(p->type->data[i] == 'b') {
@@ -732,7 +736,7 @@ static int32_t osc_send2(CSOUND *csound, OSCSEND2 *p)
           break;
         case 's':
           s = (STRINGDAT *)p->arg[i];
-          size = strlen(s->data)+1;
+          size = (int32_t) strlen(s->data)+1;
           size = ceil(size/4.)*4;
           /* realloc if necessary */
           if(buffersize + size > bsize) {
@@ -833,7 +837,7 @@ static int32_t osc_send2(CSOUND *csound, OSCSEND2 *p)
           csound->Warning(csound, Str("OSCsend failed to send "
                                       "message with destination %s to %s:%d\n"),
                                       p->dest->data, p->ipaddress->data,
-                          (int) *p->port);
+                          (int32_t) *p->port);
         }
         p->err_state = 1;
         return OK;
@@ -855,16 +859,16 @@ typedef struct {
   ARRAYDAT *type;
   ARRAYDAT *arg;
   MYFLT *imtu;
-  int mtu;
+  int32_t mtu;
   AUXCH   aux;    /* MTU bytes */
   int32_t sock, iargs;
   MYFLT   last;
   struct sockaddr_in server_addr;
-  int no_msgs;
+  int32_t no_msgs;
 } OSCBUNDLE;
 
 
-static int oscbundle_init(CSOUND *csound, OSCBUNDLE *p) {
+static int32_t oscbundle_init(CSOUND *csound, OSCBUNDLE *p) {
   /* check array sizes:
      type and dest should match
      arg should have the same number of rows as
@@ -885,7 +889,7 @@ static int oscbundle_init(CSOUND *csound, OSCBUNDLE *p) {
     if(p->no_msgs < p->arg->sizes[0])
       return csound->InitError(csound, "%s", Str("arg array not big enough\n"));
 
-    if(*p->imtu) p->mtu = (int) *p->imtu;
+    if(*p->imtu) p->mtu = (int32_t) *p->imtu;
     else p->mtu = MAX_PACKET_SIZE;
 #if defined(WIN32) && !defined(__CYGWIN__)
     WSADATA wsaData = {0};
@@ -925,7 +929,7 @@ static int oscbundle_init(CSOUND *csound, OSCBUNDLE *p) {
                           Str("Bundle msg exceeded max packet size, not sent\n")); \
           return OK; }
 
-static int oscbundle_perf(CSOUND *csound, OSCBUNDLE *p){
+static int32_t oscbundle_perf(CSOUND *csound, OSCBUNDLE *p){
     if(*p->kwhen != p->last) {
       int32_t i, n, size = 0, tstrs,
         dstrs, msize, buffsize = 0, tmp;
@@ -948,12 +952,12 @@ static int oscbundle_perf(CSOUND *csound, OSCBUNDLE *p){
       for(i = 0; i < p->no_msgs; i++, size = 0) {
         int32_t siz;
         dstr = dest[i].data;
-        dstrs = strlen(dstr)+1;
+        dstrs = (int32_t) strlen(dstr)+1;
         size += ceil((dstrs)/4.)*4;
         tstr[0] = ',';
         strncpy(tstr+1, type[i].data, 62);
         tstr[63]='\0';
-        tstrs = strlen(tstr)+1;
+        tstrs = (int32_t) strlen(tstr)+1;
         size += ceil((tstrs)/4.)*4;
         msize = tstrs - 2; /* tstrs-2 is the number of ints or floats in msg */
         size += msize*4;

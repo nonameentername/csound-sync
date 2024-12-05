@@ -17,7 +17,7 @@ LOCAL_CPPFLAGS += -std=c++11 -pthread -frtti -fexceptions
 LOCAL_LDFLAGS += -Wl,--export-dynamic -L$(LIBSNDFILE_SRC_DIR)
 
 ifeq ($(TARGET_ARCH_ABI),$(filter $(TARGET_ARCH_ABI), armeabi-v7a arm64-v8a))
-LOCAL_ARM_NEON  := true 
+LOCAL_ARM_NEON  := true
 LOCAL_CFLAGS += -DHAVE_NEON -mfloat-abi=softfp
 endif # TARGET_ARCH_ABI == armeabi-v7a |arm64-v8a | x86
 
@@ -34,6 +34,8 @@ $(CSOUND_SRC_ROOT)/Engine/envvar.c \
 $(CSOUND_SRC_ROOT)/Engine/extract.c \
 $(CSOUND_SRC_ROOT)/Engine/fgens.c \
 $(CSOUND_SRC_ROOT)/Engine/insert.c \
+$(CSOUND_SRC_ROOT)/Engine/srconvert.c \
+$(CSOUND_SRC_ROOT)/Engine/udo.c \
 $(CSOUND_SRC_ROOT)/Engine/linevent.c \
 $(CSOUND_SRC_ROOT)/Engine/memalloc.c \
 $(CSOUND_SRC_ROOT)/Engine/memfiles.c \
@@ -64,6 +66,7 @@ $(CSOUND_SRC_ROOT)/InOut/circularbuffer.c \
 $(CSOUND_SRC_ROOT)/OOps/aops.c \
 $(CSOUND_SRC_ROOT)/OOps/bus.c \
 $(CSOUND_SRC_ROOT)/OOps/cmath.c \
+$(CSOUND_SRC_ROOT)/OOps/complex_ops.c \
 $(CSOUND_SRC_ROOT)/OOps/diskin2.c \
 $(CSOUND_SRC_ROOT)/OOps/disprep.c \
 $(CSOUND_SRC_ROOT)/OOps/dumpf.c \
@@ -282,7 +285,7 @@ $(CSOUND_SRC_ROOT)/Engine/cs_par_orc_semantic_analysis.c \
 
 #CsoundObj.cpp
 
-LOCAL_LDLIBS += -llog -lOpenSLES -ldl -lm -lc 
+LOCAL_LDLIBS += -llog -lOpenSLES -ldl -lm -lc
 
 # For building with all plugins use:
 
@@ -290,7 +293,7 @@ LOCAL_LDLIBS += -llog -lOpenSLES -ldl -lm -lc
 
 # For building without plugins, but with support for plugins that may depend on GNU STL, use:
 
-LOCAL_SHARED_LIBRARIES += c++_shared sndfile 
+LOCAL_SHARED_LIBRARIES += c++_shared sndfile
 #LOCAL_STATIC_LIBRARIES += sndfile
 
 # Prevents stripping needed exports from the shared library.

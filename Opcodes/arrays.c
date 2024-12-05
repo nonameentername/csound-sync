@@ -176,7 +176,7 @@ static MYFLT nextval(FILE *f)
 {
   /* Read the next character; suppress multiple space and comments to a
      single space */
-  int c;
+  int32_t c;
  top:
   c = getc(f);
  top1:
@@ -184,7 +184,7 @@ static MYFLT nextval(FILE *f)
   if (isdigit(c) || c=='e' || c=='E' || c=='+' || c=='-' || c=='.') {
     double d;                           /* A number starts */
     char buff[128];
-    int j = 0;
+    int32_t j = 0;
     do {                                /* Fill buffer */
       buff[j++] = c;
       c = getc(f);
@@ -239,7 +239,7 @@ static MYFLT nextsval(char **ff)
 {
   /* Read the next character; suppress multiple space
    * should use stdtod */
-  int c;
+  int32_t c;
   char *f = *ff;
  top:
   c = *f++;
@@ -248,7 +248,7 @@ static MYFLT nextsval(char **ff)
   if (isdigit(c) || c=='e' || c=='E' || c=='+' || c=='-' || c=='.') {
     double d;                           /* A number starts */
     char buff[128];
-    int j = 0;
+    int32_t j = 0;
     do {                                /* Fill buffer */
       buff[j++] = c;
       c = *f++;
@@ -455,8 +455,9 @@ typedef struct {
 
 static int32_t tabarithset(CSOUND *csound, TABARITH *p)
 {
+
   if (LIKELY(p->left->data && p->right->data)) {
-    int i;
+    int32_t i;
     if (UNLIKELY(p->left->dimensions != p->right->dimensions))
       return
         csound->InitError(csound, "%s",
@@ -472,6 +473,7 @@ static int32_t tabarithset(CSOUND *csound, TABARITH *p)
   }
   else return csound->InitError(csound, "%s",
                                 Str("array-variable not initialised"));
+
 }
 
 static int32_t tabiadd(CSOUND *csound, ARRAYDAT *ans,
@@ -1050,6 +1052,7 @@ static int32_t tabaisub(CSOUND *csound, TABARITH1 *p)
   MYFLT r       = *p->right;
   int32_t sizel = l->sizes[0];
   int32_t i;
+  tabinit_like(csound, ans, l);
 
   if (UNLIKELY(ans->data == NULL || l->data== NULL))
     return csound->PerfError(csound, &(p->h),
@@ -1071,6 +1074,7 @@ static int32_t tabiasub(CSOUND *csound, TABARITH2 *p)
   MYFLT r     = *p->left;
   int32_t sizel = l->sizes[0];
   int32_t i;
+  tabinit_like(csound, ans, l);
 
   if (UNLIKELY(ans->data == NULL || l->data== NULL))
     return csound->PerfError(csound, &(p->h),
@@ -1109,6 +1113,7 @@ static int32_t tabaimult(CSOUND *csound, TABARITH1 *p)
   ARRAYDAT *ans = p->ans;
   ARRAYDAT *l   = p->left;
   MYFLT r       = *p->right;
+  tabinit_like(csound, ans, l);
   return tabimult(csound, ans, l, r, p);
 }
 
@@ -1118,6 +1123,7 @@ static int32_t tabiamult(CSOUND *csound, TABARITH2 *p)
   ARRAYDAT *ans = p->ans;
   ARRAYDAT *l   = p->right;
   MYFLT r       = *p->left;
+  tabinit_like(csound, ans, l);
   return tabimult(csound, ans, l, r, p);
 }
 
@@ -1129,6 +1135,7 @@ static int32_t tabaidiv(CSOUND *csound, TABARITH1 *p)
   MYFLT r       = *p->right;
   int32_t sizel = l->sizes[0];
   int32_t i;
+  tabinit_like(csound, ans, l);
 
   if (UNLIKELY(r==FL(0.0)))
     return csound->PerfError(csound, &(p->h),
@@ -1153,6 +1160,7 @@ static int32_t tabiadiv(CSOUND *csound, TABARITH2 *p)
   MYFLT r     = *p->left;
   int32_t sizel    = l->sizes[0];
   int32_t i;
+  tabinit_like(csound, ans, l);
 
   if (UNLIKELY(ans->data == NULL || l->data== NULL))
     return csound->PerfError(csound, &(p->h),
@@ -2563,7 +2571,7 @@ static int32_t tabsuma(CSOUND *csound, TABQUERY1 *p)
 
   memset(&ans[offset], '\0', nsmps*sizeof(MYFLT));
 
-  int numarrays4 = numarrays - (numarrays % 4);
+  int32_t numarrays4 = numarrays - (numarrays % 4);
 
   for (i=0; i<numarrays4; i+=4) {
     in0 = &(t->data[i*span]);
@@ -2571,14 +2579,14 @@ static int32_t tabsuma(CSOUND *csound, TABQUERY1 *p)
     in2 = &(t->data[(i+2)*span]);
     in3 = &(t->data[(i+3)*span]);
 
-    for(int j=offset; j < nsmps; j++) {
+    for(int32_t j=offset; j < nsmps; j++) {
       ans[j] += in0[j] + in1[j] + in2[j] + in3[j];
     }
   }
 
   for (i=numarrays4;i<numarrays; i++) {
     in0 = &(t->data[i*span]);
-    for(int j=offset; j < nsmps; j++) {
+    for(int32_t j=offset; j < nsmps; j++) {
       ans[j] += in0[j];
     }
   }
@@ -3128,15 +3136,15 @@ typedef struct {
 
 static int32_t trim_i(CSOUND *csound, TRIM *p)
 {
-  int size = (int)(*p->size);
+  int32_t size = (int)(*p->size);
   tabinit(csound, p->tab, size, &(p->h));
   p->tab->sizes[0] = size;
   return OK;
 }
 static int32_t trim(CSOUND *csound, TRIM *p)
 {
-  int size = (int)(*p->size);
-  int n = tabcheck(csound, p->tab, size, &(p->h));
+  int32_t size = (int)(*p->size);
+  int32_t n = tabcheck(csound, p->tab, size, &(p->h));
   if (n != OK) return n;
   p->tab->sizes[0] = size;
   return OK;
@@ -3215,7 +3223,7 @@ typedef struct {
   ARRAYDAT *tab, *tabin;
   STRINGDAT *str;
   int32_t    len;
-  OENTRY *opc;
+  const OENTRY *opc;
 } TABMAP;
 
 
@@ -3224,7 +3232,7 @@ static int32_t tabmap_set(CSOUND *csound, TABMAP *p)
 {
   MYFLT *data, *tabin = p->tabin->data;
   int32_t n, size;
-  OENTRY *opc  = NULL;
+  const OENTRY *opc  = NULL;
   AEVAL  eval;
 
   if (UNLIKELY(p->tabin->data == NULL)||p->tabin->dimensions!=1)
@@ -3239,7 +3247,7 @@ static int32_t tabmap_set(CSOUND *csound, TABMAP *p)
   data =  p->tab->data;
 
 
-  opc = csound->FindOpcode(csound, p->str->data, "i", "i");
+  opc = csound->FindOpcode(csound, 1, p->str->data, "i", "i");
   if (UNLIKELY(opc == NULL))
     return csound->InitError(csound,  Str("%s not found"), p->str->data);
   p->opc = opc;
@@ -3249,7 +3257,7 @@ static int32_t tabmap_set(CSOUND *csound, TABMAP *p)
     opc->init(csound, (void *) &eval);
   }
 
-  opc = csound->FindOpcode(csound, p->str->data, "k", "k");
+  opc = csound->FindOpcode(csound, 1, p->str->data, "k", "k");
   p->opc = opc;
   return OK;
 }
@@ -3259,7 +3267,8 @@ static int32_t tabmap_perf(CSOUND *csound, TABMAP *p)
   /* FIXME; eeds check */
   MYFLT *data =  p->tab->data, *tabin = p->tabin->data;
   int32_t n, size;
-  OENTRY *opc  = p->opc;
+
+  const OENTRY *opc  = p->opc;
   AEVAL  eval;
 
   if (UNLIKELY(p->tabin->data == NULL) || p->tabin->dimensions !=1)
@@ -4510,7 +4519,7 @@ static int32 taninv2_Ai(CSOUND* csound, TABARITH* p)
   ARRAYDAT* ans = p->ans;
   ARRAYDAT* aa = p->left;
   ARRAYDAT* bb = p->right;
-  int i, j, k;
+  int32_t i, j, k;
   if (tabarithset(csound, p)!=OK)
     return NOTOK;
   k = 0;
@@ -4528,7 +4537,7 @@ static int32 taninv2_A(CSOUND* csound, TABARITH* p)
   ARRAYDAT* ans = p->ans;
   ARRAYDAT* aa = p->left;
   ARRAYDAT* bb = p->right;
-  int i, j, k;
+  int32_t i, j, k;
   k = 0;
   for (i=0; i<ans->dimensions; i++) {
     for (j=0; j<aa->sizes[i]; j++) {
@@ -4544,7 +4553,7 @@ static int32 taninv2_Aa(CSOUND* csound, TABARITH* p)
   ARRAYDAT* ans = p->ans;
   ARRAYDAT* aa = p->left;
   ARRAYDAT* bb = p->right;
-  int i, j, k;
+  int32_t i, j, k;
   uint32_t m;
   k = 0;
   for (i=0; i<ans->dimensions; i++) {

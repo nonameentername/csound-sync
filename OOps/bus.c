@@ -37,6 +37,8 @@
 #include "bus.h"
 #include "namedins.h"
 
+int32_t *csoundGetChannelLock(CSOUND *csound, const char *name);
+
 /* For sensing opcodes */
 #if defined(__unix) || defined(__unix__) || defined(__MACH__)
 #  ifdef HAVE_SYS_TIME_H
@@ -180,7 +182,7 @@ int32_t pvsin_init(CSOUND *csound, FCHAN *p)
     if(GetTypeForArg(p->a) == &CS_VAR_TYPE_S) 
       strncpy(p->name,((STRINGDAT *)p->a)->data, MAX_CHAN_NAME);
     else {
-      p->n = MYFLT2LRND(*p->a);
+      p->n = (int32_t) MYFLT2LRND(*p->a);
       snprintf(p->name, MAX_CHAN_NAME+1, "%i", p->n);
     }
     
@@ -219,8 +221,8 @@ int32_t pvsin_perf(CSOUND *csound, FCHAN *p)
       }
     }
     else {
-      if(p->n != MYFLT2LRND(*p->a)) {
-       p->n = MYFLT2LRND(*p->a);
+      if(p->n != (int32_t) MYFLT2LRND(*p->a)) {
+       p->n = (int32_t) MYFLT2LRND(*p->a);
        snprintf(p->name, MAX_CHAN_NAME+1, "%i", p->n);
        flag = 1;
       }
@@ -250,7 +252,7 @@ int32_t pvsout_init(CSOUND *csound, FCHAN *p)
     if(GetTypeForArg(p->a) == &CS_VAR_TYPE_S) 
       strncpy(p->name, ((STRINGDAT *)p->a)->data, MAX_CHAN_NAME);
     else {
-      p->n = MYFLT2LRND(*p->a);
+      p->n = (int32_t) MYFLT2LRND(*p->a);
       snprintf(p->name, MAX_CHAN_NAME+1, "%i", p->n);
     }
     
@@ -281,8 +283,8 @@ int32_t pvsout_perf(CSOUND *csound, FCHAN *p)
       }
     }
     else {
-      if(p->n != MYFLT2LRND(*p->a)) {
-       p->n = MYFLT2LRND(*p->a);
+      if(p->n != (int32_t) MYFLT2LRND(*p->a)) {
+       p->n = (int32_t) MYFLT2LRND(*p->a);
        snprintf(p->name, MAX_CHAN_NAME+1, "%i", p->n);
        flag = 1;
       }
@@ -305,23 +307,23 @@ int32_t pvsout_perf(CSOUND *csound, FCHAN *p)
     return OK;
 }
 
-PUBLIC int csoundPvsDataFFTSize(const PVSDAT *pvsdat) {
+PUBLIC int32_t csoundPvsDataFFTSize(const PVSDAT *pvsdat) {
   return pvsdat->N;
 }
 
-PUBLIC int csoundPvsDataOverlap(const PVSDAT *pvsdat) {
+PUBLIC int32_t csoundPvsDataOverlap(const PVSDAT *pvsdat) {
   return pvsdat->overlap;
 }
 
-PUBLIC int csoundPvsDataWindowSize(const PVSDAT *pvsdat) {
+PUBLIC int32_t csoundPvsDataWindowSize(const PVSDAT *pvsdat) {
   return pvsdat->winsize;
 }
 
-PUBLIC int csoundPvsDataFormat(const PVSDAT *pvsdat) {
+PUBLIC int32_t csoundPvsDataFormat(const PVSDAT *pvsdat) {
   return pvsdat->format;
 }
 
-PUBLIC unsigned int csoundPvsDataFramecount(const PVSDAT *pvsdat) {
+PUBLIC uint32_t csoundPvsDataFramecount(const PVSDAT *pvsdat) {
   return pvsdat->framecount;
 }
 
@@ -334,8 +336,8 @@ PUBLIC void csoundSetPvsData(PVSDAT *pvsdat, const float *frame) {
 }
 
 PUBLIC PVSDAT *csoundInitPvsChannel(CSOUND *csound, const char* name,
-                                    int size, int overlap, int winsize,
-                                 int wintype, int format) {
+                                    int32_t size, int32_t overlap, int32_t winsize,
+                                 int32_t wintype, int32_t format) {
     PVSDAT *p;
     if (csoundGetChannelPtr(csound, (void **) &p, name,
                             CSOUND_PVS_CHANNEL | CSOUND_INPUT_CHANNEL
@@ -424,8 +426,8 @@ static CS_NOINLINE CHNENTRY *alloc_channel(CSOUND *csound,
             break;
         case CSOUND_STRING_CHANNEL:
             dsize = sizeof(STRINGDAT);
-            break;
             varType = &CS_VAR_TYPE_S;
+            break;
         case CSOUND_PVS_CHANNEL:
             dsize = sizeof(PVSDAT);
             varType = &CS_VAR_TYPE_F;
@@ -498,8 +500,8 @@ PUBLIC const CS_TYPE *csoundGetChannelVarType(CSOUND *csound, const char *name) 
 }
 
 
-PUBLIC int csoundGetChannelPtr(CSOUND *csound, void **p,
-                               const char *name, int type)
+PUBLIC int32_t csoundGetChannelPtr(CSOUND *csound, void **p,
+                               const char *name, int32_t type)
 {
     CHNENTRY  *pp;
 
@@ -522,7 +524,7 @@ PUBLIC int csoundGetChannelPtr(CSOUND *csound, void **p,
     return CSOUND_ERROR;
 }
 
-PUBLIC int csoundGetChannelDatasize(CSOUND *csound, const char *name){
+PUBLIC int32_t csoundGetChannelDatasize(CSOUND *csound, const char *name){
 
     CHNENTRY  *pp;
     pp = find_channel(csound, name);
@@ -532,16 +534,16 @@ PUBLIC int csoundGetChannelDatasize(CSOUND *csound, const char *name){
            used with strings, the datasize might become
            invalid */
         if ((pp->type & CSOUND_STRING_CHANNEL) == CSOUND_STRING_CHANNEL)
-            return ((STRINGDAT*)pp->data)->size;
+          return (int32_t) ((STRINGDAT*)pp->data)->size;
         // NEED TO CHECK FOR ARRAYS
         if((pp->type & CSOUND_ARRAY_CHANNEL) == CSOUND_ARRAY_CHANNEL)
-            return ((ARRAYDAT*)pp->data)->allocated;
+            return (int32_t) ((ARRAYDAT*)pp->data)->allocated;
         return pp->datasize;
     }
 }
 
 
-int *csoundGetChannelLock(CSOUND *csound, const char *name)
+int32_t *csoundGetChannelLock(CSOUND *csound, const char *name)
 {
     CHNENTRY  *pp;
 
@@ -560,7 +562,7 @@ static int32_t cmp_func(const void *p1, const void *p2)
                   ((controlChannelInfo_t*) p2)->name);
 }
 
-PUBLIC int csoundListChannels(CSOUND *csound, controlChannelInfo_t **lst)
+PUBLIC int32_t csoundListChannels(CSOUND *csound, controlChannelInfo_t **lst)
 {
     CHNENTRY  *pp;
     size_t     n;
@@ -606,7 +608,7 @@ PUBLIC void csoundDeleteChannelList(CSOUND *csound, controlChannelInfo_t *lst)
     if (lst != NULL) csound->Free(csound, lst);
 }
 
-PUBLIC int csoundSetControlChannelHints(CSOUND *csound, const char *name,
+PUBLIC int32_t csoundSetControlChannelHints(CSOUND *csound, const char *name,
                                             controlChannelHints_t hints)
 {
     CHNENTRY  *pp;
@@ -657,7 +659,7 @@ PUBLIC int csoundSetControlChannelHints(CSOUND *csound, const char *name,
 * special parameters set; otherwise, a negative error code is returned.
 */
 
-PUBLIC int csoundGetControlChannelHints(CSOUND *csound, const char *name,
+PUBLIC int32_t csoundGetControlChannelHints(CSOUND *csound, const char *name,
                                             controlChannelHints_t *hints)
 {
     CHNENTRY  *pp;
@@ -851,7 +853,7 @@ int32_t chnget_opcode_init_i(CSOUND *csound, CHNGET *p)
 /* init routine for i-rate chnget array opcode (control data) */
 int32_t chnget_array_opcode_init_i(CSOUND* csound, CHNGETARRAY* p)
 {
-    int index = 0;
+    int32_t index = 0;
     ARRAYDAT* arr = (ARRAYDAT*) p->iname;
 
     p->arraySize = arr->sizes[0];
@@ -900,7 +902,7 @@ int32_t chnget_array_opcode_init_i(CSOUND* csound, CHNGETARRAY* p)
 int32_t chnget_array_opcode_init(CSOUND* csound, CHNGETARRAY* p)
 {
     ARRAYDAT* arr = (ARRAYDAT*) p->iname;
-    int index = 0;
+    int32_t index = 0;
     p->arraySize = arr->sizes[0];
     p->channels = (STRINGDAT*) arr->data;
     p->channelPtrs = (MYFLT **) csound->Malloc(csound, p->arraySize*sizeof(MYFLT*)); // VL: surely an array of pointers?
@@ -962,7 +964,7 @@ int32_t chnget_array_opcode_init(CSOUND* csound, CHNGETARRAY* p)
 /* perf routine for chnget array opcode (control data) */
 int32_t chnget_array_opcode_perf_k(CSOUND* csound, CHNGETARRAY* p)
 {
-    int index = 0;
+    int32_t index = 0;
 
     for (index = 0; index<p->arraySize; index++)
     {
@@ -996,8 +998,8 @@ int32_t chnget_array_opcode_perf_a(CSOUND *csound, CHNGETARRAY *p)
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
 
-    int index = 0;
-    int blockIndex = 0;
+    int32_t index = 0;
+    int32_t blockIndex = 0;
     MYFLT* outPtr;
     for (index = 0; index<p->arraySize; index++) {
         blockIndex = csound->ksmps*index;
@@ -1036,7 +1038,7 @@ int32_t chnget_array_opcode_perf_S(CSOUND* csound, CHNGETARRAY* p)
 {
     STRINGDAT *strings = (STRINGDAT *)p->arrayDat->data;
     int32_t err;
-    int index = 0;
+    int32_t index = 0;
 
     for (index = 0; index<p->arraySize; index++) {
         err = csoundGetChannelPtr(csound, (void **) &p->channelPtrs[index],
@@ -1066,7 +1068,7 @@ int32_t chnset_array_opcode_init_i(CSOUND *csound, CHNGETARRAY *p)
 {
     int32_t   err;
 
-    int index = 0;
+    int32_t index = 0;
     ARRAYDAT* valueArr = (ARRAYDAT*) p->arrayDat;
     ARRAYDAT* channelArr = (ARRAYDAT*) p->iname;
     p->arraySize = channelArr->sizes[0];
@@ -1114,7 +1116,7 @@ int32_t chnset_array_opcode_init_i(CSOUND *csound, CHNGETARRAY *p)
 int32_t chnset_array_opcode_init(CSOUND* csound, CHNGETARRAY* p)
 {
     int32_t err;
-    int index = 0;
+    int32_t index = 0;
 
     ARRAYDAT* channelArr = (ARRAYDAT*) p->iname;
     p->arraySize = channelArr->sizes[0];
@@ -1154,7 +1156,7 @@ int32_t chnset_array_opcode_init(CSOUND* csound, CHNGETARRAY* p)
 
 int32_t chnset_array_opcode_perf_k(CSOUND *csound, CHNGETARRAY *p)
 {
-    int index = 0;
+    int32_t index = 0;
     ARRAYDAT* valueArr = (ARRAYDAT*) p->arrayDat;
 
     for (index = 0; index<p->arraySize; index++) {
@@ -1202,8 +1204,8 @@ int32_t chnset_array_opcode_perf_a(CSOUND *csound, CHNGETARRAY *p)
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
     ARRAYDAT* valueArr = (ARRAYDAT*) p->arrayDat;
-    int index = 0;
-    int blockIndex = 0;
+    int32_t index = 0;
+    int32_t blockIndex = 0;
 
     for (index = 0; index<p->arraySize; index++) {
         if(CS_KSMPS == (uint32_t) csound->ksmps){
@@ -1241,7 +1243,7 @@ int32_t chnset_array_opcode_perf_a(CSOUND *csound, CHNGETARRAY *p)
 int32_t chnset_array_opcode_perf_S(CSOUND* csound, CHNGETARRAY* p)
 {
     int32_t err;
-    int index = 0;
+    int32_t index = 0;
     STRINGDAT *strings = (STRINGDAT *)p->arrayDat->data;
 
     for (index = 0; index<p->arraySize; index++)
@@ -1637,7 +1639,7 @@ int32_t chnset_opcode_perf_S(CSOUND* csound, CHNGET* p)
 
 /* declare control channel, optionally with special parameters */
 
-int32_t chn_k_opcode_init_(CSOUND *csound, CHN_OPCODE_K *p, int mode)
+int32_t chn_k_opcode_init_(CSOUND *csound, CHN_OPCODE_K *p, int32_t mode)
 {
     MYFLT *dummy;
     int32_t   type, err;
@@ -1916,7 +1918,7 @@ int32_t sensekey_perf(CSOUND *csound, KSENSE *p)
             if (retval>0) {
                 char    ch = '\0';
                 int32_t n=0;
-                if (UNLIKELY((n=read(0, &ch, 1))<0)) {
+                if (UNLIKELY((n=(int32_t)read(0, &ch, 1))<0)) {
                     csound->PerfError(csound, &(p->h),
                                       Str("read failure in sensekey\n"));
                     return NOTOK;
@@ -2283,7 +2285,7 @@ static inline void copy_array(CSOUND *csound,
    csoundSpinUnLock(lock);
 }
 
-static int32_t init_chn_array(CSOUND* csound, CHNGET* p, int type) {
+static int32_t init_chn_array(CSOUND* csound, CHNGET* p, int32_t type) {
     int32_t   err;
     ARRAYDAT *adat = (ARRAYDAT *) p->arg, *adat_chn;
     err = csoundGetChannelPtr(csound, (void **)&(p->fp),
@@ -2309,7 +2311,7 @@ static int32_t init_chn_array(CSOUND* csound, CHNGET* p, int type) {
    return OK;
 }
 
-int32_t array_perf_check(CSOUND* csound, CHNGET* p, int type) {
+int32_t array_perf_check(CSOUND* csound, CHNGET* p, int32_t type) {
     if (strncmp(p->chname, p->iname->data, MAX_CHAN_NAME)
         || !strcmp(p->iname->data, ""))
     {
@@ -2399,8 +2401,9 @@ int32_t chn_opcode_init_ARRAY(CSOUND *csound, CHN_OPCODE_ARRAY *p)
     adat->dimensions = (int32_t) p->idim->sizes[0];
     adat->sizes = (int32_t *) csound->Calloc(csound,
                                            adat->dimensions*sizeof(int32_t));
-    for(i = 0; i < adat->dimensions; i++)
-      siz += (adat->sizes[i] = MYFLT2LRND(p->idim->data[i]));
+    siz = (adat->sizes[0] = (int32_t) MYFLT2LRND(p->idim->data[0]));
+    for(i = 1; i < adat->dimensions; i++)
+      siz *= (adat->sizes[i] = (int32_t) MYFLT2LRND(p->idim->data[i]));
   
     adat->arrayType = (CS_TYPE *)
       csoundGetTypeWithVarTypeName(csound->typePool, p->type->data);
@@ -2445,10 +2448,10 @@ int32_t chnclear_opcode_init_ARRAY(CSOUND *csound, CHNCLEAR *p)
    NB: the following do not depend on API_lock
    therefore do not need to be in the message queue
 */
-MYFLT csoundGetControlChannel(CSOUND *csound, const char *name, int *err)
+MYFLT csoundGetControlChannel(CSOUND *csound, const char *name, int32_t *err)
 {
   MYFLT *pval;
-  int err_;
+  int32_t err_;
   union {
     MYFLT d;
     MYFLT_INT_TYPE i;
@@ -2539,14 +2542,14 @@ void csoundSetStringChannel(CSOUND *csound, const char *name,
   if (csoundGetChannelPtr(csound, (void **) &stringdat, name,
                           CSOUND_STRING_CHANNEL | CSOUND_INPUT_CHANNEL)
       == CSOUND_SUCCESS){
-    int    size = stringdat->size; //csoundGetChannelDatasize(csound, name);
+    size_t   size = stringdat->size; //csoundGetChannelDatasize(csound, name);
     spin_lock_t *lock = (spin_lock_t *) csoundGetChannelLock(csound, (char*) name);
 
     if (lock != NULL) {
       csoundSpinLock(lock);
     }
 
-    if (strlen(string) + 1 > (unsigned int) size) {
+    if (strlen(string) + 1 > (uint32_t) size) {
       if (stringdat->data != NULL) csound->Free(csound,stringdat->data);
       stringdat->data = cs_strdup(csound, string);
       stringdat->size = strlen(string) + 1;
@@ -2566,7 +2569,7 @@ void csoundGetStringChannel(CSOUND *csound, const char *name,
 {
   STRINGDAT  *pstring;
   char *chstring;
-  int n2;
+  int32_t n2;
   if (strlen(name) == 0) return;
   if (csoundGetChannelPtr(csound, (void **) &pstring, name,
                           CSOUND_STRING_CHANNEL | CSOUND_OUTPUT_CHANNEL)
@@ -2576,7 +2579,7 @@ void csoundGetStringChannel(CSOUND *csound, const char *name,
     if (lock != NULL)
       csoundSpinLock(lock);
     if (string != NULL && chstring != NULL) {
-      n2 = strlen(chstring);
+      n2 = (int32_t) strlen(chstring);
       strNcpy(string,chstring, n2+1);
     }
     if (lock != NULL)
@@ -2584,7 +2587,7 @@ void csoundGetStringChannel(CSOUND *csound, const char *name,
   }
 }
 
-PUBLIC int csoundSetPvsChannel(CSOUND *csound, const char *name,
+PUBLIC int32_t csoundSetPvsChannel(CSOUND *csound, const char *name,
                                const PVSDAT *fin)
 {
   PVSDAT *f;
@@ -2607,7 +2610,7 @@ PUBLIC int csoundSetPvsChannel(CSOUND *csound, const char *name,
   return CSOUND_SUCCESS;
 }
 
-PUBLIC int csoundGetPvsChannel(CSOUND *csound, const char *name,
+PUBLIC int32_t csoundGetPvsChannel(CSOUND *csound, const char *name,
                                PVSDAT *fout)
 {
   PVSDAT *f;
@@ -2629,9 +2632,9 @@ PUBLIC int csoundGetPvsChannel(CSOUND *csound, const char *name,
 }
 
 PUBLIC ARRAYDAT *csoundInitArrayChannel(CSOUND *csound, const char *name,
-                                        const char *type, int dimensions,
-                                        const int *sizes) {
-  int i, siz = 0, err;
+                                        const char *type, int32_t dimensions,
+                                        const int32_t *sizes) {
+  int32_t i, siz = 0, err;
   ARRAYDAT *adat;
 
   err = csoundGetChannelPtr(csound, (void **) &adat, name,
@@ -2645,8 +2648,9 @@ PUBLIC ARRAYDAT *csoundInitArrayChannel(CSOUND *csound, const char *name,
   adat->dimensions = dimensions;
   adat->sizes = (int32_t *) csound->Calloc(csound,
                                            dimensions*sizeof(int32_t));
+  siz = (adat->sizes[0] = sizes[0]);
   for(i = 0; i < adat->dimensions; i++)
-    siz += (adat->sizes[i] = sizes[i]);
+    siz *= (adat->sizes[i] = sizes[i]);
   
   adat->arrayType = (CS_TYPE *)
     csoundGetTypeWithVarTypeName(csound->typePool, type);
@@ -2655,7 +2659,7 @@ PUBLIC ARRAYDAT *csoundInitArrayChannel(CSOUND *csound, const char *name,
   return adat;
 }
 
-PUBLIC int csoundArrayDataDimensions(const ARRAYDAT *adat) {
+PUBLIC int32_t csoundArrayDataDimensions(const ARRAYDAT *adat) {
   return adat->dimensions;
 }
 
@@ -2663,7 +2667,7 @@ PUBLIC const char *csoundArrayDataType(const ARRAYDAT *adat) {
   return adat->arrayType->varTypeName; 
 }
 
-PUBLIC const int *csoundArrayDataSizes(const ARRAYDAT *adat){
+PUBLIC const int32_t *csoundArrayDataSizes(const ARRAYDAT *adat){
   return adat->sizes;
 }
 

@@ -71,7 +71,9 @@
 
 %token STRING_TOKEN
 %token T_IDENT
+%token T_IDENTB
 %token T_TYPED_IDENT
+%token T_TYPED_IDENTB
 %token T_PLUS_IDENT
 
 %token INTEGER_TOKEN
@@ -163,7 +165,6 @@
     extern TREE* constant_fold(CSOUND *, TREE *);
     extern void csound_orcerror(PARSE_PARM *, void *, CSOUND *,
                                 TREE**, const char*);
-    extern int add_udo_definition(CSOUND*, char *, char *, char *, int);
     extern ORCTOKEN *lookup_token(CSOUND*,char*,void*);
 #define LINE csound_orcget_lineno(scanner)
 #define LOCN csound_orcget_locn(scanner)
@@ -171,7 +172,8 @@
     extern int csound_orcget_lineno(void *);
     extern ORCTOKEN *make_string(CSOUND *, char *);
     extern char* UNARY_PLUS;
-    extern TREE* make_opcall_from_func_start(CSOUND*, int, int, int, TREE*, TREE*);
+    extern TREE* make_opcall_from_func_start(CSOUND*, int32_t, uint64_t, int32_t, TREE*, TREE*);
+    extern void add_instr_variable(CSOUND *csound,  TREE *x);
 %}
 %%
 
@@ -224,7 +226,7 @@ struct_arg : identifier
 instr_definition : INSTR_TOKEN instr_id_list NEWLINE
                     { csound_orcput_ilocn(scanner, LINE, LOCN); }
                   statement_list ENDIN_TOKEN NEWLINE
-                 {  $$ = make_node(csound, csound_orcget_iline(scanner),
+                  {  $$ = make_node(csound, (int32_t) csound_orcget_iline(scanner),
                                   csound_orcget_ilocn(scanner), INSTR_TOKEN,
                                   $2, $5);
                     csp_orc_sa_instr_finalize(csound);
@@ -238,7 +240,9 @@ instr_definition : INSTR_TOKEN instr_id_list NEWLINE
 
 instr_id_list : instr_id_list ',' instr_id
                   { $$ = appendToTree(csound, $1, $3); }
-              | instr_id  { csp_orc_sa_instr_add_tree(csound, $1); }
+              | instr_id  { csp_orc_sa_instr_add_tree(csound, $1);
+                    add_instr_variable(csound, $1);
+                }
               ;
 
 instr_id : integer
@@ -355,18 +359,18 @@ opcall  : identifier NEWLINE
           { $$ = make_opcall_from_func_start(csound, LINE, LOCN, '#', $1, $3); }
         ;
 
-function_call : typed_identifier '(' expr_list ')'
+function_call : typed_identifierb expr_list ')'
               { $$ = $1;
                 $1->type = T_FUNCTION;
-                $1->right = $3; }
-             | typed_identifier '(' ')'
+                $1->right = $2; }
+             | typed_identifierb ')'
               { $$ = $1;
                 $1->type = T_FUNCTION; }
-             | identifier '(' expr_list ')'
+             | identifierb expr_list ')'
               { $$ = $1;
                 $1->type = T_FUNCTION;
-                $1->right = $3; }
-             | identifier '(' ')'
+                $1->right = $2; }
+             | identifierb ')'
               { $$ = $1;
                 $1->type = T_FUNCTION; }
              ;
@@ -386,7 +390,7 @@ statement_list : statement_list statement
                   }
                 ;
 
-statement : out_arg_list assignment expr NEWLINE
+statement : out_arg_list assignment expr_list NEWLINE
                 {
                   $$ = (TREE *)$2;
                   $$->left = (TREE *)$1;
@@ -510,7 +514,6 @@ declare_definition : DECLARE_TOKEN identifier udo_arg_list ':' udo_out_arg_list 
  }
 
 /* Expressions */
-
 expr_list : expr_list ',' expr
               { $$ = appendToTree(csound, $1, $3); }
          | expr_list ',' NEWLINE expr
@@ -610,48 +613,48 @@ unary_expr : '~' expr %prec S_UMINUS
         | '+' error           { $$ = NULL; }
         ;
 
-binary_expr : expr '+' expr   { $$ = make_node(csound, LINE,LOCN, '+', $1, $3); }
+binary_expr : expr '+' optnewline expr   { $$ = make_node(csound, LINE,LOCN, '+', $1, $4); }
           | expr '+' error
-          | expr '-' expr  { $$ = make_node(csound ,LINE,LOCN, '-', $1, $3); }
+          | expr '-' optnewline expr  { $$ = make_node(csound ,LINE,LOCN, '-', $1, $4); }
           | expr '-' error
-          | expr S_LE expr      { $$ = make_node(csound, LINE,LOCN, S_LE, $1, $3); }
+          | expr S_LE optnewline expr      { $$ = make_node(csound, LINE,LOCN, S_LE, $1, $4); }
           | expr S_LE error
-          | expr S_GE expr      { $$ = make_node(csound, LINE,LOCN, S_GE, $1, $3); }
+          | expr S_GE optnewline expr      { $$ = make_node(csound, LINE,LOCN, S_GE, $1, $4); }
           | expr S_GE error     { $$ = NULL; }
-          | expr S_NEQ expr     { $$ = make_node(csound, LINE,LOCN, S_NEQ, $1, $3); }
+          | expr S_NEQ optnewline expr     { $$ = make_node(csound, LINE,LOCN, S_NEQ, $1, $4); }
+          | expr S_NEQ error    { $$ = NULL; }
            /* VL: 18.09.21 added the rule for if x = y for backwards compatibility */
           | expr '=' expr_list  { $$ = make_node(csound, LINE,LOCN, S_EQ, $1, $3); }
           | expr '=' error
-          | expr S_NEQ error    { $$ = NULL; }
-          | expr S_EQ expr      { $$ = make_node(csound, LINE,LOCN, S_EQ, $1, $3); }
+          | expr S_EQ optnewline expr      { $$ = make_node(csound, LINE,LOCN, S_EQ, $1, $4); }
           | expr S_EQ error
-          | expr S_GT expr      { $$ = make_node(csound, LINE,LOCN, S_GT, $1, $3); }
+          | expr S_GT optnewline expr      { $$ = make_node(csound, LINE,LOCN, S_GT, $1, $4); }
           | expr S_GT error
-          | expr S_LT expr      { $$ = make_node(csound, LINE,LOCN, S_LT, $1, $3); }
+          | expr S_LT optnewline expr      { $$ = make_node(csound, LINE,LOCN, S_LT, $1, $4); }
           | expr S_LT error
-          | expr S_AND expr   { $$ = make_node(csound, LINE,LOCN, S_AND, $1, $3); }
+          | expr S_AND optnewline expr   { $$ = make_node(csound, LINE,LOCN, S_AND, $1, $4); }
           | expr S_AND error
-          | expr S_OR expr    { $$ = make_node(csound, LINE,LOCN, S_OR, $1, $3); }
+          | expr S_OR optnewline expr    { $$ = make_node(csound, LINE,LOCN, S_OR, $1, $4); }
           | expr S_OR error
-          | expr '*' expr    { $$ = make_node(csound, LINE,LOCN, '*', $1, $3); }
+          | expr '*' optnewline expr    { $$ = make_node(csound, LINE,LOCN, '*', $1, $4); }
           | expr '*' error
-          | expr '/' expr    { $$ = make_node(csound, LINE,LOCN, '/', $1, $3); }
+          | expr '/' optnewline expr    { $$ = make_node(csound, LINE,LOCN, '/', $1, $4); }
           | expr '/' error
-          | expr '^' expr    { $$ = make_node(csound, LINE,LOCN, '^', $1, $3); }
+          | expr '^' optnewline expr    { $$ = make_node(csound, LINE,LOCN, '^', $1, $4); }
           | expr '^' error
-          | expr '%' expr    { $$ = make_node(csound, LINE,LOCN, '%', $1, $3); }
+          | expr '%' optnewline expr    { $$ = make_node(csound, LINE,LOCN, '%', $1, $4); }
           | expr '%' error
-          | expr '|' expr        { $$ = make_node(csound, LINE,LOCN, '|', $1, $3); }
+          | expr '|' optnewline expr        { $$ = make_node(csound, LINE,LOCN, '|', $1, $4); }
           | expr '|' error
-          | expr '&' expr        { $$ = make_node(csound, LINE,LOCN, '&', $1, $3); }
+          | expr '&' optnewline expr        { $$ = make_node(csound, LINE,LOCN, '&', $1, $4); }
           | expr '&' error
-          | expr '#' expr        { $$ = make_node(csound, LINE,LOCN, '#', $1, $3); }
+          | expr '#' optnewline expr        { $$ = make_node(csound, LINE,LOCN, '#', $1, $4); }
           | expr '#' error
-          | expr S_BITSHIFT_LEFT expr
-                 { $$ = make_node(csound, LINE,LOCN, S_BITSHIFT_LEFT, $1, $3); }
+          | expr S_BITSHIFT_LEFT optnewline expr
+                 { $$ = make_node(csound, LINE,LOCN, S_BITSHIFT_LEFT, $1, $4); }
           | expr S_BITSHIFT_LEFT error
-          | expr S_BITSHIFT_RIGHT expr
-                 { $$ = make_node(csound, LINE,LOCN, S_BITSHIFT_RIGHT, $1, $3); }
+          | expr S_BITSHIFT_RIGHT optnewline expr
+                 { $$ = make_node(csound, LINE,LOCN, S_BITSHIFT_RIGHT, $1, $4); }
           | expr S_BITSHIFT_RIGHT error
           ;
 
@@ -726,6 +729,10 @@ goto  : GOTO_TOKEN
             { $$ = make_leaf(csound,LINE,LOCN, IGOTO_TOKEN, (ORCTOKEN *)$1); }
           ;
 
+optnewline: NEWLINE
+          | /* empty */
+          ;
+
 string : STRING_TOKEN
         { $$ = make_leaf(csound, LINE,LOCN, STRING_TOKEN, (ORCTOKEN *)$1); }
         ;
@@ -753,7 +760,15 @@ typed_identifier : T_TYPED_IDENT
         { $$ = make_leaf(csound, LINE, LOCN, T_TYPED_IDENT, (ORCTOKEN *)$1); }
         ;
 
+typed_identifierb : T_TYPED_IDENTB
+        { $$ = make_leaf(csound, LINE, LOCN, T_TYPED_IDENT, (ORCTOKEN *)$1); }
+        ;
+
 identifier : T_IDENT
+        { $$ = make_leaf(csound, LINE, LOCN, T_IDENT, (ORCTOKEN *)$1); }
+        ;
+
+identifierb : T_IDENTB
         { $$ = make_leaf(csound, LINE, LOCN, T_IDENT, (ORCTOKEN *)$1); }
         ;
 

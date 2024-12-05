@@ -33,19 +33,16 @@ typedef void *locale_t;
 
 #include <limits.h>
 /* this checks for 64BIT builds */
-#if defined(__MACH__) || defined(LINUX)
-#if ( __WORDSIZE == 64 ) || defined(__x86_64__) || defined(__amd64__)
-#define B64BIT
-#endif
+#if (defined(__WORDSIZE) && __WORDSIZE == 64) || defined(_WIN64) || defined(__x86_64__) || defined(_M_X64) || defined(__ppc64__) || defined(__aarch64__) || (defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ == 8)
+    #define B64BIT
 #endif
 
-#if defined(WIN32)
-#if _WIN64
-#define B64BIT
+#ifndef __cplusplus
+#include <stdbool.h>
 #endif
+#if defined(__MACH__) || defined(__FreeBSD__) || defined(__DragonFly__)
+#include <xlocale.h>
 #endif
-
-
 
 #ifdef HAVE_GCC3
 #  undef HAVE_GCC3
@@ -111,11 +108,7 @@ typedef uint_least16_t uint16;
 #endif
 
 #if !defined(USE_DOUBLE)
-#if !defined(_MSC_VER)
 #include "float-version.h"
-#else
-#define USE_DOUBLE
-#endif
 #endif
 
 #ifdef USE_DOUBLE
@@ -203,7 +196,7 @@ typedef uint_least16_t uint16;
 #endif
 
 /* Aligning to double boundaries, should work with MYFLT as float or double */
-#define CS_FLOAT_ALIGN(x) ((int)(x + sizeof(MYFLT)-1) & (~(sizeof(MYFLT)-1)))
+#define CS_FLOAT_ALIGN(x) ((int32_t)(x + sizeof(MYFLT)-1) & (~(sizeof(MYFLT)-1)))
 
 #if defined(__BUILDING_LIBCSOUND) || defined(CSOUND_CSDL_H)
 
@@ -294,8 +287,8 @@ typedef signed char         int8_t;
 typedef unsigned char       uint8_t;
 typedef short               int16_t;
 typedef unsigned short      uint16_t;
-typedef int                 int32_t;
-typedef unsigned int        uint32_t;
+typedef int32_t                 int32_t;
+typedef uint32_t        uint32_t;
 #  if defined(__GNUC__) || !defined(WIN32)
 typedef long long           int64_t;
 typedef unsigned long long  uint64_t;
@@ -375,20 +368,20 @@ typedef unsigned long       uintptr_t;
 #include <emmintrin.h>
 #  ifndef USE_DOUBLE
 // From Agner Fog optimisation manuals p.144
-static inline int MYFLT2LONG (float const x) {
+static inline int32_t MYFLT2LONG (float const x) {
     return _mm_cvtss_si32 (_mm_load_ss (&x));
 }
 
-static inline int MYFLT2LRND (float const x) {
+static inline int32_t MYFLT2LRND (float const x) {
     return _mm_cvtss_si32 (_mm_load_ss (&x));
 }
 
 #  else
-static inline int MYFLT2LONG (double const x) {
+static inline int32_t MYFLT2LONG (double const x) {
     return _mm_cvtsd_si32 (_mm_load_sd (&x));
 }
 
-static inline int MYFLT2LRND (double const x) {
+static inline int32_t MYFLT2LRND (double const x) {
     return _mm_cvtsd_si32 (_mm_load_sd (&x));
 }
 #  endif
@@ -569,6 +562,21 @@ typedef int32_t spin_lock_t;
 #define SPINLOCK_INIT 0
 #endif
 
+#if (defined(__MACH__) || defined(ANDROID) || defined(NACL) \
+  || defined(__CYGWIN__) || defined(__HAIKU__))
+#include <pthread.h>
+#define BARRIER_SERIAL_THREAD (-1)
+  typedef struct {
+    pthread_mutex_t mut;
+    pthread_cond_t cond;
+    uint32_t count, max, iteration;
+  } barrier_t;
+#ifndef PTHREAD_BARRIER_SERIAL_THREAD
+#define pthread_barrier_t barrier_t
+#endif /* PTHREAD_BARRIER_SERIAL_THREAd */
+#endif /* __MACH__ */
+
+
 /* The ignore_value() macro is taken from GNULIB ignore-value.h,
    licensed under the terms of the LGPLv2+
    Normally casting an expression to void discards its value, but GCC
@@ -582,6 +590,4 @@ typedef int32_t spin_lock_t;
 #else
 # define ignore_value(x) ((void) (x))
 #endif
-
-
 #endif  /* CSOUND_SYSDEP_H */

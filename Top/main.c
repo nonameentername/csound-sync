@@ -21,27 +21,33 @@
 #include "soundio.h"
 #include "csmodule.h"
 #include "corfile.h"
-
+#include "soundfile.h"
 #include "csound_orc.h"
 
 #include "cs_par_base.h"
 #include "cs_par_orc_semantics.h"
 //#include "cs_par_dispatch.h"
 
+extern const uint32_t csPlayScoMask;
+
+
+extern int32_t csoundCompileCsd(CSOUND *csound, const char *csd_filename);
+extern int32_t csoundCompileCsdText(CSOUND *csound, const char *csd_text);
+extern void csoundInputMessage(CSOUND *csound, const char * sc);
 extern void allocate_message_queue(CSOUND *csound);
 CS_NORETURN void    dieu(CSOUND *, char *, ...);
-  int     argdecode(CSOUND *, int, const char **);
-  int     init_pvsys(CSOUND *);
+  int32_t     argdecode(CSOUND *, int32_t,  const char **);
+  int32_t     init_pvsys(CSOUND *);
 //  char    *get_sconame(CSOUND *);
   void    print_benchmark_info(CSOUND *, const char *);
-//  int     read_unified_file(CSOUND *, char **, char **);
-//  int     read_unified_file2(CSOUND *csound, char *csd);
-  int     read_unified_file4(CSOUND *csound, CORFIL *csd);
+//  int32_t     read_unified_file(CSOUND *, char **, char **);
+//  int32_t     read_unified_file2(CSOUND *csound, char *csd);
+  int32_t     read_unified_file4(CSOUND *csound, CORFIL *csd);
   uintptr_t  kperfThread(void * cs);
 //void cs_init_math_constants_macros(CSOUND *csound, PRE_PARM *yyscanner);
 //void cs_init_omacros(CSOUND *csound, PRE_PARM*, NAMES *nn);
  void csoundInputMessageInternal(CSOUND *csound, const char *message);
- int csoundCompileOrcInternal(CSOUND *csound, const char *str, int async);
+ int32_t csoundCompileOrcInternal(CSOUND *csound, const char *str, int32_t async);
 
 static void checkOptions(CSOUND *csound)
 {
@@ -99,7 +105,7 @@ static void checkOptions(CSOUND *csound)
 static void put_sorted_score(CSOUND *csound, char *ss, FILE* ff)
 {
     char *p = ss;
-    int num, cnt;
+    int32_t num, cnt;
     double p2o, p2, p3o,p3, inst;
     while (*p!='\0') {
       switch (*p) {
@@ -150,16 +156,16 @@ static void put_sorted_score(CSOUND *csound, char *ss, FILE* ff)
     }
 }
 
-int csoundCompileArgs(CSOUND *csound, int argc, const char **argv)
+int32_t csoundCompileArgs(CSOUND *csound, int32_t argc, const char **argv)
 {
     OPARMS  *O = csound->oparms;
     char    *s;
     FILE    *xfile = NULL;
-    int     n;
-    volatile int     csdFound = 0;
-    volatile int ac = argc;
+    int32_t     n;
+    volatile int32_t     csdFound = 0;
+    volatile int32_t ac = argc;
     char    *fileDir;
-    volatile int     compiledOk = 0;
+    volatile int32_t     compiledOk = 0;
 
    
    if ((n = setjmp(csound->exitjmp)) != 0) {
@@ -309,14 +315,15 @@ int csoundCompileArgs(CSOUND *csound, int argc, const char **argv)
       csound->LongJmp(csound, 1);
 
     if (UNLIKELY(csoundCompileOrcInternal(csound, NULL, 0) != 0)){
-      if (csound->oparms->daemon != 1)
+      if (csound->oparms->daemon != 1 && csound->orchname != NULL)
         csoundDie(csound, Str("cannot compile orchestra"));
       else {
         /* VL -- 21-10-13 Csound does not need to die on
            failure to compile. It can carry on, because new
            instruments can be compiled again 
-           27-07-13 Csound dies on failure if setting up
-           a server
+           27-07-24 Csound dies on failure if setting up
+           a server, but only if code is presented -- as
+           before it can start without an orchestra
           */
         if (csound->oparms->daemon == 1)
           csound->Warning(csound, Str("cannot compile orchestra.\n"
@@ -342,7 +349,7 @@ int csoundCompileArgs(CSOUND *csound, int argc, const char **argv)
     /* IV - Oct 31 2002: now we can read and sort the score */
 
     if (csound->scorename != NULL &&
-        (n = strlen(csound->scorename)) > 4 &&  /* if score ?.srt or ?.xtr */
+        (n = (int32_t) strlen(csound->scorename)) > 4 &&  /* if score ?.srt or ?.xtr */
         (!strcmp(csound->scorename + (n - 4), ".srt") ||
          !strcmp(csound->scorename + (n - 4), ".xtr"))) {
       csound->Message(csound, Str("using previous %s\n"), csound->scorename);
@@ -385,7 +392,7 @@ int csoundCompileArgs(CSOUND *csound, int argc, const char **argv)
      if(O->msglevel || O->odebug)
        csound->Message(csound, Str("\t... done\n"));
     /* copy sorted score name */
-    O->playscore = csound->scstr;
+    csound->playscore = csound->scstr;
     /* IV - Jan 28 2005 */
     print_benchmark_info(csound, Str("end of score sort"));
     if (O->syntaxCheckOnly) {
@@ -398,27 +405,27 @@ int csoundCompileArgs(CSOUND *csound, int argc, const char **argv)
     return CSOUND_SUCCESS;
 }
 
-extern int  playopen_dummy(CSOUND *, const csRtAudioParams *parm);
-extern void rtplay_dummy(CSOUND *, const MYFLT *outBuf, int nbytes);
-extern int  recopen_dummy(CSOUND *, const csRtAudioParams *parm);
-extern int  rtrecord_dummy(CSOUND *, MYFLT *inBuf, int nbytes);
+extern int32_t  playopen_dummy(CSOUND *, const csRtAudioParams *parm);
+extern void rtplay_dummy(CSOUND *, const MYFLT *outBuf, int32_t nbytes);
+extern int32_t  recopen_dummy(CSOUND *, const csRtAudioParams *parm);
+extern int32_t  rtrecord_dummy(CSOUND *, MYFLT *inBuf, int32_t nbytes);
 extern void rtclose_dummy(CSOUND *);
-extern int  audio_dev_list_dummy(CSOUND *, CS_AUDIODEVICE *, int);
-extern int  midi_dev_list_dummy(CSOUND *csound, CS_MIDIDEVICE *list, int isOutput);
-extern int DummyMidiInOpen(CSOUND *csound, void **userData,
+extern int32_t  audio_dev_list_dummy(CSOUND *, CS_AUDIODEVICE *, int32_t);
+extern int32_t  midi_dev_list_dummy(CSOUND *csound, CS_MIDIDEVICE *list, int32_t isOutput);
+extern int32_t DummyMidiInOpen(CSOUND *csound, void **userData,
                            const char *devName);
-extern int DummyMidiRead(CSOUND *csound, void *userData,
-                         unsigned char *buf, int nbytes);
-extern int DummyMidiOutOpen(CSOUND *csound, void **userData,
+extern int32_t DummyMidiRead(CSOUND *csound, void *userData,
+                         unsigned char *buf, int32_t nbytes);
+extern int32_t DummyMidiOutOpen(CSOUND *csound, void **userData,
                      const char *devName);
-extern int DummyMidiWrite(CSOUND *csound, void *userData,
-                   const unsigned char *buf, int nbytes);
+extern int32_t DummyMidiWrite(CSOUND *csound, void *userData,
+                   const unsigned char *buf, int32_t nbytes);
 
 
-PUBLIC int csoundStart(CSOUND *csound) // DEBUG
+PUBLIC int32_t csoundStart(CSOUND *csound) // DEBUG
 {
     OPARMS  *O = csound->oparms;
-    int     n;
+    int32_t     n;
 
     /* if a CSD was not used, check options */
     if (csound->csdname == NULL)
@@ -513,11 +520,9 @@ PUBLIC int csoundStart(CSOUND *csound) // DEBUG
         O->filetyp = TYP_AIFF;  /* ... or AIFF on the Mac */
 #endif
     }
-    /* everything other than a raw sound file has a header */
-    O->sfheader = (O->filetyp == TYP_RAW ? 0 : 1);
     if (O->Linein || O->Midiin || O->FMidiin)
       O->RTevents = 1;
-    if (!O->sfheader)
+    if (O->filetyp != TYP_RAW )
       O->rewrt_hdr = 0;         /* cannot rewrite header of headerless file */
     /* VL 9 04 15: these not need occur jointly anymore */
     /*
@@ -532,8 +537,8 @@ PUBLIC int csoundStart(CSOUND *csound) // DEBUG
 
 #ifdef PARCS
     if (O->numThreads > 1) {
-      void csp_barrier_alloc(CSOUND *, void **, int);
-      int i;
+      void csp_barrier_alloc(CSOUND *, void **, int32_t);
+      int32_t i;
       THREADINFO *current = NULL;
 
       csp_barrier_alloc(csound, &(csound->barrier1), O->numThreads);
@@ -570,24 +575,24 @@ PUBLIC int csoundStart(CSOUND *csound) // DEBUG
     return musmon(csound);
 }
 
-PUBLIC int csoundCompile(CSOUND *csound, int argc, const char **argv){
+PUBLIC int32_t csoundCompile(CSOUND *csound, int32_t argc, const char **argv){
     return csoundCompileArgs(csound,argc,argv);
 }
 
-int csoundCompileCsd(CSOUND *csound, const char *str) {
+int32_t csoundCompileCsd(CSOUND *csound, const char *str) {
     CORFIL *tt = copy_to_corefile(csound, str, NULL, 0);
     if (LIKELY(tt != NULL)) {
-      int res = csoundCompileCsdText(csound, tt->body);
+      int32_t res = csoundCompileCsdText(csound, tt->body);
       corfile_rm(csound, &tt);
       return res;
     }
     return CSOUND_ERROR;
 }
 
-int csoundCompileCsdText(CSOUND *csound, const char *csd_text)
+int32_t csoundCompileCsdText(CSOUND *csound, const char *csd_text)
 {
     //csound->oparms->odebug = 1; /* *** SWITCH ON EXTRA DEBUGGING *** */
-    int res = read_unified_file4(csound, corfile_create_r(csound, csd_text));
+    int32_t res = read_unified_file4(csound, corfile_create_r(csound, csd_text));
     //printf("file read res = %d\n", res);
     if (LIKELY(res)) {
       if (csound->csdname != NULL) csound->Free(csound, csound->csdname);

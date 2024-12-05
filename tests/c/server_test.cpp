@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "gtest/gtest.h"
-#if defined(WIN32) && !defined(__CYGWIN__)
+#if defined(WIN32) && !defined(__CYGWIN__) 
 # include <winsock2.h>
 # include <ws2tcpip.h>
 #else
@@ -9,7 +9,7 @@
 # include <netinet/in.h>
 # include <arpa/inet.h>
 #endif
-#if defined (WIN32)
+#if defined (WIN32) && !defined(__MINGW32__)
 # include <Windows.h>
 #else
 # include "unistd.h"
@@ -20,10 +20,10 @@
 
 void udp_send(const char* msg) {
     struct sockaddr_in server_addr;
-    int sock;
+    int32_t sock;
 #if defined(WIN32) && !defined(__CYGWIN__)
     WSADATA wsaData = { 0 };
-    int err;
+    int32_t err;
     if (UNLIKELY((err = WSAStartup(MAKEWORD(2, 2), &wsaData)) != 0))
         return;
 #endif

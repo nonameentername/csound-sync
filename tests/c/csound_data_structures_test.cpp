@@ -37,25 +37,26 @@ public:
   CSOUND* csound {nullptr};
 };
 
+
 TEST_F (CsoundDataStructuresTests, testCsCons)
 {
   CONS_CELL* head = NULL;
-  char *a = "A", *b = "B", *c = "C";
+  const char *a = "A", *b = "B", *c = "C";
     
   ASSERT_EQ (cs_cons_length(head), 0);
 
-  head = cs_cons(csound, a, head);
+  head = cs_cons(csound, (void *) a, head);
   ASSERT_EQ (cs_cons_length(head), 1);
   ASSERT_STREQ ((char*)head->value, "A");
   ASSERT_EQ (head->value, a);
 
-  head = cs_cons(csound, b, head);
+  head = cs_cons(csound, (void *) b, head);
   ASSERT_EQ (cs_cons_length(head), 2);
   ASSERT_STREQ ((char*)head->value, "B");
   ASSERT_EQ (head->value, b);
   ASSERT_EQ (head->next->value, a);
     
-  head = cs_cons(csound, c, head);
+  head = cs_cons(csound, (void *) c, head);
   ASSERT_EQ (cs_cons_length(head), 3);
   ASSERT_STREQ ((char*)head->value, "C");
   ASSERT_EQ (head->value, c);
@@ -84,62 +85,86 @@ TEST_F (CsoundDataStructuresTests, testCsConsAppend)
 
 TEST_F (CsoundDataStructuresTests, testCsHashTable)
 {
-  char* testValue = "test";
-    
+  const char* testValue = "test";
   CS_HASH_TABLE* hashTable = cs_hash_table_create(csound);
     
-  cs_hash_table_put(csound, hashTable, "a", const_cast<char*>("1"));
-  cs_hash_table_put(csound, hashTable, "b", const_cast<char*>("2"));
-  cs_hash_table_put(csound, hashTable, "c", const_cast<char*>("3"));
+  cs_hash_table_put(csound, hashTable, const_cast<char*>("a"),
+                    const_cast<char*>("1"));
+  cs_hash_table_put(csound, hashTable, const_cast<char*>("b"),
+                    const_cast<char*>("2"));
+  cs_hash_table_put(csound, hashTable, const_cast<char*>("c"),
+                    const_cast<char*>("3"));
     
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "a"), "1");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "b"), "2");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "c"), "3");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("a")), "1");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("b")), "2");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("c")), "3");
     
-  cs_hash_table_remove(csound, hashTable, "c");
+  cs_hash_table_remove(csound, hashTable, const_cast<char*>("c"));
     
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "a"), "1");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "b"), "2");
-  ASSERT_TRUE ((char*)cs_hash_table_get(csound, hashTable, "c") == NULL);
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("a")), "1");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("b")), "2");
+  ASSERT_TRUE ((char*)cs_hash_table_get(csound, hashTable,
+                                        const_cast<char*>("c")) == NULL);
     
-  cs_hash_table_put(csound, hashTable, testValue, NULL);
+  cs_hash_table_put(csound, hashTable, const_cast<char*>(testValue), NULL);
     
-  ASSERT_STREQ ((char*)cs_hash_table_get_key(csound, hashTable, "test"), "test");
-  ASSERT_TRUE (cs_hash_table_get_key(csound, hashTable, "test") != testValue);
+  ASSERT_STREQ ((char*)cs_hash_table_get_key(csound, hashTable,
+                                             const_cast<char*>("test")), "test");
+  ASSERT_TRUE (cs_hash_table_get_key(csound, hashTable,
+                                     const_cast<char*>("test")) != testValue);
 }
 
 TEST_F (CsoundDataStructuresTests, testCsHasTableMerge)
 {
   CS_HASH_TABLE* hashTable = cs_hash_table_create(csound);
   CS_HASH_TABLE* hashTable2 = cs_hash_table_create(csound);
-    
-  cs_hash_table_put(csound, hashTable, "a", const_cast<char*>("1"));
-  cs_hash_table_put(csound, hashTable, "b", const_cast<char*>("2"));
-  cs_hash_table_put(csound, hashTable, "c", const_cast<char*>("3"));
-    
-  cs_hash_table_put(csound, hashTable2, "b", const_cast<char*>("4"));
-  cs_hash_table_put(csound, hashTable2, "c", const_cast<char*>("5"));
-  cs_hash_table_put(csound, hashTable2, "d", const_cast<char*>("6"));
-    
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "a"), "1");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "b"), "2");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "c"), "3");
+
+  cs_hash_table_put(csound, hashTable, const_cast<char*>("a"),
+                    const_cast<char*>("1"));
+  cs_hash_table_put(csound, hashTable, const_cast<char*>("b"),
+                    const_cast<char*>("2"));
+  cs_hash_table_put(csound, hashTable, const_cast<char*>("c"),
+                    const_cast<char*>("3"));
+
+  cs_hash_table_put(csound, hashTable2, const_cast<char*>("b"),
+                    const_cast<char*>("4"));
+  cs_hash_table_put(csound, hashTable2, const_cast<char*>("c"),
+                    const_cast<char*>("5"));
+  cs_hash_table_put(csound, hashTable2, const_cast<char*>("d"),
+                    const_cast<char*>("6"));  
+
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("a")), "1");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("b")), "2");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("c")), "3");
 
   cs_hash_table_merge(csound, hashTable, hashTable2);
-    
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "a"), "1");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "b"), "4");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "c"), "5");
-  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable, "d"), "6");    
+
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("a")), "1");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("b")), "4");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("c")), "5");
+  ASSERT_STREQ ((char*)cs_hash_table_get(csound, hashTable,
+                                         const_cast<char*>("d")), "6");     
 }
 
 TEST_F (CsoundDataStructuresTests, testCsHashTableGetPutKey)
 {
   CS_HASH_TABLE* hashTable = cs_hash_table_create(csound);
-  auto a = cs_hash_table_put_key(csound, hashTable, "test");
-  auto b = cs_hash_table_put_key(csound, hashTable, "test");
-  auto c = cs_hash_table_get_key(csound, hashTable, "test");
-  auto d = cs_hash_table_get_key(csound, hashTable, "some other value");
+  auto a = cs_hash_table_put_key(csound, hashTable, const_cast<char*>("test"));
+  auto b = cs_hash_table_put_key(csound, hashTable, const_cast<char*>("test"));
+  auto c = cs_hash_table_get_key(csound, hashTable, const_cast<char*>("test"));
+  auto d = cs_hash_table_get_key(csound, hashTable,
+                                 const_cast<char*>("some other value"));
     
   ASSERT_EQ (a, b);
   ASSERT_EQ (b, c);

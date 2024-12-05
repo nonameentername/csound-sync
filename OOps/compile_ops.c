@@ -24,6 +24,7 @@
 #include <stdio.h>
 int32_t csoundCompileOrcInternal(CSOUND *csound, const char *str, int32_t async);
 int32_t csoundReadScoreInternal(CSOUND *csound, const char *str);
+int32_t csoundCompileCsd(CSOUND *csound, const char *csd_filename);
 
 int32_t compile_orc_i(CSOUND *csound, COMPILE *p){
   FILE *fp;
@@ -76,6 +77,112 @@ int32_t compile_str_i(CSOUND *csound, COMPILE *p){
   //csp_orc_sa_print_list(csound);
   return OK;
 }
+
+/* compiles a single instrument:
+   Instr new_instr Scode  -> adds new instr in free slot
+*/
+int32_t compile_instr(CSOUND *csound, CINSTR *p) {
+  INSTRTXT **instrs = csound->GetInstrumentList(csound);
+  int32_t num = 1;
+  size_t siz;
+  char *code;
+  const char *endin = "\n endin \n";
+  // look for a free slot
+  while(instrs[num] != NULL) num++;
+  siz = strlen(p->code->data) + strlen(endin) + 16;
+  code = csound->Calloc(csound, siz);
+  snprintf(code, siz,"instr %d\n%s%s", num, p->code->data, endin);
+
+  if(csound->GetDebug(csound)) csound->Message(csound, "%s \n", code);
+  // compile code
+  if(csoundCompileOrcInternal(csound, code, 0) == CSOUND_SUCCESS) {
+    // pass the instrument out
+    p->instr->instr = instrs[num];
+    csound->Free(csound, code);
+    return OK;
+  }
+  csound->Free(csound, code);
+  return csound->InitError(csound, "failed to compile instr\n");
+}
+#include "linevent.h"
+int32_t eventOpcodeI_(CSOUND *csound, LINEVENT *p, int32_t s, char p1);
+int32_t eventOpcode_(CSOUND *csound, LINEVENT *p, int32_t s, char p1);
+/* compiles and runs an anonymous instrument
+   run_instr Scode, idur[, ...]  
+*/
+int32_t compile_and_run_instr(CSOUND *csound, CARINSTR *p) {
+  char *code;
+  const char *endin = "\n endin \n";
+  const char *name = "instr __ANONYMOUS__ \n";
+  size_t siz = strlen(p->code->data)
+    + strlen(name) + strlen(endin) + 1;
+  code = csound->Calloc(csound, siz);
+  snprintf(code, siz, "%s%s%s", name, p->code->data, endin);
+  if(csound->GetDebug(csound))
+    csound->Message(csound, "%s \n", code);
+  // compile code
+  if(csoundCompileOrcInternal(csound, code, 0) == CSOUND_SUCCESS) {
+       LINEVENT pp;
+       MYFLT zero = FL(0.0);
+       MYFLT num = (MYFLT) csound->StringArg2Insno(csound, "__ANONYMOUS__", 1);
+       int32_t i;
+       pp.h = p->h;
+       char c[2] = "i";
+       pp.args[0] = (MYFLT *) c;
+       pp.args[1] = (MYFLT *) &num;
+       pp.args[2] = &zero;
+       pp.args[3] = p->INOCOUNT > 1 ? p->argums[0] : &zero;
+       pp.argno = p->INOCOUNT + (p->INOCOUNT > 1 ? 2 : 3);
+       for (i=0; i < p->INOCOUNT-1;i++) {
+         pp.args[i+3] = p->argums[i];
+       }
+      pp.flag = 1;
+      csound->Free(csound, code); 
+      return eventOpcodeI_(csound, &pp, 0, 'i');
+  }
+  csound->Free(csound, code);
+  return csound->InitError(csound, "failed to compile instr\n");
+}
+
+int32_t run_instr(CSOUND *csound, RINSTR *p) {
+       LINEVENT pp;
+       MYFLT zero = FL(0.0);
+       int32_t i;
+       pp.h = p->h;
+       char c[2] = "i";
+       pp.args[0] = (MYFLT *) c;
+       pp.args[1] = (MYFLT *) p->instr;
+       pp.args[2] = &zero;
+       pp.args[3] = p->INOCOUNT > 1 ? p->argums[0] : &zero;
+       pp.argno = p->INOCOUNT + (p->INOCOUNT > 1 ? 2 : 3);
+       for (i=1; i < p->INOCOUNT-1;i++) {
+         pp.args[i+3] = p->argums[i];
+       }
+      pp.flag = 1;
+      return eventOpcodeI_(csound, &pp, 2, 'i');
+}
+
+int32_t run_instr_k(CSOUND *csound, RINSTRK *p) {
+      if(*p->ktrig) {
+       LINEVENT pp;
+       MYFLT zero = FL(0.0);
+       int32_t i;
+       pp.h = p->h;
+       char c[2] = "i";
+       pp.args[0] = (MYFLT *) c;
+       pp.args[1] = (MYFLT *) p->instr;
+       pp.args[2] = &zero;
+       pp.args[3] = p->INOCOUNT > 1 ? p->argums[0] : &zero;
+       pp.argno = p->INOCOUNT + (p->INOCOUNT > 1 ? 2 : 3);
+       for (i=1; i < p->INOCOUNT-1;i++) {
+         pp.args[i+3] = p->argums[i];
+       }
+       pp.flag = 1;
+       return eventOpcode_(csound, &pp, 2, 'i');
+      } else return OK;
+}
+
+
 
 int32_t read_score_i(CSOUND *csound, COMPILE *p){
   *p->res = (MYFLT)(csoundReadScoreInternal(csound,
@@ -145,7 +252,7 @@ const char *csoundOSCMessageGetDouble(const char *buf, MYFLT *mf) {
 }
 
 
-/** Get int from Osc Message data 
+/** Get int32_t from Osc Message data 
     returns pointer to next datum
 */
 const char *csoundOSCMessageGetInt32(const char *buf, MYFLT *mf) {
@@ -215,7 +322,7 @@ const char *csoundOSCMessageGetNumber(const char *buf,
 }
 
 int32_t readOSC_perf(CSOUND *csound, ROSC *p) {
-  int cnt = p->OUTOCOUNT - 1, i;
+  int32_t cnt = p->OUTOCOUNT - 1, i;
   if(cnt > 32)
     return csound->PerfError(csound, &(p->h),
                              "OSCRead exceeded max output args (>32)\n");
@@ -249,12 +356,12 @@ int32_t readOSC_perf(CSOUND *csound, ROSC *p) {
 #include "arrays.h"
 
 int32_t readOSCarray_init(CSOUND *csound, ROSCA *p) {
-  tabinit(csound, p->out, strlen(p->type->data), &(p->h));
+  tabinit(csound, p->out, (int32_t) strlen(p->type->data), &(p->h));
   return OK;
 }
 
 int32_t readOSCarray_perf(CSOUND *csound, ROSCA *p) {
-  int cnt = p->out->sizes[0], i;
+  int32_t cnt = p->out->sizes[0], i;
   OSC_MESS *mess = csoundReadOSCMessage(csound, p->address->data,
                                         p->type->data);
   if(mess != NULL) {

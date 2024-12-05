@@ -28,16 +28,6 @@ void freeStringMem (char* ptr) {
   free(ptr);
 }
 
-__attribute__((used))
-CSOUND_PARAMS* allocCsoundParamsStruct() {
-  CSOUND_PARAMS* ptr = NULL;
-  ptr = malloc(sizeof(CSOUND_PARAMS));
-  return ptr;
-}
-
-void freeCsoundParams(CSOUND_PARAMS* ptr) {
-  free(ptr);
-}
 
 __attribute__((used))
 double* allocFloatArray(int length) {
@@ -49,7 +39,6 @@ double* allocFloatArray(int length) {
 void freeFloatArrayMem(double* ptr) {
   free(ptr);
 }
-
 
 // START CS_MIDIDEVICE
 int sizeOfMidiStruct() {
@@ -63,8 +52,7 @@ CS_MIDIDEVICE* allocCsMidiDeviceStruct(int num) {
   return ptr;
 }
 
-
-void freeCsMidiDeviceStruct(CSOUND_PARAMS* ptr) {
+void freeCsMidiDeviceStruct(CS_MIDIDEVICE* ptr) {
   free(ptr);
 }
 
@@ -254,11 +242,11 @@ CSOUND *csoundCreateWasi() {
 // same as csoundReset but also loads
 // opcodes which need re-initialization to
 // be callable (aka static_modules)
+// NB: csoundCleanup has been removed from API for 7.0
 int csoundResetWasi(CSOUND *csound) {
-  int cleanResult = csoundCleanup(csound);
   csoundReset(csound);
   csoundSetMidiCallbacks(csound);
-  return cleanResult;
+  return CSOUND_SUCCESS;
 }
 
 int isRequestingRtMidiInput(CSOUND *csound) {

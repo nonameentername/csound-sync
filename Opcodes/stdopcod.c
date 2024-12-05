@@ -50,7 +50,6 @@ int32_t stdopc_ModuleInit(CSOUND *csound)
     } else return CSOUND_SUCCESS;  // already initialised
     
     p->csound = csound;
-    csound->GetOParms(csound, &p->oparms);
     /* fout.c */
     p->file_opened = (struct fileinTag*) NULL;
     p->file_num = -1;
@@ -117,7 +116,7 @@ PUBLIC  int32_t  csoundModuleInit(CSOUND *csound)
 
 PUBLIC int32_t csoundModuleInfo(void)
 {
-    return ((CS_APIVERSION << 16) + (CS_APISUBVER << 8) + (int32_t) sizeof(MYFLT));
+    return ((CS_VERSION << 16) + (CS_SUBVER << 8) + (int32_t) sizeof(MYFLT));
 }
 
 PUBLIC  int32_t csoundModuleDestroy(CSOUND *csound)

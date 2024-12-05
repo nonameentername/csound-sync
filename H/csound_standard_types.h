@@ -44,10 +44,11 @@ extern "C" {
     extern const CS_TYPE CS_VAR_TYPE_F;
     extern const CS_TYPE CS_VAR_TYPE_B;
     extern const CS_TYPE CS_VAR_TYPE_b;
-    extern const CS_TYPE CS_VAR_TYPE_ARRAY; 
+    extern const CS_TYPE CS_VAR_TYPE_ARRAY;
+    extern const CS_TYPE CS_VAR_TYPE_INSTR; 
 
     typedef struct arrayVarInit {
-        int dimensions;
+        int32_t dimensions;
         const CS_TYPE* type;
     } ARRAY_VAR_INIT;
 

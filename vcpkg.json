@@ -8,23 +8,23 @@
         "libsamplerate",
         {
             "name": "portmidi",
-            "platform": "!android"
+            "platform": "!android & !emscripten & !ios"
         },
         {
             "name": "liblo",
-            "platform": "!android"
+            "platform": "!android & !emscripten & !ios"
         },
         {
             "name": "gtest",
-            "platform": "!android"
+            "platform": "!android & !emscripten & !ios"
         },
         {
             "name": "jack2",
-            "platform": "linux"
+            "platform": "linux|osx"
         },
         {
             "name": "portaudio",
-            "platform": "!android"
+            "platform": "!android & !emscripten & !ios"
         },
         {
             "name": "dirent",
