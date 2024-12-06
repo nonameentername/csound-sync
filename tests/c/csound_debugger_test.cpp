@@ -159,7 +159,8 @@ static void brkpt_cb4(CSOUND *csound, debug_bkpt_info_t *bkpt_info, void *userda
     debug_instr_t *debug_instr = bkpt_info->breakpointInstr;
     ASSERT_EQ (debug_instr->p1, 1);
     ASSERT_EQ (debug_instr->p2, 0);
-    ASSERT_EQ (debug_instr->p3, 1.1);
+    ASSERT_EQ (debug_instr->p3, (MYFLT) 1.1);
+
     ASSERT_EQ (debug_instr->kcounter, 0);
 }
 
@@ -363,22 +364,22 @@ static void brkpt_cb8(CSOUND *csound, debug_bkpt_info_t *bkpt_info, void *line_)
 {
     switch (count) {
     case 0:
-        ASSERT_EQ (bkpt_info->breakpointInstr->p1, 1.2);
+        ASSERT_EQ (bkpt_info->breakpointInstr->p1, (MYFLT) 1.2);
         break;
     case 1:
-        ASSERT_EQ (bkpt_info->breakpointInstr->p1, 1.3);
+        ASSERT_EQ (bkpt_info->breakpointInstr->p1, (MYFLT) 1.3);
         break;
     case 2:
-        ASSERT_EQ (bkpt_info->breakpointInstr->p1, 30);
+        ASSERT_EQ (bkpt_info->breakpointInstr->p1, (MYFLT) 30);
         break;
     case 3:
-         ASSERT_EQ (bkpt_info->breakpointInstr->p1, 30.1);
+         ASSERT_EQ (bkpt_info->breakpointInstr->p1, (MYFLT) 30.1);
         break;
     case 4:
-         ASSERT_EQ (bkpt_info->breakpointInstr->p1, 1);
+         ASSERT_EQ (bkpt_info->breakpointInstr->p1, (MYFLT) 1);
         break;
     case 5:
-         ASSERT_EQ (bkpt_info->breakpointInstr->p1, 1.2);
+         ASSERT_EQ (bkpt_info->breakpointInstr->p1, (MYFLT)1.2);
         break;
     }
     count++;
