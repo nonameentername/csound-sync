@@ -493,6 +493,16 @@ jobs:
     env:
       VERSION: v1
     steps:
+
+      - name: Echo vars
+        run: |
+          echo $IOSCROSS_DOWNLOAD_URL
+          echo $ANDROID_WORKFLOW_RUN_ID
+        env:
+          IOSCROSS_DOWNLOAD_URL: ${{ vars.IOSCROSS_DOWNLOAD_URL }}
+          ANDROID_WORKFLOW_RUN_ID: ${{ vars.ANDROID_WORKFLOW_RUN_ID }}
+
+
       - name: Checkout source code
         uses: actions/checkout@v1
         with:
