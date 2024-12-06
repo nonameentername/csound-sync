@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DUSE_MP3=0 -DBUILD_TESTS=1 -DBUILD_STATIC_LIBRARY=1
+          cmake .. -DUSE_MP3=0 -DBUILD_TESTS=1 -DBUILD_STATIC_LIBRARY=1 -DUSE_DOUBLE=0
 
       - name: Build Csound
         run: |
@@ -272,7 +272,7 @@ jobs:
         run: brew install bison flex
 
       - name: Configure build
-        run: cmake -B build -S . -DBUILD_TESTS=1 -DUSE_VCPKG=1 -DCUSTOM_CMAKE="./platform/osx/custom-osx.cmake"
+        run: cmake -B build -S . -DUSE_DOUBLE=0 -DBUILD_TESTS=1 -DUSE_VCPKG=1 -DCUSTOM_CMAKE="./platform/osx/custom-osx.cmake"
 
       - name: Build Csound
         run: cmake --build build --config Release

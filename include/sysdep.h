@@ -353,7 +353,7 @@ typedef unsigned long       uintptr_t;
 #    define MYFLT2LONG(x) (x > LONG_MIN && x < LONG_MAX ? \
                            (int32) lrintf((float) (x)) : 0)
 #    define MYFLT2LRND(x) (x > LONG_MIN && x < LONG_MAX ? \
-                           (int32) lrint( (x)) : 0)
+                           (int32) lrintf((float) (x)) : 0)
 #  else
 #    define MYFLT2LONG(x) (x > LONG_MIN && x < LONG_MAX ? \
                            (int32) lrint((double) (x)) : 0)
