@@ -380,3 +380,8 @@ int32_t readOSCarray_perf(CSOUND *csound, ROSCA *p) {
   }
   return OK;
 }
+#include "aops.h"
+int32_t myflt_size(CSOUND *csound, ASSIGN *p) {
+  *p->r = FL(sizeof(MYFLT));
+   return OK;
+}

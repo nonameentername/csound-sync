@@ -167,6 +167,7 @@ OENTRY opcodlst_1[] = {
   { "instrnum",   S(IREF_NUM),0,    "i",    ":InstrDef;",   (SUBR) get_instr_num },
   { "nstrnum",   S(IREF_NUM),0,    "i",    ":InstrDef;",   (SUBR) get_instr_num },
   { "init.instr", S(ASSIGN) ,0,  ":InstrDef;", ":InstrDef;", (SUBR) copyVarGenericInit},
+  { "floatsize", S(ASSIGN) ,0, "i", "", myflt_size },
   /* VL 4.4.24 removing thread field:
      These boolean were all marked thread 0, with both init and perf functions.
      At instance(), there was a check for NOT thread 3 (meaning init XOR perf),
