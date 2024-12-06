@@ -501,6 +501,8 @@ jobs:
         env:
           IOSCROSS_DOWNLOAD_URL: ${{ vars.IOSCROSS_DOWNLOAD_URL }}
           ANDROID_WORKFLOW_RUN_ID: ${{ vars.ANDROID_WORKFLOW_RUN_ID }}
+          IOSCROSS_WORKFLOW_RUN_ID: ${{ vars.IOSCROSS_WORKFLOW_RUN_ID}}
+            
 
 
       - name: Checkout source code
