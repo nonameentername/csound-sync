@@ -350,10 +350,13 @@ int32_t copyVarGenericInit(CSOUND *csound, void *p) {
     if(type == &CS_VAR_TYPE_ARRAY) {
       ARRAYDAT* adat = (ARRAYDAT*) assign->a;
       if(adat->arrayType == &CS_VAR_TYPE_I ||
-         adat->arrayType == &CS_VAR_TYPE_INSTR) flag = 1;
+         adat->arrayType == &CS_VAR_TYPE_b ||
+         adat->arrayType == &CS_VAR_TYPE_INSTR ||
+         adat->arrayType == &CS_VAR_TYPE_INSTANCE) flag = 1;
     } else if(type == &CS_VAR_TYPE_I ||
               type == &CS_VAR_TYPE_b ||
-              type == &CS_VAR_TYPE_INSTR    
+              type == &CS_VAR_TYPE_INSTR ||
+              type == &CS_VAR_TYPE_INSTANCE
               ) flag = 1;
     if (flag) {
       assign->h.perf = copyVarNoOp;

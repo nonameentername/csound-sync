@@ -315,6 +315,12 @@ if(APPLE)
         message(STATUS  "clock_gettime() not found")
     endif()
 endif()
+include(checkSymbolExists)
+
+CHECK_SYMBOL_EXISTS(lrint math.h FOUND_LRINT)
+message(STATUS "lrint: ${FOUND_LRINT}")
+
+
 
 if(OSXCROSS_TARGET)
     set(CMAKE_C_FLAGS "-I${OSXCROSS_SDK}/usr/include ${CMAKE_C_FLAGS}")
@@ -597,10 +603,7 @@ if (NOT MATH_LIBRARY)
     set(MATH_LIBRARY "")
 endif()
 
-cmake_push_check_state()
-list(APPEND CMAKE_REQUIRED_LIBRARIES ${MATH_LIBRARY})
-check_function_exists(lrint HAVE_LRINT)
-cmake_pop_check_state()
+
 
 # MSVC / VCPKG won't find dirent.h by default. Need to add the path explicitly
 find_file(DIRENT_H "dirent.h")
@@ -640,7 +643,7 @@ if (HAVE_EXECINFO_H)
     add_definitions("-DHAVE_EXECINFO")
 endif()
 
-check_deps(USE_LRINT HAVE_LRINT)
+check_deps(USE_LRINT FOUND_LRINT)
 if(USE_LRINT)
     add_definitions("-DUSE_LRINT")
 endif()

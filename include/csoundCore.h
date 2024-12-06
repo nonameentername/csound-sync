@@ -758,8 +758,8 @@ extern "C" {
    * checks for string code in p-fields
    */
   static inline int32_t isstrcod(MYFLT xx){
-    int32_t sel = (byte_order()+1)&1;
 #ifdef USE_DOUBLE
+    int32_t sel = (byte_order()+1)&1;
     union {
       double d;
       int32_t i[2];

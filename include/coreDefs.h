@@ -62,13 +62,14 @@ extern "C" {
 #define PMAX      (1998)
 #define VARGMAX   (1999)
 #define NOT_AN_INSTRUMENT INT32_MAX  
-  
-#ifndef  SHORT_TABLE_LENGTH  // long max table length is the default
+
+// long max table length is the default for doubles  
+#if defined(USE_DOUBLE) && !defined(SHORT_TABLE_LENGTH)  
 // MAXLEN is the largest positive 32bit signed pow of two  
 static const int32_t MAXLEN = 1 << 30;
 static const double FMAXLEN = (double) (1 << 30);
 static const uint32_t PHMASK = (1 << 30) - 1;
-#else   // this is the original max table length
+#else   // this is the original max table length - use for floats
 static const int32_t MAXLEN =  1 << 24;
 static const double FMAXLEN = (double) (1 << 24);
 static const uint32_t PHMASK = (1 << 24) - 1;
