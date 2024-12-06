@@ -29,7 +29,6 @@ public:
     virtual void SetUp ()
     {
         csound = csoundCreate (NULL,NULL);
-        csoundCreateMessageBuffer (csound, 0);
         csoundSetOption (csound, "-odac --logfile=null");
     }
 
@@ -192,4 +191,32 @@ const char* event = R"(
    csoundEventString(csound, event, 0);
    result = csoundPerformKsmps(csound);
    ASSERT_TRUE(result == 0);
+}
+
+TEST_F (OrcCompileTests, testMaxTableSize)
+{
+    const char* instrument = R"(
+instr 1
+a1 oscil 0,0,1
+endin
+     )";
+
+const char* event = R"(
+ f 1 0 [2^30-1] 2 0 [2^30-1] 0
+ i1 0 1
+   )";
+
+   csoundEventString(csound, event, 0);
+   int32_t result =
+     csoundCompileOrc(csound, instrument);
+     ASSERT_TRUE(result == 0);
+     result = csoundStart(csound);
+     ASSERT_TRUE(result == 0);
+     result = csoundPerformKsmps(csound);
+    if(sizeof(MYFLT) > 4) {
+    ASSERT_TRUE(result == 0);
+    ASSERT_TRUE(csoundTableLength(csound,1) == pow(2,30)-1);
+   }
+   else
+    ASSERT_FALSE(result == 0);
 }
