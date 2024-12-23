@@ -89,6 +89,16 @@ extern "C" {
     void    *useropinfo; /* user opcode parameters */
   } OENTRY;
 
+
+  /** 
+   *   holds OENTRYs for opcode overloads
+   **/
+   typedef struct oentries {
+      int32_t count;                /* Number of etries in table */
+      OENTRY* entries[0];       /* Entended by count entries */
+    } OENTRIES;
+
+
   /**
    * Storage for parsed orchestra code, for each opcode in an INSTRTXT.
    */

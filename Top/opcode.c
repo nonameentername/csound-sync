@@ -32,7 +32,6 @@
 #include "csoundCore.h"
 #include "csound_standard_types.h"
 #include "compile_ops.h"
-#include "csound_orc.h"
 #include <ctype.h>
 #include "interlocks.h"
 
@@ -231,38 +230,7 @@ void list_opcodes(CSOUND *csound, int32_t level) {
   csoundDisposeOpcodeList(csound, lst);
 }
 
-struct oentries;
 struct oentries *find_opcode2(CSOUND *, char *);
-CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYPE *type,
-                               char *name, void *typeArg); 
-
-void addOpcodeRefs(CSOUND *csound) {
-  CONS_CELL *head, *item;
-  const CS_TYPE *type = &CS_VAR_TYPE_OPCODEREF;
-  CS_VARIABLE *var;
-  OENTRY *ep;
-  char *name;
-  OPCODEREF ref = {NULL, 1}, *dest;
-
-  head = cs_hash_table_values(csound, csound->opcodes);
-  while (head != NULL) {
-    item = head->value;
-    ep = item->value;
-    name = get_opcode_short_name(csound, ep->opname);
-
-    if (csoundFindVariableWithName(csound, csound->engineState.varPool, name) ==
-        NULL) {
-      var = addGlobalVariable(csound, &csound->engineState, (CS_TYPE *) type, name, NULL);
-      if(var != NULL) {
-       ref.entries = find_opcode2(csound, name);
-       dest = (OPCODEREF *) &(var->memBlock->value);
-       type->copyValue(csound, type, dest, &ref, NULL);
-      } else csound->Warning(csound, "could not create opcode ref for %s\n", name);
-    }
-    head = head->next;
-  }
-}
-
 int32_t opcode_info(CSOUND *csound, OPINFO *p) {
   OENTRY *ep = p->ref->entries->entries[0];
   int n, nep =  p->ref->entries->count;
@@ -276,4 +244,16 @@ int32_t opcode_info(CSOUND *csound, OPINFO *p) {
                     n+1, ep->opname, ep->outypes, ep->intypes);
   }
   return OK;
+}
+#include "aops.h"
+int32_t opcode_ref(CSOUND *csound, ASSIGN *p) {
+   OPCODEREF *pp = (OPCODEREF *) p->r;
+   STRINGDAT *str = (STRINGDAT *) p->a;
+   if(find_opcode(csound, str->data))
+   pp->entries = find_opcode2(csound, str->data);
+   else return csound->InitError(csound,
+                                 "could not find opcode %s",
+                                 str->data);
+   
+   return OK;
 }

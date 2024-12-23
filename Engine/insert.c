@@ -1265,7 +1265,8 @@ int32_t csoundInitError(CSOUND *csound, const char *s, ...)
   }
   else
     snprintf(buf, 512, Str("INIT ERROR in instr %d (opcode %s) line %d: "),
-             ip->insno, csound->op, csound->ids->optext->t.linenum);
+             ip->insno, csound->ids->optext->t.oentry->opname,
+             csound->ids->optext->t.linenum);
   va_start(args, s);
   csoundErrMsgV(csound, buf, s, args);
   va_end(args);

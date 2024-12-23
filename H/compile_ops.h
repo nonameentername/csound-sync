@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include <csoundCore.h>
+#include "csoundCore.h"
+#include "aops.h"
 
 typedef struct _compile {
   OPDS h;
@@ -100,4 +101,4 @@ int32_t compile_and_run_instr(CSOUND *csound, CARINSTR *p);
 int32_t run_instr(CSOUND *csound, RINSTR *p); 
 int32_t run_instr_k(CSOUND *csound, RINSTRK *p); 
 int32_t opcode_info(CSOUND *csound, OPINFO *p);
-
+int32_t opcode_ref(CSOUND *csound, ASSIGN *p);

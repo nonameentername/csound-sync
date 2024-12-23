@@ -157,7 +157,9 @@ void opcodeRef_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
    memcpy(dest, src, sizeof(OPCODEREF));
    p->readonly = 0; // clear readonly flag (which is not copied)
   }
-  else csound->Warning(csound, "opcode ref var is read-only: copy value bypassed");
+  else csound->Warning(csound, "%s (:OpcodeDef) is read-only: " 
+                                "cannot be redefined, ignoring assignment",
+                       get_opcode_short_name(csound, p->entries->entries[0]->opname));
 }
 
 void opcodeObj_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
@@ -425,7 +427,7 @@ const CS_TYPE CS_VAR_TYPE_ARRAY = {
 };
 
 const CS_TYPE CS_VAR_TYPE_OPCODEREF = {
-  "OpcodeDef", "opcode definition reference", CS_ARG_TYPE_BOTH,
+  "OpcodeRef", "opcode definition reference", CS_ARG_TYPE_BOTH,
   createOpcodeRef, opcodeRef_copy_value, NULL, NULL, 0
 };
 

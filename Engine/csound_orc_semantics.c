@@ -1732,7 +1732,7 @@ TREE* convert_unary_op_to_binary(CSOUND* csound, TREE* new_left, TREE* unary_op)
  */
 TREE* convert_statement_to_opcall(CSOUND* csound, TREE* root, TYPE_TABLE* typeTable) {
   int32_t leftCount, rightCount;
-
+  
   if (root->type == T_ASSIGNMENT) {
     /* Rewrite tree if line is "a1, a2 = func(arg, arg1)" 
        to "a1, a2 func arg, arg1" */
@@ -1753,6 +1753,7 @@ TREE* convert_statement_to_opcall(CSOUND* csound, TREE* root, TYPE_TABLE* typeTa
   //  print(1,2,3)
   // then it should just be updated to T_OPCALL and returned
   if(root->type == T_FUNCTION) {
+           
     root->type = T_OPCALL;
     return root;
   }
@@ -1770,7 +1771,7 @@ TREE* convert_statement_to_opcall(CSOUND* csound, TREE* root, TYPE_TABLE* typeTa
                 "received a non T_OPCALL TREE\n"));
     return NULL;
   }
-
+ 
   if (root->value != NULL) {
     /* xout exp(0) */
     if (root->left != NULL &&
@@ -1789,7 +1790,7 @@ TREE* convert_statement_to_opcall(CSOUND* csound, TREE* root, TYPE_TABLE* typeTa
     /* Already processed T_OPCALL, return as-is */
     return root;
   }
-
+  
   if (root->left == NULL) {
     synterr(csound,
             Str("Internal Error: convert_statement_to_opcall "
@@ -1807,7 +1808,10 @@ TREE* convert_statement_to_opcall(CSOUND* csound, TREE* root, TYPE_TABLE* typeTa
 
       /* i.e. ksubst init -1 */
       /* TODO - this should check if it's a var first */
-      if (find_opcode(csound, top->value->lexeme) != NULL) {
+      CS_VARIABLE *var = find_var_from_pools(csound, top->value->lexeme,
+        top->value->lexeme, typeTable);
+
+      if (find_opcode(csound, top->value->lexeme) != NULL && var == NULL) {
         top->next = root->next;
         root->next = NULL;
         return top;
