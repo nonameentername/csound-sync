@@ -21,7 +21,15 @@ endif
 print givar
 endin
 
+instr P1
+  exitnow(-1)
+endin
 
+instr P1
+prints "redefined \n"
+endin
+
+schedule(P1, 0, 0)
 </CsInstruments>
 <CsScore>
 i1 0 1
