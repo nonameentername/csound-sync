@@ -1139,7 +1139,7 @@ void orcompact(CSOUND *csound)          /* free all inactive instr spaces */
   for (txtp = &(csound->engineState.instxtanchor);
        txtp != NULL;  txtp = txtp->nxtinstxt) {
     if ((ip = txtp->instance) != NULL) {        /* if instance exists */
-
+     
       prvip = NULL;
       prvnxtloc = &txtp->instance;
       do {

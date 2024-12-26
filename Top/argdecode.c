@@ -1261,6 +1261,10 @@ static int32_t decode_long(CSOUND *csound, char *s, int32_t argc, char **argv)
   #endif    
       return 1;
     }
+     else if (!strcmp(s, "allow-redefinition")) {
+      O->redef = 1;
+      return 1;
+    }
     csoundErrorMsg(csound, Str("unknown long option: '--%s'"), s);
     return 0;
 }
