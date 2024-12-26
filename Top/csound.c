@@ -971,7 +971,8 @@ static const CSOUND cenviron_ = {
     SPINLOCK_INIT, /* spinlocks */
     NULL,
     NULL, /* Delayed messages */
-    {NULL,
+    { /* sread */
+     NULL,
      NULL,
      NULL,
      NULL, /* bp, prvibp, sp, nx */
@@ -1006,11 +1007,12 @@ static const CSOUND cenviron_ = {
      1,    /*  repeat_cnt, repeat_point32_t,  repeat_inc */
      NULL, /*  repeat_mm */
      0},
-    {
+    {  /* onefileStatics */
         NULL, NULL, NULL, NULL, /* orcname, sconame, midname */
         0, 0                    /* midiSet, csdlinecount */
     },
-    {NULL,
+    { /* lineventStatics */
+     NULL,
      NULL, /* Linep, Linebufend    */
      0,    /* stdmode              */
      {
@@ -1029,7 +1031,7 @@ static const CSOUND cenviron_ = {
      NULL,
      NULL,
      0},
-    {
+    {   /* musmonStatics */
         {0, 0},
         {0, 0}, /* srngcnt, orngcnt    */
         0,
@@ -1041,8 +1043,7 @@ static const CSOUND cenviron_ = {
         NULL, /* ep, epend           */
         NULL  /* lsect               */
     },
-    // NULL,           /*  musmonGlobals       */
-    {
+    {   /* libsndStatics */
         NULL,       /*  outfile             */
         NULL,       /*  infile              */
         NULL,       /*  sfoutname;          */
@@ -1179,7 +1180,8 @@ static const CSOUND cenviron_ = {
         0.0, /* limiter */
         DFLT_SR,
         DFLT_KR, /* defaults */
-        0        /* mp3 mode */
+        0,        /* mp3 mode */
+        0        /* instr redefinition flag */ 
     },
     {0, 0, {0}}, /* REMOT_BUF */
     NULL,        /* remoteGlobals        */
@@ -1257,7 +1259,8 @@ static const CSOUND cenviron_ = {
     {/* csound_util */
      csoundAddUtility, csoundRunUtility, csoundListUtilities,
      csoundSetUtilityDescription, csoundGetUtilityDescription, set_util_sr,
-     set_util_nchnls, SAsndgetset, sndgetset, getsndin}};
+     set_util_nchnls, SAsndgetset, sndgetset, getsndin}
+};
 
 void csound_aops_init_tables(CSOUND *cs);
 

@@ -252,6 +252,8 @@ extern "C" {
     MYFLT kr_default;
     /* MP3 encoding mode  */
     int32_t     mp3_mode;
+    /* instr redefinition flag */
+    int32_t     redef;
   } OPARMS;
  
   /**
