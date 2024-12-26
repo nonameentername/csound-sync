@@ -279,7 +279,7 @@ int32_t strcat_opcode(CSOUND *csound, STRCAT_OP *p)
 	csound->Calloc(csound, 2*size);
       p->r->size = 2*size;
     }
-    memcpy(p->r->data, p->str1->data, p->r->size - 1);
+    memcpy(p->r->data, p->str1->data, p->str1->size - 1);
     strcat(p->r->data, p->str2->data);
     return OK;
   }
