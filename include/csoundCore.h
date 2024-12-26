@@ -79,13 +79,13 @@ extern "C" {
 
   typedef struct oentry {
     char    *opname;
-    uint16  dsblksiz;
-    uint16  flags;
+    size_t  dsblksiz;
+    int32_t flags;
     char    *outypes;
     char    *intypes;
-    int32_t  (*init)(CSOUND *, void *p);
-    int32_t  (*perf)(CSOUND *, void *p);
-    int32_t  (*deinit)(CSOUND *, void *p);
+    SUBR    init;
+    SUBR    perf;
+    SUBR    deinit;
     void    *useropinfo; /* user opcode parameters */
   } OENTRY;
 
@@ -1303,7 +1303,7 @@ extern "C" {
 
     /** @name Plugin opcodes and discovery support */
     /**@{ */
-    int32_t (*AppendOpcode)(CSOUND *, const char *opname, int32_t dsblksiz, int32_t flags,
+    int32_t (*AppendOpcode)(CSOUND *, const char *opname, size_t dsblksiz, int32_t flags,
                             const char *outypes, const char *intypes,
                             int32_t (*init)(CSOUND *, void *),
                             int32_t (*perf)(CSOUND *, void *),
