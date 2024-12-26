@@ -121,7 +121,7 @@ def runTest():
 	["test46.csd", "if-then with expression in boolean comparison"],
 	["test47.csd", "until loop and t-variables"],
 	["test48.csd", "expected failure with variable used before defined", 1],
-    ["test_instr_redefinition.csd", "expected failure with instr redefinition", 1],
+    ["test_instr_redefinition.csd", "allow instr redefinition"],
 	["test_instr0_labels.csd", "test labels in instr0 space"],
 	["test_string.csd", "test string assignment and printing"],
 	["test_sprintf.csd", "test string assignment and printing"],
@@ -158,7 +158,6 @@ def runTest():
 	["test_polymorphic_udo.csd", "test polymorphic udo"],
 	["test_udo_a_array.csd", "test udo with a-array"],
 	["test_udo_2d_array.csd", "test udo with 2d-array"],
-
     ["test_udo_string_array_join.csd", "test udo with S[] arg returning S"],
     ["test_array_function_call.csd", "test synthesizing an array arg from a function-call"],
     ["test_explicit_types.csd", "test typed identifiers (i.e. signals:a[], sigLeft:a)"],
