@@ -445,8 +445,8 @@ jobs:
 
   windows_build_mingw:
     name: Windows build (mingw/vcpkg)
-    if: false #github.ref == 'refs/heads/develop' || vars.ENABLE_CROSS_COMPILERS == 'true'
-    runs-on: ubuntu-latest
+    #if: github.ref == 'refs/heads/develop' || vars.ENABLE_CROSS_COMPILERS == 'true'
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout source code
         uses: actions/checkout@v1
