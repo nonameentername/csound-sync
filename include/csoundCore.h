@@ -247,8 +247,9 @@ extern "C" {
    * OPCODE type
    */
   typedef struct opcodeObj {
-    struct opds *opds;
-    void *dataspace;
+    struct opds *dataspace;
+    size_t size;
+    struct insds *ctx;
     int32_t readonly;
   } OPCODEOBJ;
 

@@ -31,7 +31,7 @@
 /* And suppressing deprecated Oct 2015 -- JPff */
 #include "csoundCore.h"
 #include "csound_standard_types.h"
-#include "compile_ops.h"
+#include "opcode.h"
 #include <ctype.h>
 #include "interlocks.h"
 
@@ -230,7 +230,9 @@ void list_opcodes(CSOUND *csound, int32_t level) {
   csoundDisposeOpcodeList(csound, lst);
 }
 
+// opcodes for OpcodeRef and Opcode types
 struct oentries *find_opcode2(CSOUND *, char *);
+
 int32_t opcode_info(CSOUND *csound, OPINFO *p) {
   OENTRY *ep = p->ref->entries->entries[0];
   int n, nep =  p->ref->entries->count;
@@ -245,7 +247,7 @@ int32_t opcode_info(CSOUND *csound, OPINFO *p) {
   }
   return OK;
 }
-#include "aops.h"
+
 int32_t opcode_ref(CSOUND *csound, ASSIGN *p) {
    OPCODEREF *pp = (OPCODEREF *) p->r;
    STRINGDAT *str = (STRINGDAT *) p->a;
@@ -254,6 +256,51 @@ int32_t opcode_ref(CSOUND *csound, ASSIGN *p) {
    else return csound->InitError(csound,
                                  "could not find opcode %s",
                                  str->data);
-   
    return OK;
+}
+
+/** Create opcode from an OpcodeRef
+    opc:Opcode create ref:OpcodeRef[,overload:i]
+ */
+int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
+    OPCODEREF *ref = (OPCODEREF *) p->a;
+    if(ref->entries != NULL) {
+    OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
+    int32_t n = (int32_t) (*p->b >= 0 ? *p->b : 0);
+    OENTRY *entry =
+      ref->entries->entries[n < ref->entries->count ? n : ref->entries->count-1];
+    // set opcode object
+    obj->size = entry->dsblksiz;
+    obj->dataspace = (OPDS *) csound->Calloc(csound, obj->size);
+    obj->ctx = p->h.insdshead;
+    // fill OPDS with as much information as we have now
+    obj->dataspace->insdshead = obj->ctx;
+    obj->dataspace->optext = csound->Calloc(csound, sizeof(OPTXT));
+    if(obj->dataspace->optext != NULL) {
+      obj->dataspace->optext->t.oentry = entry;
+      obj->dataspace->optext->t.opcod = entry->opname;
+    }
+     return OK;
+   }
+   return csound->InitError(csound, "invalid opcode reference");
+}
+
+int32_t opcode_dealloc(CSOUND *csound, AOP *p) {
+   OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
+   if(obj->dataspace) {
+    csound->Free(csound, obj->dataspace->optext);
+    csound->Free(csound, obj->dataspace);
+    obj->dataspace = NULL;
+   }
+   return OK;
+}
+
+int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->ref;
+  if(obj->dataspace != NULL) {
+  OENTRY *ep = obj->dataspace->optext->t.oentry;
+    csound->Message(csound, "%s\tout-types: %s\tin-types: %s\n",
+                   ep->opname, ep->outypes, ep->intypes);
+  }
+  return OK;
 }
