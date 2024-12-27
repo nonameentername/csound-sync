@@ -168,7 +168,10 @@ OENTRY opcodlst_1[] = {
   { "opcodeinfo", S(OPINFO) ,0,  "", ":OpcodeRef;", (SUBR) opcode_info},
   { "init.opcd", S(ASSIGN), 0, ":OpcodeRef;", ":OpcodeRef;", (SUBR) copyVarGenericInit},
   { "init.opcd", S(ASSIGN), 0, ":OpcodeRef;", "S", (SUBR) opcode_ref},
-  { "opcoderef", S(ASSIGN), 0, ":OpcodeRef;", "S", (SUBR) opcode_ref}, 
+  { "opcoderef", S(ASSIGN), 0, ":OpcodeRef;", "S", (SUBR) opcode_ref},
+  { "create", S(AOP) ,0,  ":Opcode;", ":OpcodeRef;o", (SUBR) create_opcode_simple, NULL,
+    (SUBR) opcode_dealloc},
+  { "opcodeinfo", S(OPINFO) ,0,  "", ":Opcode;", (SUBR) opcode_object_info},
   { "init.instr", S(ASSIGN) ,0,  ":InstrDef;", ":InstrDef;", (SUBR) copyVarGenericInit},
   { "floatsize", S(ASSIGN) ,0, "i", "", myflt_size },
   /* VL 4.4.24 removing thread field:

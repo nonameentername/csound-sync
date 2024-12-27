@@ -243,7 +243,7 @@ int32_t opcode_info(CSOUND *csound, OPINFO *p) {
   for(n = 0; n < nep; n++) {
     ep = p->ref->entries->entries[n];
     csound->Message(csound, "(%d)\t%s\tout-types: %s\tin-types: %s\n",
-                    n+1, ep->opname, ep->outypes, ep->intypes);
+                    n, ep->opname, ep->outypes, ep->intypes);
   }
   return OK;
 }
