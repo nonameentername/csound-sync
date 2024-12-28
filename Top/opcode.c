@@ -369,8 +369,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
           argtype = csoundGetTypeForArg(args[n]);
           // if output arg exists, try to connect it
           if(argtype != &CS_VAR_TYPE_A) {
-            csound->Message(csound, "Expected type: %s, got: %s\n",
-                            CS_VAR_TYPE_A.varTypeName, argtype->varTypeName);
+            csound->Message(csound, "Output arg %d, expected type: %s, got: %s\n",
+                            i+1,CS_VAR_TYPE_A.varTypeName, argtype->varTypeName);
             return NOTOK;
           }
           outargs[i] = args[n++];
@@ -386,8 +386,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         if(n < no) {
           argtype = csoundGetTypeForArg(args[n]);
           if(argtype != &CS_VAR_TYPE_K){
-            csound->Message(csound, "Expected type: %s, got: %s\n",
-                            CS_VAR_TYPE_K.varTypeName, argtype->varTypeName);
+            csound->Message(csound, "Output arg %d, expected type: %s, got: %s\n",
+                            i+1, CS_VAR_TYPE_K.varTypeName, argtype->varTypeName);
             return NOTOK;
           }
           outargs[i] = args[n++];
@@ -401,8 +401,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         if(n < no) {
           argtype = csoundGetTypeForArg(args[n]);
           if(argtype != &CS_VAR_TYPE_I){
-            csound->Message(csound, "Expected type: %s, got: %s\n",
-                            CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
+            csound->Message(csound, "Output arg %d, expected type: %s, got: %s\n",
+                            i+1, CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
             return NOTOK;
           }
           outargs[i] = args[n++];
@@ -417,8 +417,9 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
           argtype = csoundGetTypeForArg(args[n]);
           if(argtype != &CS_VAR_TYPE_A && argtype != &CS_VAR_TYPE_K &&
              argtype != &CS_VAR_TYPE_I ){
-            csound->Message(csound, "Expected types: %s, %s, or %s, got: %s\n",
-                            CS_VAR_TYPE_A.varTypeName, CS_VAR_TYPE_K.varTypeName,
+            csound->Message(csound,
+                            "Output arg %d, expected types: %s, %s, or %s, got: %s\n",
+                            i+1, CS_VAR_TYPE_A.varTypeName, CS_VAR_TYPE_K.varTypeName,
                             CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
             return NOTOK;
           }
@@ -435,8 +436,10 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
           if(argtype != &CS_VAR_TYPE_A && argtype != &CS_VAR_TYPE_K &&
              argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_S){
             csound->Message(csound,
-                            "Expected types: %s, %s, %s, or %s, got: %s\n",
-                            CS_VAR_TYPE_A.varTypeName, CS_VAR_TYPE_K.varTypeName,
+                            "Output arg %d, expected types: "
+                            "%s, %s, %s, or %s, got: %s\n",
+                            i+1, CS_VAR_TYPE_A.varTypeName,
+                            CS_VAR_TYPE_K.varTypeName,
                             CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_S.varTypeName,
                             argtype->varTypeName);
             return NOTOK;
@@ -453,8 +456,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         if(n < no) {
           argtype = csoundGetTypeForArg(args[n]);  
           if(argtype != &CS_VAR_TYPE_F) {
-            csound->Message(csound, "Expected type: %s, got: %s\n",
-                            CS_VAR_TYPE_F.varTypeName, argtype->varTypeName);
+            csound->Message(csound, "Output arg %d, expected type: %s, got: %s\n",
+                            i+1, CS_VAR_TYPE_F.varTypeName, argtype->varTypeName);
             return NOTOK;
           }
           outargs[i] = args[n++];
@@ -467,11 +470,11 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
     if(*types == ':') types++;
     argtype = csoundGetTypeForArg(args[n]);
     len = strlen(argtype->varTypeName);
-    if(strncmp(argtype->varTypeName, types, len) > 0) {
+    if(strncmp(argtype->varTypeName, types, len) != 0) {
       char typ[64];
       memcpy(typ, types, len);
       typ[len] = '\0';
-      csound->Message(csound, "Expect type: %s, got %s\n", typ,
+      csound->Message(csound, "Output arg %d, expect type: %s, got %s\n", i+1, typ,
                       argtype->varTypeName);
       return NOTOK;
     }
@@ -484,7 +487,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
   // n is the outarg count
   if(n != no) {
     // arg number mismatch?
-    csound->Message(csound, "out arg number mismatch, expected %d, got %d\n",
+    csound->Message(csound, "Output arg number mismatch, expected %d, got %d\n",
                     no, n);
     return NOTOK;
   }
@@ -515,8 +518,10 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         if(argtype != &CS_VAR_TYPE_A && argtype != &CS_VAR_TYPE_K &&
            argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_C &&
            argtype != &CS_VAR_TYPE_P){
-          csound->Message(csound, "Expected types: %s, %s, or %s, got: %s\n",
-                          CS_VAR_TYPE_A.varTypeName, CS_VAR_TYPE_K.varTypeName,
+          csound->Message(csound, "Input arg %d, expected types: "
+                          "%s, %s, or %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_A.varTypeName,
+                          CS_VAR_TYPE_K.varTypeName,
                           CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
           return NOTOK;
         }
@@ -531,8 +536,10 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
            argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_S &&
            argtype != &CS_VAR_TYPE_C && argtype != &CS_VAR_TYPE_P){
           csound->Message(csound,
-                          "Expected types: %s, %s, %s, or %s, got: %s\n",
-                          CS_VAR_TYPE_A.varTypeName, CS_VAR_TYPE_K.varTypeName,
+                          "Input arg %d, expected types: "
+                          "%s, %s, %s, or %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_A.varTypeName,
+                          CS_VAR_TYPE_K.varTypeName,
                           CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_S.varTypeName,
                           argtype->varTypeName);
           return NOTOK;
@@ -546,8 +553,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_C &&
            argtype != &CS_VAR_TYPE_P){
-          csound->Message(csound, "Expected type: %s, got: %s\n",
-                          CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
+          csound->Message(csound, "Input arg %d, expected type: %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
           return NOTOK;
         }
         inargs[i] = args[n];
@@ -558,8 +565,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       for(; i < ni; n++, i++) {
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_A){
-          csound->Message(csound, "Expected type: %s, got: %s\n",
-                          CS_VAR_TYPE_A.varTypeName, argtype->varTypeName);
+          csound->Message(csound, "Input arg %d, expected type: %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_A.varTypeName, argtype->varTypeName);
           return NOTOK;
         }
         inargs[i] = args[n];
@@ -571,8 +578,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_K && argtype != &CS_VAR_TYPE_C &&
            argtype != &CS_VAR_TYPE_P && argtype != &CS_VAR_TYPE_I){
-          csound->Message(csound, "Expected type: %s, got: %s\n",
-                          CS_VAR_TYPE_K.varTypeName, argtype->varTypeName);
+          csound->Message(csound, "Input arg %d, expected type: %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_K.varTypeName, argtype->varTypeName);
           return NOTOK;
         }
         inargs[i] = args[n];
@@ -583,8 +590,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       for(; i < ni; n++, i++) {
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_S){
-          csound->Message(csound, "Expected type: %s, got: %s\n",
-                          CS_VAR_TYPE_S.varTypeName, argtype->varTypeName);
+          csound->Message(csound, "Input arg %d, expected type: %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_S.varTypeName, argtype->varTypeName);
           return NOTOK;
         }
         inargs[i] = args[n];
@@ -595,16 +602,16 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       for(; i < ni; n++, i++) {
         argtype = csoundGetTypeForArg(args[n]);
         if(n%2 && argtype != &CS_VAR_TYPE_A) {
-          csound->Message(csound, "Expected type: %s, got: %s\n",
-                          CS_VAR_TYPE_A.varTypeName,
+          csound->Message(csound, "Input arg %d, expected type: %s, got: %s\n",
+                          i+1, CS_VAR_TYPE_A.varTypeName,
                           argtype->varTypeName);
           return NOTOK;
         }
         if(n%2 == 0 && argtype != &CS_VAR_TYPE_K && argtype != &CS_VAR_TYPE_I
                         && argtype != &CS_VAR_TYPE_C &&
                         argtype != &CS_VAR_TYPE_P) {
-          csound->Message(csound, "Expected type: %s, got: %s\n",
-                          CS_VAR_TYPE_K.varTypeName, argtype->varTypeName);
+          csound->Message(csound, "Input arg %d, expected type: %s, got: %s\n",
+                          i+1, CS_VAR_TYPE_K.varTypeName, argtype->varTypeName);
 
           return NOTOK;
         }
@@ -617,8 +624,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       if(argtype != &CS_VAR_TYPE_A && argtype != &CS_VAR_TYPE_K &&
          argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_C &&
          argtype != &CS_VAR_TYPE_P){
-        csound->Message(csound, "Expected types: %s, %s, or %s, got: %s\n",
-                        CS_VAR_TYPE_A.varTypeName, CS_VAR_TYPE_K.varTypeName,
+        csound->Message(csound, "Input arg %d, expected types: %s, %s, or %s, got: %s\n",
+                        i+1, CS_VAR_TYPE_A.varTypeName, CS_VAR_TYPE_K.varTypeName,
                         CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
         return NOTOK;
       }
@@ -629,9 +636,9 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       argtype = csoundGetTypeForArg(args[n]);
       if(argtype != &CS_VAR_TYPE_S && argtype != &CS_VAR_TYPE_I
          && argtype != &CS_VAR_TYPE_C && argtype != &CS_VAR_TYPE_P){
-        csound->Message(csound, "Expected types: %s or %s, got: %s\n",
-                        CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_S.varTypeName,
-                        argtype->varTypeName);
+        csound->Message(csound, "Input arg %d, expected types: %s or %s, got: %s\n",
+                        i+1, CS_VAR_TYPE_I.varTypeName,
+                        CS_VAR_TYPE_S.varTypeName,argtype->varTypeName);
         return NOTOK;
       }
       inargs[i++] = args[n++]; 
@@ -642,8 +649,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       if(argtype != &CS_VAR_TYPE_S && argtype != &CS_VAR_TYPE_I &&
          argtype != &CS_VAR_TYPE_K && argtype != &CS_VAR_TYPE_C &&
          argtype != &CS_VAR_TYPE_P){
-        csound->Message(csound, "Expected types: %s, %s, or %s, got: %s\n",
-                        CS_VAR_TYPE_K.varTypeName, CS_VAR_TYPE_I.varTypeName,
+        csound->Message(csound, "Input arg %d, expected types: %s, %s, or %s, got: %s\n",
+                        i+1, CS_VAR_TYPE_K.varTypeName, CS_VAR_TYPE_I.varTypeName,
                         CS_VAR_TYPE_S.varTypeName, argtype->varTypeName);
         return NOTOK;
       }
@@ -671,8 +678,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_K &&
            argtype != &CS_VAR_TYPE_C && argtype != &CS_VAR_TYPE_P) {
-          csound->Message(csound, "Expected types: %s or %s, got: %s\n",
-                          CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
+          csound->Message(csound, "Input arg %d, expected types: %s or %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
                           argtype->varTypeName);
           return NOTOK;
         }
@@ -689,8 +696,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_K &&
            argtype != &CS_VAR_TYPE_C && argtype != &CS_VAR_TYPE_P) {
-          csound->Message(csound, "Expected types: %s or %s, got: %s\n",
-                          CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
+          csound->Message(csound, "Input arg %d, expected types: %s or %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
                           argtype->varTypeName);
           return NOTOK;
         }
@@ -707,8 +714,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_C &&
            argtype != &CS_VAR_TYPE_P) {
-          csound->Message(csound, "Expected types: %s got: %s\n",
-                          CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
+          csound->Message(csound, "Input arg %d, expected types: %s got: %s\n",
+                          i+1,CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
           return NOTOK;
         }
         inargs[i++] = args[n++];
@@ -724,8 +731,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_K &&
            argtype != &CS_VAR_TYPE_C && argtype != &CS_VAR_TYPE_P) {
-          csound->Message(csound, "Expected types: %s or %s, got: %s\n",
-                          CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
+          csound->Message(csound, "Input arg %d, expected types: %s or %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
                           argtype->varTypeName);
           return NOTOK;
         }
@@ -742,8 +749,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_K &&
            argtype != &CS_VAR_TYPE_C && argtype != &CS_VAR_TYPE_P) {
-          csound->Message(csound, "Expected types: %s or %s, got: %s\n",
-                          CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
+          csound->Message(csound, "Input arg %d, expected types: %s or %s, got: %s\n",
+                          i+1,CS_VAR_TYPE_I.varTypeName, CS_VAR_TYPE_K.varTypeName,
                           argtype->varTypeName);
           return NOTOK;
         }
@@ -760,8 +767,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_C &&
            argtype != &CS_VAR_TYPE_P) {
-          csound->Message(csound, "Expected type: %s got: %s\n",
-                          CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
+          csound->Message(csound, "Input arg %d, expected type: %s got: %s\n",
+                          i+1,CS_VAR_TYPE_I.varTypeName, argtype->varTypeName);
           return NOTOK;
         }
         inargs[i++] = args[n++];
@@ -776,8 +783,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       argtype = csoundGetTypeForArg(args[n]);
       if(argtype != &CS_VAR_TYPE_P && argtype != &CS_VAR_TYPE_C
          && argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_K) {
-        csound->Message(csound, "Expected type: k got: %s\n",
-                           argtype->varTypeName);
+        csound->Message(csound, "Input arg %d, expected type: k got: %s\n",
+                        i+1,argtype->varTypeName);
         return NOTOK;
       }
       inargs[i++] = args[n++];
@@ -787,8 +794,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
       argtype = csoundGetTypeForArg(args[n]);
       if(argtype != &CS_VAR_TYPE_P && argtype != &CS_VAR_TYPE_C
          && argtype != &CS_VAR_TYPE_I) {
-        csound->Message(csound, "Expected type: i got: %s\n",
-                           argtype->varTypeName);
+        csound->Message(csound, "Input arg %d, expected type: i got: %s\n",
+                        i+1,argtype->varTypeName);
         return NOTOK;
       }
       inargs[i++] = args[n++];
@@ -804,8 +811,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         char typ[64];
         memcpy(typ, types, len);
         typ[len] = '\0';
-        csound->Message(csound, "Expected type: %s got: %s\n",
-                          typ, argtype->varTypeName);
+        csound->Message(csound, "Input arg %d, expected type: %s got: %s\n",
+                        i+1, typ, argtype->varTypeName);
         return NOTOK;
       }
       inargs[i++] = args[n++];
@@ -817,7 +824,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
   }
   // check that input args match. 
   if(ni != i - opt) {
-    csound->Message(csound, "in arg number mismatch, expected %d, got %d\n",
+    csound->Message(csound, "Input arg number mismatch, expected %d, got %d\n",
                     ni, i - opt);    
     return NOTOK;
   }
@@ -836,12 +843,28 @@ void set_line_num_and_loc(OPRUN *p) {
    obj->dataspace->optext->t.linenum = p->h.optext->t.linenum;
    obj->dataspace->optext->t.linenum = p->h.optext->t.locn;
 }
-  
+
+int32_t context_check(CSOUND *csound, OPCODEOBJ *obj, OPDS *h) {
+  if(obj->dataspace->insdshead == h->insdshead) return OK;
+  INSDS *ip = obj->dataspace->insdshead;
+  INSDS *ctx = h->insdshead;
+  // different SR always fails check
+  if(ip->esr != ctx->esr) return NOTOK;
+  // ksmps less than ctx fails check
+  if(ip->ksmps < ctx->ksmps) return NOTOK;
+  // otherwise there is no context incompatibility
+  return OK;
+}
+
 /* this opcode connects all args to opcode obj and
    optionally runs init function 
 */
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  if(context_check(csound, obj, &(p->h)) != OK)
+    return csound->InitError(csound, "incompatible context, "
+                             "cannot initialise opcode obj for %s\n",
+                             obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(p);
   if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
              p->INCOUNT - 1) == OK) {
@@ -850,13 +873,22 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
       return obj->dataspace->init(csound, obj->dataspace);
     else return OK;
   }
-  return csound->InitError(csound, "mismatching arguments"); 
+  return csound->InitError(csound, "mismatching arguments\n"
+                           "for opcode obj %s\t"
+                            "outypes: %s\tintypes: %s",
+                           obj->dataspace->optext->t.oentry->opname,
+                           obj->dataspace->optext->t.oentry->outypes,
+                           obj->dataspace->optext->t.oentry->intypes); 
 }
 
 /* this opcode runs a perf pass on an initialised object
 */
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  if(context_check(csound, obj, &(p->h)) != OK)
+    return csound->InitError(csound, "incompatible context, "
+                             "cannot perform opcode obj for %s\n",
+                             obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(p);
   if(obj->dataspace->perf != NULL && obj->init_flag)
     return obj->dataspace->perf(csound, obj->dataspace);
