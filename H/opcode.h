@@ -44,4 +44,4 @@ int32_t opcode_dealloc(CSOUND *csound, AOP *p);
 int32_t create_opcode_simple(CSOUND *csound, AOP *p);
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p);
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p);
-int32_t opcode_object_deinit(CSOUND *csound, OPRUN *p);
+

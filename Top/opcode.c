@@ -297,6 +297,8 @@ int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
 int32_t opcode_dealloc(CSOUND *csound, AOP *p) {
    OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
    if(obj->dataspace) {
+    if(obj->init_flag && obj->dataspace->deinit != NULL)
+      obj->dataspace->deinit(csound, obj->dataspace);
     csound->Free(csound, obj->dataspace->optext);
     csound->Free(csound, obj->dataspace);
     obj->dataspace = NULL;
@@ -498,8 +500,16 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
   while(*types != '\0') {
     // now deal with multiple inargs
     // unlike input, these are single letter
-    if(*types == 'M') {
+    if(*types == '*') {
       // connect all remaining args
+      for(; i < ni; n++, i++) {
+        argtype = csoundGetTypeForArg(args[n]);
+        inargs[i] = args[n];
+      }
+      break; // no further inputs expected
+    }
+    // same for all other multi input types, but with type checks
+    else if(*types == 'M') {
       for(; i < ni; n++, i++) {
         argtype = csoundGetTypeForArg(args[n]);
         if(argtype != &CS_VAR_TYPE_A && argtype != &CS_VAR_TYPE_K &&
@@ -512,9 +522,8 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
         }
         inargs[i] = args[n];
       }
-      break; // no further inputs expected
+      break; 
     }
-    // same for all other multi input types
     else if(*types == 'N') {
       for(; i < ni; n++, i++) {
         argtype = csoundGetTypeForArg(args[n]);
@@ -854,13 +863,5 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
   else return OK;
 }
 
-/* this opcode runs a deinit pass om an initialised object
- */
-int32_t opcode_object_deinit(CSOUND *csound, OPRUN *p) {
-  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
-  obj->init_flag = 0;
-  if(obj->dataspace != NULL && obj->dataspace->deinit != NULL)
-    return obj->dataspace->deinit(csound, obj->dataspace);
-  else return OK;
-}
+
 
