@@ -300,7 +300,8 @@ int32_t opcode_dealloc(CSOUND *csound, AOP *p) {
     if(obj->init_flag && obj->dataspace->deinit != NULL)
       obj->dataspace->deinit(csound, obj->dataspace);
     csound->Free(csound, obj->dataspace->optext);
-    csound->Free(csound, obj->dataspace);
+    if(!obj->udo_flag) 
+      csound->Free(csound, obj->dataspace);
     obj->dataspace = NULL;
    }
    return OK;
@@ -329,6 +330,7 @@ MYFLT *set_constant(CSOUND *csound, const char *name, MYFLT value) {
                                name, value) + CS_VAR_TYPE_OFFSET);
 }
 
+#include "udo.h"
 /** 
  * Set up arguments for opcode using OENTRY type lists
  * check every out and in arg and connect it
@@ -342,9 +344,16 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,
   CS_TYPE *argtype;
   int32_t n = 0, i = 0, opt = 0;
   size_t len;
-  // opcode output args located after OPDS struct
-  MYFLT **outargs = (MYFLT **) (obj->dataspace + 1);
+  MYFLT **outargs;
   MYFLT **inargs;
+  if(obj->udo_flag) {
+    // udo args located at the end of udo struct
+   UOPCODE *udo = (UOPCODE *) obj->dataspace;
+   outargs = udo->ar;
+  } else {
+   // opcode args located after OPDS struct
+    outargs = (MYFLT **) (obj->dataspace + 1);
+  }
   
   // out args first
   types = ep->outypes;
@@ -866,8 +875,9 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
                              "cannot initialise opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(p);
+  obj->udo_flag = obj->dataspace->optext->t.oentry->useropinfo ? 1 : 0;
   if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
-             p->INCOUNT - 1) == OK) {
+                p->INCOUNT - 1) == OK) {
     obj->init_flag = 1;
     if(obj->dataspace->init != NULL)
       return obj->dataspace->init(csound, obj->dataspace);

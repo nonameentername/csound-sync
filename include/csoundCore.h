@@ -250,6 +250,7 @@ extern "C" {
     struct opds *dataspace;
     size_t size;
     int32_t init_flag;
+    int32_t udo_flag;
     int32_t readonly;
   } OPCODEOBJ;
 

@@ -858,6 +858,7 @@ INSTRTXT *create_instrument(CSOUND *csound, TREE *root,
 
   ip = (INSTRTXT *)csound->Calloc(csound, sizeof(INSTRTXT));
   ip->varPool = (CS_VAR_POOL *)root->markup;
+
   op = (OPTXT *)ip;
   statements = root->right;
   // ip->mdepends = 0;
