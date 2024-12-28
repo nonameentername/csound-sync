@@ -31,8 +31,17 @@ typedef struct _opinfo {
   OPCODEREF *ref;
 } OPINFO;
 
+typedef struct _oprun {
+  OPDS h;
+  MYFLT *args[VARGMAX];
+} OPRUN;
+
+
 int32_t opcode_info(CSOUND *csound, OPINFO *p);
 int32_t opcode_ref(CSOUND *csound, ASSIGN *p);
 int32_t opcode_object_info(CSOUND *csound, OPINFO *p);
 int32_t opcode_dealloc(CSOUND *csound, AOP *p);
 int32_t create_opcode_simple(CSOUND *csound, AOP *p);
+int32_t opcode_object_init(CSOUND *csound, OPRUN *p);
+int32_t opcode_object_perf(CSOUND *csound, OPRUN *p);
+int32_t opcode_object_deinit(CSOUND *csound, OPRUN *p);

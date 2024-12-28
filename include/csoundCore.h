@@ -249,7 +249,7 @@ extern "C" {
   typedef struct opcodeObj {
     struct opds *dataspace;
     size_t size;
-    struct insds *ctx;
+    int32_t init_flag;
     int32_t readonly;
   } OPCODEOBJ;
 
