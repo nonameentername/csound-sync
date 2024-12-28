@@ -274,6 +274,7 @@ int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
     OENTRY *entry =
       ref->entries->entries[n < ref->entries->count ? n : ref->entries->count-1];
     obj->init_flag = 0;
+    obj->udo_flag = entry->useropinfo ? 1 : 0;
     // set opcode object
     obj->size = entry->dsblksiz;
     obj->dataspace = (OPDS *) csound->Calloc(csound, obj->size);
@@ -316,8 +317,9 @@ int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->ref;
   if(obj->dataspace != NULL) {
   OENTRY *ep = obj->dataspace->optext->t.oentry;
-    csound->Message(csound, "%s\tout-types: %s\tin-types: %s\n",
-                   ep->opname, ep->outypes, ep->intypes);
+    csound->Message(csound, "%s %s\tout-types: %s\tin-types: %s \n",
+                    ep->opname, obj->udo_flag ? "(UDO)" : "",
+                    ep->outypes, ep->intypes);
   }
   return OK;
 }
@@ -875,7 +877,6 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
                              "cannot initialise opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(p);
-  obj->udo_flag = obj->dataspace->optext->t.oentry->useropinfo ? 1 : 0;
   if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
                 p->INCOUNT - 1) == OK) {
     obj->init_flag = 1;
