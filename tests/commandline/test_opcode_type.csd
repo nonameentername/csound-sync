@@ -8,7 +8,7 @@
 instr 1
    osc:OpcodeRef init "oscili"
    opcodeinfo osc
-   oobj:Opcode create osc
+   oobj:OpcodeObj create osc
    opcodeinfo oobj
 
    a1 init oobj, p4, p5, p6
