@@ -270,81 +270,7 @@ int32_t opcode_info(CSOUND *csound, OPINFO *p) {
   return OK;
 }
 
-/** 
- *  create Opcode from OpcodeRef
- *
- *  opc:Opcode create ref:OpcodeRef[,overload:i]
- */
-int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
-  OPCODEREF *ref = (OPCODEREF *) p->a;
-  if(ref->entries != NULL) {
-    OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
-    int32_t n = (int32_t) (*p->b >= 0 ? *p->b : 0);
-    OENTRY *entry =
-      ref->entries->entries[n < ref->entries->count ?
-                            n : ref->entries->count-1];
-    obj->init_flag = 0;
-    if(obj->dataspace != NULL &&
-       obj->dataspace->optext->t.oentry == entry) {
-      // nothing to do on variable reuse
-       return OK;
-     }
-    // set opcode object
-    obj->udo_flag = entry->useropinfo ? 1 : 0;
-    obj->size = entry->dsblksiz;
-    // dataspace can only be freed on reset as it
-    // may have data that is required on deact etc
-    obj->dataspace = (OPDS *) csound->Calloc(csound, obj->size);
-    if(obj->dataspace != NULL) {
-      // fill OPDS with as much information as we have now, rest on init
-      obj->dataspace->insdshead = p->h.insdshead;
-      if(obj->dataspace->optext != NULL){
-        // free optext data if reallocating
-        csound->Free(csound, obj->dataspace->optext->t.inlist);
-        csound->Free(csound, obj->dataspace);
-      }
-      obj->dataspace->optext = csound->Calloc(csound, sizeof(OPTXT));
-      if(obj->dataspace->optext != NULL) {
-        obj->dataspace->optext->t.oentry = entry;
-        obj->dataspace->optext->t.opcod = entry->opname;
-        obj->dataspace->optext->t.inlist =
-          csound->Calloc(csound, sizeof(ARGLST));
-      }
-      obj->dataspace->init = entry->init;
-      obj->dataspace->perf = entry->perf;
-      obj->dataspace->deinit = entry->deinit;
-      return OK;
-    } return
-        csound->InitError(csound,
-                          "could not allocate opcode object");
-  }
-  return csound->InitError(csound, "invalid opcode reference");
-}
 
-int32_t opcode_deinit(CSOUND *csound, AOP *p) {
-  OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
-  if(obj->dataspace) {
-    if(obj->init_flag && obj->dataspace->deinit != NULL)
-      obj->dataspace->deinit(csound, obj->dataspace);
-  }
-  return OK;
-}
-
-/**
- * print info on opcode (name, types)
- *
- * opcodeinfo opc:Opcode
- */
-int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
-  OPCODEOBJ *obj = (OPCODEOBJ *) p->ref;
-  if(obj->dataspace != NULL) {
-    OENTRY *ep = obj->dataspace->optext->t.oentry;
-    csound->Message(csound, "%s %s\tout-types: %s\tin-types: %s \n",
-                    ep->opname, obj->udo_flag ? "(UDO)" : "",
-                    ep->outypes, ep->intypes);
-  }
-  return OK;
-}
 
 /**
  * Set a constant (for optional arguments)
@@ -378,7 +304,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
     // opcode args located after OPDS struct
     outargs = (MYFLT **) (obj->dataspace + 1);
   }
-  
+ 
   // out args first
   types = ep->outypes;
   while(*types != '\0') {
@@ -558,6 +484,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
                             "expected %d, got %d\n", no, n);
     return NOTOK;
   }
+     
   // set argcount for opcode
   t->outArgCount = no;
   // connect TEXT args
@@ -936,7 +863,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
                     ni, i - opt);    
     return NOTOK;
   }
-  
+
   // connect TEXT args, skipping opcode obj
   t->inArgs = h->optext->t.inArgs + 1;
   t->inlist->count = ni = t->inArgCount = ni;
@@ -968,6 +895,108 @@ int32_t context_check(CSOUND *csound, OPCODEOBJ *obj, OPDS *h) {
   return OK;
 }
 
+OPDS *opcode_dataspace_new(CSOUND *csound, OENTRY *entry, OPDS *h) {
+    OPDS *dataspace;
+    dataspace = (OPDS *) csound->Calloc(csound, entry->dsblksiz);
+    if(dataspace != NULL) {
+      // fill OPDS with as much information as we have now, rest on init
+      dataspace->insdshead = h->insdshead;
+      dataspace->optext = csound->Calloc(csound, sizeof(OPTXT));
+      if(dataspace->optext != NULL) {
+        dataspace->optext->t.oentry = entry;
+        dataspace->optext->t.opcod = entry->opname;
+        dataspace->optext->t.inlist =
+          csound->Calloc(csound, sizeof(ARGLST));
+      }
+      dataspace->init = entry->init;
+      dataspace->perf = entry->perf;
+      dataspace->deinit = entry->deinit;
+      return dataspace;
+    } return NULL;
+}
+
+/** 
+ *  create Opcode from OpcodeRef
+ *
+ *  opc:Opcode create ref:OpcodeRef[,overload:i]
+ */
+int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
+  OPCODEREF *ref = (OPCODEREF *) p->a;
+  if(ref->entries != NULL) {
+    OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
+    int32_t n = (int32_t) (*p->b >= 0 ? *p->b : 0);
+    OENTRY *entry =
+      ref->entries->entries[n < ref->entries->count ?
+                            n : ref->entries->count-1];
+    if(obj->dataspace == NULL || obj->size < entry->dsblksiz) {
+      if((obj->dataspace = opcode_dataspace_new(csound, entry, &(p->h)))
+          == NULL)
+        return csound->InitError(csound, "could not allocate opcode object");
+     }
+      obj->udo_flag = entry->useropinfo == NULL ? 0  : 1;
+      obj->init_flag = 0;
+      obj->size = entry->dsblksiz;
+      return OK;
+  }
+  return csound->InitError(csound, "invalid opcode reference");
+}
+
+#include "arrays.h"
+int32_t create_opcode_array(CSOUND *csound, OPARRAY *p) {
+  OPCODEREF *ref = p->ref;
+  if(ref->entries != NULL) {
+    int n  =  (int32_t) (*p->ovl >= 0 ? *p->ovl : 0), i;
+    OPCODEOBJ *obj;
+    OENTRY *entry =
+     ref->entries->entries[n < ref->entries->count ? n : ref->entries->count-1];
+    n  = *p->n;
+    tabinit(csound, p->r, n, NULL);
+    obj = (OPCODEOBJ *) p->r->data;
+    for(i = 0; i < n; i++) {
+      if(obj[i].dataspace == NULL || obj[i].size < entry->dsblksiz) {
+       if((obj[i].dataspace = opcode_dataspace_new(csound, entry, &(p->h)))
+          == NULL)
+        return csound->InitError(csound, "could not allocate opcode object");
+      }
+      obj[i].udo_flag = entry->useropinfo == NULL ? 0  : 1;
+      obj[i].init_flag = 0;
+      obj[i].size = entry->dsblksiz; 
+      }
+    return OK;
+  }
+  return csound->InitError(csound, "invalid opcode reference");
+}
+
+int32_t opcode_delete(CSOUND *csound, AOP *p) {
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
+  if(obj->dataspace) {
+    if(obj->dataspace->deinit != NULL)
+      obj->dataspace->deinit(csound, obj->dataspace);
+    csound->Free(csound, obj->dataspace->optext->t.inlist);
+    csound->Free(csound, obj->dataspace->optext);
+    if(obj->udo_flag == 0)
+     csound->Free(csound, obj->dataspace);
+  }
+  return OK;
+}
+
+/**
+ * print info on opcode (name, types)
+ *
+ * opcodeinfo opc:Opcode
+ */
+int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->ref;
+  if(obj->dataspace != NULL) {
+    OENTRY *ep = obj->dataspace->optext->t.oentry;
+    csound->Message(csound, "%s %s\tout-types: %s\tin-types: %s \n",
+                    ep->opname, obj->udo_flag ? "(UDO)" : "",
+                    ep->outypes, ep->intypes);
+  }
+  return OK;
+}
+
+
 /** 
  * this opcode connects all args to opcode obj and
  * optionally runs init function
@@ -976,16 +1005,20 @@ int32_t context_check(CSOUND *csound, OPCODEOBJ *obj, OPDS *h) {
 */
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  OPCODEOBJ *out = (OPCODEOBJ *) p->args[0];
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->InitError(csound, "incompatible context, "
                              "cannot initialise opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(p);
-  if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
+  if(setup_args(csound, obj, &(p->h), &(p->args[1]), p->OUTCOUNT - 1,
                 p->INCOUNT - 1) == OK) {
     obj->init_flag = 1;
-    if(obj->dataspace->init != NULL)
-      return obj->dataspace->init(csound, obj->dataspace);
+    if(obj->dataspace->init != NULL) {
+       int32_t ret = obj->dataspace->init(csound, obj->dataspace);
+       if(obj != out) memcpy(out, obj, sizeof(OPCODEOBJ));
+       return ret;
+    }
     else return OK;
   }
   return csound->InitError(csound, "mismatching arguments\n"
@@ -1004,14 +1037,53 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
   if(context_check(csound, obj, &(p->h)) != OK)
-    return csound->InitError(csound, "incompatible context, "
+    return csound->PerfError(csound, &(p->h), "incompatible context, "
                              "cannot perform opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(p);
-  if(obj->dataspace->perf != NULL && obj->init_flag)
-    return obj->dataspace->perf(csound, obj->dataspace);
-  else return OK;
+  if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
+                p->INCOUNT - 1) == OK) {
+    if(obj->init_flag == 1 || obj->dataspace->init == NULL) {
+      if(obj->dataspace->perf != NULL)
+       return obj->dataspace->perf(csound, obj->dataspace);
+      else return OK; // nothing to do
+    } else return csound->PerfError(csound, &(p->h), "not initialised\n");
+  } else return csound->PerfError(csound, &(p->h), "mismatching arguments\n"
+                           "for opcode obj %s\t"
+                           "outypes: %s\tintypes: %s",
+                           obj->dataspace->optext->t.oentry->opname,
+                           obj->dataspace->optext->t.oentry->outypes,
+                           obj->dataspace->optext->t.oentry->intypes);
+}
+
+int32_t opcode_run_init(CSOUND *csound, OPRUN *p) {
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  if(context_check(csound, obj, &(p->h)) != OK)
+    return csound->InitError(csound, "incompatible context, "
+                             "cannot initialise opcode obj for %s\n",
+                             obj->dataspace->optext->t.oentry->opname);
+  set_line_num_and_loc(p);
+  if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
+                p->INCOUNT - 1) == OK) {
+    if(obj->dataspace->init != NULL) {
+       int32_t ret = obj->dataspace->init(csound, obj->dataspace);
+       return ret;
+    }
+    else return OK;
+  }
+  return csound->InitError(csound, "mismatching arguments\n"
+                           "for opcode obj %s\t"
+                           "outypes: %s\tintypes: %s",
+                           obj->dataspace->optext->t.oentry->opname,
+                           obj->dataspace->optext->t.oentry->outypes,
+                           obj->dataspace->optext->t.oentry->intypes); 
 }
 
 
-
+int32_t opcode_run_perf(CSOUND *csound, OPRUN *p) {
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  set_line_num_and_loc(p);
+  if(obj->dataspace->perf != NULL)
+       return obj->dataspace->perf(csound, obj->dataspace);
+   else return OK; // nothing to do
+}

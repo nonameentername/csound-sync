@@ -352,7 +352,6 @@ static int32_t array_get(CSOUND* csound, ARRAY_GET *p)
   int32_t index;
   int32_t indefArgCount = p->INOCOUNT - 1;
  
-
   if (UNLIKELY(indefArgCount == 0))
     return csound->PerfError(csound, &(p->h),
                              "%s", Str("Error: no indexes set for array get"));

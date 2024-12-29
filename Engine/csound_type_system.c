@@ -333,7 +333,6 @@ int32_t copyVarGeneric(CSOUND *csound, void *p) {
             "with two different types: %s : %s"),
         typeR->varTypeName, typeA->varTypeName);
     }
-
     typeR->copyValue(csound, typeR, assign->r, assign->a, &(assign->h));
     return OK;
 }
@@ -353,10 +352,12 @@ int32_t copyVarGenericInit(CSOUND *csound, void *p) {
          adat->arrayType == &CS_VAR_TYPE_INSTR) flag = 1;
     } else if(type == &CS_VAR_TYPE_I ||
               type == &CS_VAR_TYPE_b ||
-              type == &CS_VAR_TYPE_INSTR    
+              type == &CS_VAR_TYPE_INSTR  ||
+              type == &CS_VAR_TYPE_OPCODEOBJ
               ) flag = 1;
     if (flag) {
-      assign->h.perf = copyVarNoOp;
+      if(type != &CS_VAR_TYPE_OPCODEOBJ)
+        assign->h.perf = copyVarNoOp;
       copyVarGeneric(csound, p);
     }
     return OK;

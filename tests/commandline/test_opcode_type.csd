@@ -11,8 +11,7 @@ instr 1
    oobj:OpcodeObj create osc
    opcodeinfo oobj
 
-   a1 init oobj, p4, p5, p6
-      perf oobj
+   a1 run oobj, p4, p5, p6
       out a1
 endin
 
