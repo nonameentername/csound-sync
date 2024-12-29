@@ -40,7 +40,7 @@ typedef struct _oprun {
 int32_t opcode_info(CSOUND *csound, OPINFO *p);
 int32_t opcode_ref(CSOUND *csound, ASSIGN *p);
 int32_t opcode_object_info(CSOUND *csound, OPINFO *p);
-int32_t opcode_dealloc(CSOUND *csound, AOP *p);
+int32_t opcode_deinit(CSOUND *csound, AOP *p);
 int32_t create_opcode_simple(CSOUND *csound, AOP *p);
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p);
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p);

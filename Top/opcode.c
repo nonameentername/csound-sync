@@ -284,36 +284,48 @@ int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
       ref->entries->entries[n < ref->entries->count ?
                             n : ref->entries->count-1];
     obj->init_flag = 0;
-    obj->udo_flag = entry->useropinfo ? 1 : 0;
+    if(obj->dataspace != NULL &&
+       obj->dataspace->optext->t.oentry == entry) {
+      // nothing to do on variable reuse
+       return OK;
+     }
     // set opcode object
+    obj->udo_flag = entry->useropinfo ? 1 : 0;
     obj->size = entry->dsblksiz;
+    // dataspace can only be freed on reset as it
+    // may have data that is required on deact etc
     obj->dataspace = (OPDS *) csound->Calloc(csound, obj->size);
     if(obj->dataspace != NULL) {
       // fill OPDS with as much information as we have now, rest on init
       obj->dataspace->insdshead = p->h.insdshead;
+      if(obj->dataspace->optext != NULL){
+        // free optext data if reallocating
+        csound->Free(csound, obj->dataspace->optext->t.inlist);
+        csound->Free(csound, obj->dataspace);
+      }
       obj->dataspace->optext = csound->Calloc(csound, sizeof(OPTXT));
       if(obj->dataspace->optext != NULL) {
         obj->dataspace->optext->t.oentry = entry;
         obj->dataspace->optext->t.opcod = entry->opname;
+        obj->dataspace->optext->t.inlist =
+          csound->Calloc(csound, sizeof(ARGLST));
       }
       obj->dataspace->init = entry->init;
       obj->dataspace->perf = entry->perf;
       obj->dataspace->deinit = entry->deinit;
       return OK;
-    } return csound->InitError(csound, "could not allocate opcode object");
+    } return
+        csound->InitError(csound,
+                          "could not allocate opcode object");
   }
   return csound->InitError(csound, "invalid opcode reference");
 }
 
-int32_t opcode_dealloc(CSOUND *csound, AOP *p) {
+int32_t opcode_deinit(CSOUND *csound, AOP *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
   if(obj->dataspace) {
     if(obj->init_flag && obj->dataspace->deinit != NULL)
       obj->dataspace->deinit(csound, obj->dataspace);
-    csound->Free(csound, obj->dataspace->optext);
-    if(!obj->udo_flag) 
-      csound->Free(csound, obj->dataspace);
-    obj->dataspace = NULL;
   }
   return OK;
 }
@@ -369,8 +381,6 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
   
   // out args first
   types = ep->outypes;
-  // opcode input args located after after outargs
-  inargs = outargs + strlen(types);
   while(*types != '\0') {
     // deal with multipe out args first
     if(*types == '*') {
@@ -493,23 +503,53 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
       break;
     }
     // now individual arg types
-    // skip type delimiter
-    if(*types == ':') types++;
+    // type delimiter
+    if(*types == ':') {
+      types++;
+      char typeName[64] = {0};
+      size_t end = types - strchr(types, ';');
+      memcpy(typeName, types, end);
+      argtype = csoundGetTypeForArg(args[n]);
+      if(strncmp(argtype->varTypeName, typeName, end) != 0) {
+       csound->Message(csound, "Output arg %d, expect type: "
+                       "%s, got %s\n", i+1, typeName,
+                       argtype->varTypeName);
+       return NOTOK;
+      }
+     // TODO: deal with arrays of long-name types (unsure of format)
+     // skip type delimiter
+      types += (end+1);
+    } else {
+    // single-char types
     argtype = csoundGetTypeForArg(args[n]);
-    len = strlen(argtype->varTypeName);
-    if(strncmp(argtype->varTypeName, types, len) != 0) {
-      char typ[64];
-      memcpy(typ, types, len);
-      typ[len] = '\0';
-      csound->Message(csound, "Output arg %d, expect type: "
-                      "%s, got %s\n", i+1, typ, argtype->varTypeName);
+    if(*(types+1) == '[' &&
+       argtype != &CS_VAR_TYPE_ARRAY){
+      csound->Message(csound, "Output arg %d, expect array, got %c\n",
+                      i+1, *types);
       return NOTOK;
     }
+    if(*(types+1) != '[' &&
+       strncmp(argtype->varTypeName, types, 1) != 0) {
+      csound->Message(csound, "Output arg %d, expect type: "
+                      "%c, got %s\n", i+1, *types, argtype->varTypeName);
+      return NOTOK;
+    }
+    if(*(types+1) == '[') {
+      ARRAYDAT *arg = (ARRAYDAT *) args[n];
+      const CS_TYPE *atyp = arg->arrayType;
+      if(strncmp(atyp->varTypeName, types, 1) != 0) {
+        csound->Message(csound, "Output arg %d, mismatching array subtype"
+                        " expected %c, got %s\n",
+                        i+1, *types, atyp->varTypeName);
+        return NOTOK;
+      }
+    }
+    types++;
+    // skip array type chars
+    if(*types == '[') types++;
+    if(*types == ']') types++;
+    }
     outargs[i++] = args[n++];
-    // next type
-    types += len;
-    // skip type delimiter
-    if(*types == ';') types++;
   }
   // n is the outarg count
   if(n != no) {
@@ -525,8 +565,10 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
   t->outlist = h->optext->t.outlist;
   // now check inargs
   n++;    // skip opc obj arg
-  i = 0;  // set inarg count to 0
   types = ep->intypes;
+  // opcode input args located after after outargs
+  inargs = outargs + i;
+  i = 0;  // set inarg count to 0
   while(*types != '\0') {
     // now deal with multiple inargs
     // unlike input, these are single letter
@@ -815,7 +857,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
       }
       types++;
     }
-    else if(*types == 'k') {
+    else if(*types == 'k' && *(types+1) !=  '[') {
       argtype = csoundGetTypeForArg(args[n]);
       if(argtype != &CS_VAR_TYPE_P && argtype != &CS_VAR_TYPE_C
          && argtype != &CS_VAR_TYPE_I && argtype != &CS_VAR_TYPE_K) {
@@ -826,7 +868,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
       inargs[i++] = args[n++];
       types++;
     }
-    else if(*types == 'i') {
+    else if(*types == 'i' && *(types+1) !=  '[') {
       argtype = csoundGetTypeForArg(args[n]);
       if(argtype != &CS_VAR_TYPE_P && argtype != &CS_VAR_TYPE_C
          && argtype != &CS_VAR_TYPE_I) {
@@ -836,26 +878,56 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
       }
       inargs[i++] = args[n++];
       types++;
-    }
+    } 
     else {             
       // now arg types with no special cases
-      // skip type delimiter
-      if(*types == ':') types++;
-      argtype = csoundGetTypeForArg(args[n]);
-      len = strlen(argtype->varTypeName);
-      if(strncmp(argtype->varTypeName, types, len) != 0) {
-        char typ[64];
-        memcpy(typ, types, len);
-        typ[len] = '\0';
-        csound->Message(csound, "Input arg %d, expected type: %s got: %s\n",
-                        i+1, typ, argtype->varTypeName);
-        return NOTOK;
+      // long-name types first
+      if(*types == ':') {
+        types++;
+        char typeName[64] = {0};
+        size_t end = types - strchr(types, ';');
+        memcpy(typeName, types, end);
+        argtype = csoundGetTypeForArg(args[n]);
+        if(strncmp(argtype->varTypeName, typeName, end) != 0) {
+          csound->Message(csound, "Input arg %d, expect type: "
+                          "%s, got %s\n", i+1, typeName,
+                          argtype->varTypeName);
+          return NOTOK;
+        }
+        // TODO: deal with arrays of long-name types (unsure of format)
+        // skip type delimiter
+        types += (end+1);
+      } else {
+        // single-char types
+        argtype = csoundGetTypeForArg(args[n]);
+        if(*(types+1) == '[' &&
+           argtype != &CS_VAR_TYPE_ARRAY){
+          csound->Message(csound, "Input arg %d, expect array, got %c\n",
+                          i+1, *types);
+          return NOTOK;
+        }
+        if(*(types+1) != '[' &&
+           strncmp(argtype->varTypeName, types, 1) != 0) {
+          csound->Message(csound, "Input arg %d, expect type: "
+                          "%c, got %s\n", i+1, *types, argtype->varTypeName);
+          return NOTOK;
+        }
+        if(*(types+1) == '[') {
+          ARRAYDAT *arg = (ARRAYDAT *) args[n];
+          const CS_TYPE *atyp = arg->arrayType;
+          if(strncmp(atyp->varTypeName, types, 1) != 0) {
+            csound->Message(csound, "Output arg %d, mismatching array subtype"
+                            " expected %c, got %s\n",
+                            i+1, *types, atyp->varTypeName);
+            return NOTOK;
+          }
+        }
+        types++;
+        // skip array type chars
+        if(*types == '[') types++;
+        if(*types == ']') types++;
       }
-      inargs[i++] = args[n++];
-      // next type
-      types += len;
-      // skip type delimiter if any
-      if(*types == ';') types++;
+      inargs[i++] = args[n++];  
     }
   }
   // check that input args match. 
@@ -864,10 +936,11 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h,MYFLT *args[],
                     ni, i - opt);    
     return NOTOK;
   }
-  t->inArgCount = ni;
+  
   // connect TEXT args, skipping opcode obj
-  t->outArgs = h->optext->t.outArgs + 1;
-  t->outlist = h->optext->t.outlist + 1;
+  t->inArgs = h->optext->t.inArgs + 1;
+  t->inlist->count = ni = t->inArgCount = ni;
+  t->inlist->arg[0] = (char *) t->inArgs;
   return OK;
 }
 

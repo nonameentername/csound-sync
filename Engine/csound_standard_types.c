@@ -432,7 +432,7 @@ const CS_TYPE CS_VAR_TYPE_OPCODEREF = {
 };
 
 const CS_TYPE CS_VAR_TYPE_OPCODEOBJ = {
-  "Opcode", "opcode instance reference", CS_ARG_TYPE_BOTH,
+  "OpcodeObj", "opcode instance reference", CS_ARG_TYPE_BOTH,
   createOpcodeObj, opcodeObj_copy_value, NULL, NULL, 0
 };
 
