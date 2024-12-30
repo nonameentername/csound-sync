@@ -1081,6 +1081,19 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
                            obj->dataspace->optext->t.oentry->intypes); 
 }
 
+
+
+int32_t check_consistency(OPCODEOBJ *obj, MYFLT **args,
+                          int32_t no, int32_t ni) {
+  int32_t n, i = no + 1;
+  MYFLT **oargs = (MYFLT **) (obj->dataspace + 1);
+  for(n = 0; n < no; n++)
+    if(oargs[n] != args[n]) return 1;
+  for(n = 0; n < ni; n++)
+    if(oargs[i-1] != args[i]) return 1;
+  return 0;
+}
+
 /**
  * this opcode runs a perf pass on an OpcodeObj 
  *
@@ -1093,17 +1106,19 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
                              "cannot perform opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(obj, p);
-  if(setup_args(csound, obj, &(p->h), p->args, NULL, p->OUTCOUNT,
-                p->INCOUNT - 1) == OK) {
-      if(obj->dataspace->perf != NULL)
-       return obj->dataspace->perf(csound, obj->dataspace);
-      else return OK; // nothing to do
-  } else return csound->PerfError(csound, &(p->h), "mismatching arguments\n"
+  if(check_consistency(obj, p->args, p->OUTCOUNT, p->INCOUNT - 1)){
+    if(setup_args(csound, obj, &(p->h), p->args, NULL, p->OUTCOUNT,
+                p->INCOUNT - 1) != OK)
+      return csound->PerfError(csound, &(p->h), "mismatching arguments\n"
                            "for opcode obj %s\t"
                            "outypes: %s\tintypes: %s",
                            obj->dataspace->optext->t.oentry->opname,
                            obj->dataspace->optext->t.oentry->outypes,
-                           obj->dataspace->optext->t.oentry->intypes);
+                               obj->dataspace->optext->t.oentry->intypes);
+   }
+   if(obj->dataspace->perf != NULL)
+       return obj->dataspace->perf(csound, obj->dataspace);
+    else return OK; // nothing to do
 }
 
 /** 
