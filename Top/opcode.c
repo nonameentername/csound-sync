@@ -277,7 +277,7 @@ int32_t opcode_info(CSOUND *csound, OPINFO *p) {
  */
 MYFLT *set_constant(CSOUND *csound, const char *name, MYFLT value) {
   return (MYFLT *)
-    (find_or_add_constant(csound, csound->engineState.constantsPool,
+    ((char *)find_or_add_constant(csound, csound->engineState.constantsPool,
                           name, value) + CS_VAR_TYPE_OFFSET);
 }
 
