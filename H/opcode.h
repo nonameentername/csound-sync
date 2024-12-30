@@ -44,13 +44,15 @@ typedef struct _oparray {
   MYFLT  *ovl;
 } OPARRAY;
 
-
 int32_t opcode_info(CSOUND *csound, OPINFO *p);
 int32_t opcode_ref(CSOUND *csound, ASSIGN *p);
 int32_t opcode_object_info(CSOUND *csound, OPINFO *p);
 int32_t opcode_delete(CSOUND *csound, AOP *p);
 int32_t create_opcode_simple(CSOUND *csound, AOP *p);
+int32_t opcode_delete_array(CSOUND *csound, AOP *p);
 int32_t create_opcode_array(CSOUND *csound, OPARRAY *p);
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p);
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p);
 int32_t opcode_run_perf(CSOUND *csound, OPRUN *p);
+int32_t opcode_array_perf(CSOUND *csound, OPRUN *p);
+int32_t opcode_array_init(CSOUND *csound, OPRUN *p);
