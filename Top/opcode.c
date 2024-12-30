@@ -934,7 +934,6 @@ int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
         return csound->InitError(csound, "could not allocate opcode object");
      }
       obj->udo_flag = entry->useropinfo == NULL ? 0  : 1;
-      obj->init_flag = 0;
       obj->size = entry->dsblksiz;
       return OK;
   }
@@ -959,7 +958,6 @@ int32_t create_opcode_array(CSOUND *csound, OPARRAY *p) {
         return csound->InitError(csound, "could not allocate opcode object");
       }
       obj[i].udo_flag = entry->useropinfo == NULL ? 0  : 1;
-      obj[i].init_flag = 0;
       obj[i].size = entry->dsblksiz; 
       }
     return OK;
@@ -1001,22 +999,19 @@ int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
  * this opcode connects all args to opcode obj and
  * optionally runs init function
  * 
- * outargs  init  opc:Opcode, inargs 
+ * outargs  init  opc:OpcodeObj, inargs 
 */
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
-  OPCODEOBJ *out = (OPCODEOBJ *) p->args[0];
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->InitError(csound, "incompatible context, "
                              "cannot initialise opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(p);
-  if(setup_args(csound, obj, &(p->h), &(p->args[1]), p->OUTCOUNT - 1,
+  if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
                 p->INCOUNT - 1) == OK) {
-    obj->init_flag = 1;
     if(obj->dataspace->init != NULL) {
        int32_t ret = obj->dataspace->init(csound, obj->dataspace);
-       if(obj != out) memcpy(out, obj, sizeof(OPCODEOBJ));
        return ret;
     }
     else return OK;
@@ -1032,7 +1027,7 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
 /**
  * this opcode runs a perf pass on an initialised object
  *
- * perf opc:Opcode
+ * outargs perf opc:OpcodeObj, inargs
  */
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
@@ -1043,11 +1038,9 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
   set_line_num_and_loc(p);
   if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
                 p->INCOUNT - 1) == OK) {
-    if(obj->init_flag == 1 || obj->dataspace->init == NULL) {
       if(obj->dataspace->perf != NULL)
        return obj->dataspace->perf(csound, obj->dataspace);
       else return OK; // nothing to do
-    } else return csound->PerfError(csound, &(p->h), "not initialised\n");
   } else return csound->PerfError(csound, &(p->h), "mismatching arguments\n"
                            "for opcode obj %s\t"
                            "outypes: %s\tintypes: %s",
@@ -1055,30 +1048,6 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
                            obj->dataspace->optext->t.oentry->outypes,
                            obj->dataspace->optext->t.oentry->intypes);
 }
-
-int32_t opcode_run_init(CSOUND *csound, OPRUN *p) {
-  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
-  if(context_check(csound, obj, &(p->h)) != OK)
-    return csound->InitError(csound, "incompatible context, "
-                             "cannot initialise opcode obj for %s\n",
-                             obj->dataspace->optext->t.oentry->opname);
-  set_line_num_and_loc(p);
-  if(setup_args(csound, obj, &(p->h), p->args, p->OUTCOUNT,
-                p->INCOUNT - 1) == OK) {
-    if(obj->dataspace->init != NULL) {
-       int32_t ret = obj->dataspace->init(csound, obj->dataspace);
-       return ret;
-    }
-    else return OK;
-  }
-  return csound->InitError(csound, "mismatching arguments\n"
-                           "for opcode obj %s\t"
-                           "outypes: %s\tintypes: %s",
-                           obj->dataspace->optext->t.oentry->opname,
-                           obj->dataspace->optext->t.oentry->outypes,
-                           obj->dataspace->optext->t.oentry->intypes); 
-}
-
 
 int32_t opcode_run_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];

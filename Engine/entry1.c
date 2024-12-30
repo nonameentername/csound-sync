@@ -164,7 +164,7 @@ OENTRY opcodlst_1[] = {
   { "create", S(OPARRAY),0,  ":OpcodeObj;[]", ":OpcodeRef;io", (SUBR) create_opcode_array},
   { "delete", S(AOP),0, "", ":OpcodeObj;", NULL, NULL, (SUBR) opcode_delete},
   { "opcodeinfo", S(OPINFO) ,0,  "", ":OpcodeObj;", (SUBR) opcode_object_info},
-  { "run", S(OPRUN), 0, "*", ":OpcodeObj;*", (SUBR) opcode_run_init, (SUBR) opcode_run_perf},
+  { "run", S(OPRUN), 0, "*", ":OpcodeObj;*", (SUBR) opcode_object_init, (SUBR) opcode_run_perf},
   { "init", S(OPRUN), 0, "*", ":OpcodeObj;*", (SUBR) opcode_object_init},
   { "perf", S(OPRUN), 0, "*", ":OpcodeObj;*", NULL, (SUBR) opcode_object_perf},
   { "init.instr", S(ASSIGN) ,0,  ":InstrDef;", ":InstrDef;", (SUBR) copyVarGenericInit},

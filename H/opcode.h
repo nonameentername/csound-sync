@@ -53,5 +53,4 @@ int32_t create_opcode_simple(CSOUND *csound, AOP *p);
 int32_t create_opcode_array(CSOUND *csound, OPARRAY *p);
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p);
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p);
-int32_t opcode_run_init(CSOUND *csound, OPRUN *p);
 int32_t opcode_run_perf(CSOUND *csound, OPRUN *p);
