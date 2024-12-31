@@ -81,7 +81,7 @@ static char *strsav_string(CSOUND *csound, ENGINE_STATE *engineState,
   and return the p-field num ( >= 0 ) 
   else return -1  
 */
-int32_t GetPfield(CSOUND *csound, ENGINE_STATE *engineState, INSTRTXT *ip, char *s) 
+int32_t get_pfield(CSOUND *csound, ENGINE_STATE *engineState, INSTRTXT *ip, char *s) 
 {
   CS_VARIABLE *var1 =
     csoundFindVariableWithName(csound,
@@ -390,7 +390,7 @@ OPTXT *create_opcode(CSOUND *csound, TREE *root, INSTRTXT *ip,
         }
         tp->inlist->arg[argcount++] = strsav_string(csound, engineState, arg);
 
-        if ((n = GetPfield(csound, engineState, ip, arg)) >= 0) {
+        if ((n = get_pfield(csound, engineState, ip, arg)) >= 0) {
           csoundDebugMsg(csound, "in pfield found: %s %d\n", arg, n);
            if (n > ip->pmax)
               ip->pmax = n;
@@ -426,7 +426,7 @@ OPTXT *create_opcode(CSOUND *csound, TREE *root, INSTRTXT *ip,
           arg = outargs->value->lexeme;
         }
 
-        if ((n = GetPfield(csound, engineState, ip, arg)) >= 0) {
+        if ((n = get_pfield(csound, engineState, ip, arg)) >= 0) {
           csoundDebugMsg(csound, "out pfield found: %s %d\n", arg, n);
           if (n > ip->pmax)
             ip->pmax = n;
@@ -2183,7 +2183,7 @@ static ARG *createArg(CSOUND *csound, INSTRTXT *ip, char *s,
       str->data = cs_hash_table_put_key(csound, engineState->stringPool, temp);
     }
   }
-  else if ((n = GetPfield(csound, engineState, ip, s)) >= 0) {
+  else if ((n = get_pfield(csound, engineState, ip, s)) >= 0) {
     arg->type = ARG_PFIELD;
     arg->index = n;
     csoundDebugMsg(csound, "pfield found: %s %d\n", s, n);

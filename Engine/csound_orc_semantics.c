@@ -303,7 +303,7 @@ CS_VARIABLE* find_var_from_pools(CSOUND* csound, char* varName,
   and return the p-field num ( >= 0 ) 
   else return -1  
 */
-static int32_t IsPfield(CSOUND *csound, TYPE_TABLE* typeTable, char *s) 
+static int32_t is_pfield(CSOUND *csound, TYPE_TABLE* typeTable, char *s) 
 {
   CS_VARIABLE *var = find_var_from_pools(csound, s, s, typeTable);
   // if symbol does not exist as a variable
@@ -628,7 +628,7 @@ char* get_arg_type2(CSOUND* csound, TREE* tree, TYPE_TABLE* typeTable)
     if (*s == '"')
       return cs_strdup(csound, "S");
 
-    if (IsPfield(csound, typeTable, s) >= 0)
+    if (is_pfield(csound, typeTable, s) >= 0)
       return cs_strdup(csound, "p");                           /* p-field number */
 
     varBaseName = s;
