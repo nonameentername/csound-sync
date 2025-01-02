@@ -77,16 +77,31 @@ static char *strsav_string(CSOUND *csound, ENGINE_STATE *engineState,
 }
 
 /*
-  check a char string for pnum format
-  and return the pnum ( >= 0 ) 
+  Check a symbol for pfield format (pN, PN)
+  and return the p-field num ( >= 0 ) 
   else return -1  
 */
-int32_t pnum(char *s) 
+int32_t get_pfield(CSOUND *csound, ENGINE_STATE *engineState, INSTRTXT *ip, char *s) 
 {
+  CS_VARIABLE *var1 =
+    csoundFindVariableWithName(csound,
+                               engineState->varPool, s);
+  CS_VARIABLE *var2 =
+    csoundFindVariableWithName(csound,
+                               csound->engineState.varPool, s);
+  CS_VARIABLE *var3 =
+    csoundFindVariableWithName(csound,
+                ip->varPool, s);
+  // check if symbol does not exist anywhere as variable
+  // and if it exists, that it has a pfield type
+  if((var1 == NULL || var1->varType == &CS_VAR_TYPE_P) &&
+     (var2 == NULL || var2->varType == &CS_VAR_TYPE_P) &&
+     (var1 == NULL || var3->varType == &CS_VAR_TYPE_P)) {  
   int32_t n;
   if (*s == 'p' || *s == 'P')
     if (sscanf(++s, "%d", &n))
       return (n);
+  }
   return (-1);
 }
 
@@ -375,9 +390,10 @@ OPTXT *create_opcode(CSOUND *csound, TREE *root, INSTRTXT *ip,
         }
         tp->inlist->arg[argcount++] = strsav_string(csound, engineState, arg);
 
-        if ((n = pnum(arg)) >= 0) {
-          if (n > ip->pmax)
-            ip->pmax = n;
+        if ((n = get_pfield(csound, engineState, ip, arg)) >= 0) {
+          csoundDebugMsg(csound, "in pfield found: %s %d\n", arg, n);
+           if (n > ip->pmax)
+              ip->pmax = n;
         }
         /* VL 14/12/11 : calling lgbuild here seems to be problematic for
            undef arg checks */
@@ -410,7 +426,8 @@ OPTXT *create_opcode(CSOUND *csound, TREE *root, INSTRTXT *ip,
           arg = outargs->value->lexeme;
         }
 
-        if ((n = pnum(arg)) >= 0) {
+        if ((n = get_pfield(csound, engineState, ip, arg)) >= 0) {
+          csoundDebugMsg(csound, "out pfield found: %s %d\n", arg, n);
           if (n > ip->pmax)
             ip->pmax = n;
         } else {
@@ -2165,7 +2182,12 @@ static ARG *createArg(CSOUND *csound, INSTRTXT *ip, char *s,
     if (str->data == NULL) {
       str->data = cs_hash_table_put_key(csound, engineState->stringPool, temp);
     }
-  } 
+  }
+  else if ((n = get_pfield(csound, engineState, ip, s)) >= 0) {
+    arg->type = ARG_PFIELD;
+    arg->index = n;
+    csoundDebugMsg(csound, "pfield found: %s %d\n", s, n);
+  }
   /* trap local ksmps and kr and sr */
   else if ((strcmp(s, "ksmps") == 0 &&
             csoundFindVariableWithName(csound, ip->varPool, s)) ||
@@ -2187,10 +2209,6 @@ static ARG *createArg(CSOUND *csound, INSTRTXT *ip, char *s,
     arg->type = ARG_GLOBAL;
     setupArgForVarName(csound, arg, csound->engineState.varPool, s);  
     
-  }
-  else if ((n = pnum(s)) >= 0) {
-    arg->type = ARG_PFIELD;
-    arg->index = n;
   }
   /* otherwise we have a local argument */
   else {
