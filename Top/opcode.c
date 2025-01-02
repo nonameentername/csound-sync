@@ -1242,4 +1242,9 @@ int32_t opcode_array_perf(CSOUND *csound, OPRUN *p) {
 }
 
 
-
+int32_t copy_opcode_obj(CSOUND *csound, ASSIGN *p) {
+  CS_VAR_TYPE_OPCODEOBJ.copyValue(csound, (CS_TYPE *)
+                                  &CS_VAR_TYPE_OPCODEOBJ, p->r,
+                                  p->a, NULL);
+   return OK;
+}
