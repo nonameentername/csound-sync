@@ -50,7 +50,6 @@ char *remove_type_quoting(CSOUND *csound, const char *outype);
 /* from csound_orc_compile.c */
 extern int32_t argsRequired(char* arrayName);
 extern char** splitArgs(CSOUND* csound, char* argString);
-extern int32_t pnum(char*);
 OENTRIES* find_opcode2(CSOUND*, char*);
 char* resolve_opcode_get_outarg(CSOUND* csound,
                                 OENTRIES* entries, char* inArgTypes);
@@ -297,6 +296,25 @@ CS_VARIABLE* find_var_from_pools(CSOUND* csound, char* varName,
                                        varBaseName);
    
   return var;
+}
+
+/*
+  Check a symbol for pfield format (pN, PN)
+  and return the p-field num ( >= 0 ) 
+  else return -1  
+*/
+static int32_t is_pfield(CSOUND *csound, TYPE_TABLE* typeTable, char *s) 
+{
+  CS_VARIABLE *var = find_var_from_pools(csound, s, s, typeTable);
+  // if symbol does not exist as a variable
+  // or if it is a pfield type var
+  if(var == NULL || var->varType == &CS_VAR_TYPE_P) {
+  int32_t n;
+  if (*s == 'p' || *s == 'P')
+    if (sscanf(++s, "%d", &n))
+      return (n);
+  }
+  return (-1);
 }
 
 /* This function gets arg type with checking type table */
@@ -617,8 +635,8 @@ char* get_arg_type2(CSOUND* csound, TREE* tree, TYPE_TABLE* typeTable)
     if (*s == '"')
       return cs_strdup(csound, "S");
 
-    if (pnum(s) >= 0)
-      return cs_strdup(csound, "p");                           /* pnum */
+    if (is_pfield(csound, typeTable, s) >= 0)
+      return cs_strdup(csound, "p");                           /* p-field number */
 
     varBaseName = s;
 
