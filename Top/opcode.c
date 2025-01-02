@@ -1060,6 +1060,7 @@ int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
 */
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  if(obj->dataspace != NULL) {
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->InitError(csound, "incompatible context, "
                              "cannot initialise opcode obj for %s\n",
@@ -1078,7 +1079,9 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
                            "outypes: %s\tintypes: %s",
                            obj->dataspace->optext->t.oentry->opname,
                            obj->dataspace->optext->t.oentry->outypes,
-                           obj->dataspace->optext->t.oentry->intypes); 
+                           obj->dataspace->optext->t.oentry->intypes);
+  }
+  return csound->InitError(csound, "opcode object not initialised\n");
 }
 
 
@@ -1101,6 +1104,7 @@ int32_t check_consistency(OPCODEOBJ *obj, MYFLT **args,
  */
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  if(obj->dataspace != NULL) {
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->PerfError(csound, &(p->h), "incompatible context, "
                              "cannot perform opcode obj for %s\n",
@@ -1119,6 +1123,9 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
    if(obj->dataspace->perf != NULL)
        return obj->dataspace->perf(csound, obj->dataspace);
     else return OK; // nothing to do
+  }
+  return csound->PerfError(csound, &(p->h),
+                           "opcode object not initialised\n");
 }
 
 /** 
@@ -1127,7 +1134,7 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
 */
 int32_t opcode_run_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
-  set_line_num_and_loc(obj, p);
+  set_line_num_and_loc(obj, p);                        
   if(obj->dataspace->perf != NULL)
        return obj->dataspace->perf(csound, obj->dataspace);
    else return OK; // nothing to do
