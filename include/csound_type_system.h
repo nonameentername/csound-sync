@@ -76,8 +76,8 @@ extern "C" {
     const CS_TYPE* subType;
     void (*updateMemBlockSize)(CSOUND*, struct csvariable*);
     void (*initializeVariableMemory)(CSOUND*, struct csvariable*, MYFLT*);
-    CS_VAR_MEM *memBlock;
     struct insds *ctx;
+    CS_VAR_MEM *memBlock;
   } CS_VARIABLE;
 
   typedef struct cstypeitem {
