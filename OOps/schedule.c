@@ -75,11 +75,9 @@ int32_t schedule(CSOUND *csound, SCHED *p)
     pp.flag = 1;
     if (GetTypeForArg(p->which) == &CS_VAR_TYPE_INSTR)
       return eventOpcodeI_(csound, &pp, 2, 'i');
-      else {
-        printf("not instr\n");
+    else 
       return eventOpcodeI_(csound, &pp, 0, 'i');
       
-      }
 }
 /* from aops.h */
 int32_t instr_num(CSOUND *csound, INSTRTXT *instr);
