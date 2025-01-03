@@ -157,7 +157,7 @@ OENTRY opcodlst_1[] = {
   { "init.a", S(ASSIGNM),0,       "mmmmmmmmmmmmmmmmmmmmmmmm", "m", mainit },
   { "nstrnum",   S(IREF_NUM),0,    "i",    ":InstrDef;",   (SUBR) get_instr_num },
   { "opcodeinfo", S(OPINFO) ,0,  "", ":OpcodeDef;", (SUBR) opcode_info},
-  { "init.opcd", S(ASSIGN), 0, ":OpcodeDef;", ":OpcodeDef;", (SUBR) copyVarGenericInit},
+  { "=.opcd", S(ASSIGN), 0, ":OpcodeDef;", ":OpcodeDef;", (SUBR) copyVarGeneric},
   { "init.opcd", S(ASSIGN), 0, ":OpcodeDef;", "S", (SUBR) opcode_ref},
   { "opcoderef", S(ASSIGN), 0, ":OpcodeDef;", "S", (SUBR) opcode_ref},
   { "create", S(AOP),0,  ":Opcode;", ":OpcodeDef;o", (SUBR) create_opcode_simple},

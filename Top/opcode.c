@@ -1259,26 +1259,17 @@ int32_t copy_opcode_obj(CSOUND *csound, ASSIGN *p) {
 
 CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYPE *type,
                                char *name, void *typeArg); 
-/**
- * this function looks at all opcodes in the system
- * and creates read-only variables for all opcodes
- * skipping the ones with non-alphabetic names
- * Variables are initialised to the OENTRIES found.
- **/
-void add_opcode_defs(CSOUND *csound) {
-  CONS_CELL *head, *item;
+/** This function takes an OENTRY and adds a corresponding
+ *   OpcodeDef global var, if the variable does not exist.
+ *   skipping the ones with non-alphabetic names    
+*/
+void add_opcode_def(CSOUND *csound, OENTRY *ep) {
+  char *name, *varName;
+  OPCODEREF ref = {NULL, 0}, *dest;
   const CS_TYPE *type = &CS_VAR_TYPE_OPCODEREF;
   CS_VARIABLE *var;
-  OENTRY *ep;
-  char *name, *varName;
-  OPCODEREF ref = {NULL, 1}, *dest;
-
-  head = cs_hash_table_values(csound, csound->opcodes);
-  while (head != NULL) {
-    item = head->value;
-    ep = item->value;
-    name = get_opcode_short_name(csound, ep->opname);
-    if(isalpha(*name) != 0) { // only alphabetic opcode names
+  name = get_opcode_short_name(csound, ep->opname);
+  if(isalpha(*name) != 0) { // only alphabetic opcode names
     // add underscore to name 
     varName = csound->Calloc(csound, strlen(name) + 2);
     snprintf(varName, strlen(name) + 2, "_%s", name);  
@@ -1287,17 +1278,35 @@ void add_opcode_defs(CSOUND *csound) {
       // create new variable
       var = addGlobalVariable(csound, &csound->engineState, (CS_TYPE *) type, varName,
                               NULL);
-     } else csound->Free(csound, varName);
-     if(var != NULL) {
-       // this is done at the end to catch any new overloads
-       // added since the variable was first created.
-       ref.entries = find_opcode2(csound, name);
-       dest = (OPCODEREF *) &(var->memBlock->value);
-       dest->readonly = 0;
-       type->copyValue(csound, type, dest, &ref, NULL);
-       dest->readonly = 1;  // mark it as readonly
-     } else csound->Warning(csound, "could not create opcode ref for %s\n", name);
-    }
-    head = head->next;
+    } else csound->Free(csound, varName);
+    if(var != NULL) {
+      dest = (OPCODEREF *) &(var->memBlock->value);      
+      ref.entries = find_opcode2(csound, name);
+      if(dest->entries == NULL ||
+         dest->entries->count < ref.entries->count) {
+        dest->readonly = 0;
+        type->copyValue(csound, type, dest, &ref, NULL);
+        dest->readonly = 1;  // mark it as readonly
+      } else csound->Free(csound, ref.entries);
+    } else csound->Warning(csound, "could not create opcode ref for %s\n", name);
+  }
+}
+
+
+/**
+ * this function looks at all opcodes in the system
+ * and creates read-only variables for all opcodes
+ * skipping the ones with non-alphabetic names
+ * Variables are initialised to the OENTRIES found.
+ **/
+void add_opcode_defs(CSOUND *csound) {
+  CONS_CELL *head, *item;
+  OENTRY *ep;
+  head = cs_hash_table_values(csound, csound->opcodes);
+  while (head != NULL) {
+     item = head->value;
+     ep = item->value;
+     add_opcode_def(csound, ep);
+     head = head->next;
   }
 }
