@@ -281,6 +281,9 @@ MYFLT *set_constant(CSOUND *csound, const char *name, MYFLT value) {
                           name, value) + CS_VAR_TYPE_OFFSET);
 }
 
+/** 
+ * Check arg type directly or from types list
+ */
 CS_TYPE *check_arg_type(void *arg, CS_TYPE **types, int32_t n) {
   if(types == NULL)
   return csoundGetTypeForArg(arg);
@@ -939,6 +942,24 @@ int32_t context_check(CSOUND *csound, OPCODEOBJ *obj, OPDS *h) {
   return OK;
 }
 
+/**
+ * check consistency of arg pointers (for perf-time)
+ */
+int32_t check_consistency(OPCODEOBJ *obj, MYFLT **args,
+                          int32_t no, int32_t ni) {
+  int32_t n, i = no + 1;
+  MYFLT **oargs = (MYFLT **) (obj->dataspace + 1);
+  for(n = 0; n < no; n++)
+    if(oargs[n] != args[n]) return 1;
+  for(n = 0; n < ni; n++)
+    if(oargs[i-1] != args[i]) return 1;
+  return 0;
+}
+
+
+/**
+ * allocate and initialise opcode dataspace
+ */
 OPDS *opcode_dataspace_new(CSOUND *csound, OENTRY *entry, OPDS *h) {
     OPDS *dataspace;
     dataspace = (OPDS *) csound->Calloc(csound, entry->dsblksiz);
@@ -999,7 +1020,7 @@ int32_t create_opcode_array(CSOUND *csound, OPARRAY *p) {
     OENTRY *entry =
      ref->entries->entries[n < ref->entries->count ? n : ref->entries->count-1];
     n  = *p->n;
-    tabinit(csound, p->r, n, NULL);
+    tabinit(csound, p->r, n, &(p->h));
     obj = (OPCODEOBJ *) p->r->data;
     for(i = 0; i < n; i++) {
       if(obj[i].dataspace == NULL || obj[i].size < entry->dsblksiz) {
@@ -1082,19 +1103,6 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
                            obj->dataspace->optext->t.oentry->intypes);
   }
   return csound->InitError(csound, "opcode object not initialised\n");
-}
-
-
-
-int32_t check_consistency(OPCODEOBJ *obj, MYFLT **args,
-                          int32_t no, int32_t ni) {
-  int32_t n, i = no + 1;
-  MYFLT **oargs = (MYFLT **) (obj->dataspace + 1);
-  for(n = 0; n < no; n++)
-    if(oargs[n] != args[n]) return 1;
-  for(n = 0; n < ni; n++)
-    if(oargs[i-1] != args[i]) return 1;
-  return 0;
 }
 
 /**
@@ -1245,6 +1253,51 @@ int32_t opcode_array_perf(CSOUND *csound, OPRUN *p) {
 int32_t copy_opcode_obj(CSOUND *csound, ASSIGN *p) {
   CS_VAR_TYPE_OPCODEOBJ.copyValue(csound, (CS_TYPE *)
                                   &CS_VAR_TYPE_OPCODEOBJ, p->r,
-                                  p->a, NULL);
-   return OK;
+                                  p->a, &(p->h));
+  return OK;
+}
+
+CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYPE *type,
+                               char *name, void *typeArg); 
+/**
+ * this function looks at all opcodes in the system
+ * and creates read-only variables for all opcodes
+ * skipping the ones with non-alphabetic names
+ * Variables are initialised to the OENTRIES found.
+ **/
+void add_opcode_defs(CSOUND *csound) {
+  CONS_CELL *head, *item;
+  const CS_TYPE *type = &CS_VAR_TYPE_OPCODEREF;
+  CS_VARIABLE *var;
+  OENTRY *ep;
+  char *name, *varName;
+  OPCODEREF ref = {NULL, 1}, *dest;
+
+  head = cs_hash_table_values(csound, csound->opcodes);
+  while (head != NULL) {
+    item = head->value;
+    ep = item->value;
+    name = get_opcode_short_name(csound, ep->opname);
+    if(isalpha(*name) != 0) { // only alphabetic opcode names
+    // add underscore to name 
+    varName = csound->Calloc(csound, strlen(name) + 2);
+    snprintf(varName, strlen(name) + 2, "_%s", name);  
+    if ((var = csoundFindVariableWithName(csound, csound->engineState.varPool,
+                                          varName)) == NULL) {
+      // create new variable
+      var = addGlobalVariable(csound, &csound->engineState, (CS_TYPE *) type, varName,
+                              NULL);
+     } else csound->Free(csound, varName);
+     if(var != NULL) {
+       // this is done at the end to catch any new overloads
+       // added since the variable was first created.
+       ref.entries = find_opcode2(csound, name);
+       dest = (OPCODEREF *) &(var->memBlock->value);
+       dest->readonly = 0;
+       type->copyValue(csound, type, dest, &ref, NULL);
+       dest->readonly = 1;  // mark it as readonly
+     } else csound->Warning(csound, "could not create opcode ref for %s\n", name);
+    }
+    head = head->next;
+  }
 }

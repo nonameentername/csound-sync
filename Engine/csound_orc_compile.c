@@ -1930,7 +1930,7 @@ if (engineState != &csound->engineState) {
 }
 
 void sanitize(CSOUND *csound);
-void addOpcodeRefs(CSOUND *csound);
+void add_opcode_defs(CSOUND *csound); 
 /**
    Parse and compile an orchestra given on an string (OPTIONAL)
    if str is NULL the string is taken from the internal corfile
@@ -1949,7 +1949,8 @@ int32_t csoundCompileOrcInternal(CSOUND *csound, const char *str, int32_t async)
     memcpy((void *)&csound->exitjmp, (void *)&tmpExitJmp, sizeof(jmp_buf));
     return retVal;
   }
-  
+
+  add_opcode_defs(csound); 
   root = csoundParseOrc(csound, str);
   if (LIKELY(root != NULL)) {
     retVal = csoundCompileTreeInternal(csound, root, async);

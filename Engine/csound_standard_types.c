@@ -162,9 +162,14 @@ void opcodeRef_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
                        get_opcode_short_name(csound, p->entries->entries[0]->opname));
 }
 
+// from opcode.c
+int32_t context_check(CSOUND* csound, OPCODEOBJ *p, OPDS *ctx);
 void opcodeObj_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
                       const void* src, OPDS *ctx) {
   OPCODEOBJ *p = (OPCODEOBJ *) dest;
+  OPCODEOBJ *psrc = (OPCODEOBJ *) src;
+  if(context_check(csound, psrc, ctx) != 0) 
+    csound->Warning(csound, "mismatching context: copy value bypassed");
   if(!p->readonly) {
    memcpy(dest, src, sizeof(OPCODEOBJ));
    p->readonly = 0; // clear readonly flag (which is not copied)
