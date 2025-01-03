@@ -309,7 +309,7 @@ CS_VARIABLE* createArray(void* csnd, void* p, OPDS *ctx) {
     return var;
 }
 
-CS_VARIABLE* createOpcodeRef(void* csnd, void* p, OPDS *ctx) {
+CS_VARIABLE* createOpcodeDef(void* csnd, void* p, OPDS *ctx) {
    CSOUND* csound = (CSOUND*)csnd;
    CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
    var->memBlockSize = CS_FLOAT_ALIGN(sizeof(OPCODEREF));
@@ -317,7 +317,7 @@ CS_VARIABLE* createOpcodeRef(void* csnd, void* p, OPDS *ctx) {
    return var;
 }
 
-CS_VARIABLE* createOpcodeObj(void* csnd, void* p, OPDS *ctx) {
+CS_VARIABLE* createOpcode(void* csnd, void* p, OPDS *ctx) {
    CSOUND* csound = (CSOUND*)csnd;
    CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
    var->memBlockSize = CS_FLOAT_ALIGN(sizeof(OPCODEOBJ));
@@ -427,13 +427,13 @@ const CS_TYPE CS_VAR_TYPE_ARRAY = {
 };
 
 const CS_TYPE CS_VAR_TYPE_OPCODEREF = {
-  "OpcodeRef", "opcode definition reference", CS_ARG_TYPE_BOTH,
-  createOpcodeRef, opcodeRef_copy_value, NULL, NULL, 0
+  "OpcodeDef", "opcode definition reference", CS_ARG_TYPE_BOTH,
+  createOpcodeDef, opcodeRef_copy_value, NULL, NULL, 0
 };
 
 const CS_TYPE CS_VAR_TYPE_OPCODEOBJ = {
-  "OpcodeObj", "opcode instance reference", CS_ARG_TYPE_BOTH,
-  createOpcodeObj, opcodeObj_copy_value, NULL, NULL, 0
+  "Opcode", "opcode instance reference", CS_ARG_TYPE_BOTH,
+  createOpcode, opcodeObj_copy_value, NULL, NULL, 0
 };
 
 

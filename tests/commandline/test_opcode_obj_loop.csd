@@ -9,8 +9,8 @@
 instr 1
  ival[] fillarray p5, p5*1.5
  asig[] init 2
- ref:OpcodeRef init "oscili"
- obj:OpcodeObj[] create ref,2
+ ref:OpcodeDef init "oscili"
+ obj:Opcode[] create ref,2
  n:i = 0
  while n < 2 do
   asig[n] init obj[n], p4, ival[n]

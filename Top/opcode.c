@@ -231,7 +231,7 @@ void list_opcodes(CSOUND *csound, int32_t level) {
 }
 
 /** 
- * Opcodes for OpcodeRef and Opcode types
+ * Opcodes for OpcodeDef and Opcode types
  *
  **/
 struct oentries *find_opcode2(CSOUND *, char *);
@@ -252,9 +252,9 @@ int32_t opcode_ref(CSOUND *csound, ASSIGN *p) {
 }
 
 /**
- * print info on OpcodeRef (overloads, types)
+ * print info on OpcodeDef (overloads, types)
  *
- * opcodeinfo opc:OpcodeRef
+ * opcodeinfo opc:OpcodeDef
  */
 int32_t opcode_info(CSOUND *csound, OPINFO *p) {
   OENTRY *ep = p->ref->entries->entries[0];
@@ -960,9 +960,9 @@ OPDS *opcode_dataspace_new(CSOUND *csound, OENTRY *entry, OPDS *h) {
 }
 
 /** 
- *  create single OpcodeObj from OpcodeRef
+ *  create single OpcodeObj from OpcodeDef
  *
- *  opc:Opcode create ref:OpcodeRef[,overload:i]
+ *  opc:Opcode create ref:OpcodeDef[,overload:i]
  */
 int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
   OPCODEREF *ref = (OPCODEREF *) p->a;
@@ -987,9 +987,9 @@ int32_t create_opcode_simple(CSOUND *csound, AOP *p) {
 #include "arrays.h"
 
 /** 
- *  create OpcodeObj array from OpcodeRef
+ *  create OpcodeObj array from OpcodeDef
  *
- *  opc:OpcodeObj[] create ref:OpcodeRef, n:i,[,overload:i]
+ *  opc:Opcode[] create ref:OpcodeDef, n:i,[,overload:i]
  */
 int32_t create_opcode_array(CSOUND *csound, OPARRAY *p) {
   OPCODEREF *ref = p->ref;
@@ -1018,7 +1018,7 @@ int32_t create_opcode_array(CSOUND *csound, OPARRAY *p) {
 /** 
  *  Delete opcode obj dataspace
  *
- *  delete OpcodeObj:obj
+ *  delete Opcode:obj
  */
 int32_t opcode_delete(CSOUND *csound, AOP *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
@@ -1056,7 +1056,7 @@ int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
  * this opcode connects all args to opcode obj and
  * optionally runs init function
  * 
- * outargs  init  opc:OpcodeObj, inargs 
+ * outargs  init  opc:Opcode, inargs 
 */
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
@@ -1100,7 +1100,7 @@ int32_t check_consistency(OPCODEOBJ *obj, MYFLT **args,
 /**
  * this opcode runs a perf pass on an OpcodeObj 
  *
- * outargs perf opc:OpcodeObj, inargs
+ * outargs perf opc:Opcode, inargs
  */
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
@@ -1143,7 +1143,7 @@ int32_t opcode_run_perf(CSOUND *csound, OPRUN *p) {
 /** 
  *  Delete opcode obj array dataspace
  *
- *  delete OpcodeObj:obj[]
+ *  delete Opcode:obj[]
  */
 int32_t opcode_delete_array(CSOUND *csound, AOP *p) {
   ARRAYDAT  *array = (ARRAYDAT *) p->r;
@@ -1226,7 +1226,7 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
 }
 
 /** 
- *  Perf function for run on OpcodeObj array
+ *  Perf function for run on Opcode array
  *  no checks required
  */
 int32_t opcode_array_perf(CSOUND *csound, OPRUN *p) {

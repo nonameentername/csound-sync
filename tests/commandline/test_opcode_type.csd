@@ -6,9 +6,9 @@
 0dbfs=1
 
 instr 1
-   osc:OpcodeRef init "oscili"
+   osc:OpcodeDef init "oscili"
    opcodeinfo osc
-   oobj:OpcodeObj create osc
+   oobj:Opcode create osc
    opcodeinfo oobj
 
    a1 run oobj, p4, p5, p6
