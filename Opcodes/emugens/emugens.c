@@ -2286,8 +2286,7 @@ static int32_t arrprint(CSOUND *csound, ARRAYDAT *arr,
         }
         break;
     default:
-        int margin = arr->dimensions + 1;
-        _printsubarr(csound, arr->data, 0, fmt, arr->dimensions, arr->sizes, 0, 0, margin);
+        _printsubarr(csound, arr->data, 0, fmt, arr->dimensions, arr->sizes, 0, 0, arr->dimensions + 1);
         break;
     }
     return OK;
