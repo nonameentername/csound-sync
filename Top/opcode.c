@@ -1039,7 +1039,7 @@ int32_t create_opcode_array(CSOUND *csound, OPARRAY *p) {
 /** 
  *  Delete opcode obj dataspace
  *
- *  delete Opcode:obj
+ *  delete obj:Opcode
  */
 int32_t opcode_delete(CSOUND *csound, AOP *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
@@ -1078,7 +1078,7 @@ int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
  * optionally runs init function
  * 
  * outargs  init  opc:Opcode, inargs 
-*/
+ */
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
   if(obj->dataspace != NULL) {
@@ -1139,7 +1139,7 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
 /** 
  * perf-time function for run opcode,
  * no checks required
-*/
+ */
 int32_t opcode_run_perf(CSOUND *csound, OPRUN *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
   set_line_num_and_loc(obj, p);                        
@@ -1151,7 +1151,7 @@ int32_t opcode_run_perf(CSOUND *csound, OPRUN *p) {
 /** 
  *  Delete opcode obj array dataspace
  *
- *  delete Opcode:obj[]
+ *  delete obj:Opcode[]
  */
 int32_t opcode_delete_array(CSOUND *csound, AOP *p) {
   ARRAYDAT  *array = (ARRAYDAT *) p->r;
@@ -1167,7 +1167,7 @@ int32_t opcode_delete_array(CSOUND *csound, AOP *p) {
 }
 
 /** 
- *  Init function for run on OpcodeObj array
+ *  Init function for run on Opcode array
  *  sets up dataspace and optionally runs init function
  *
  */
@@ -1263,7 +1263,7 @@ CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYP
 /** This function takes an OENTRY and adds a corresponding
  *   OpcodeDef global var, if the variable does not exist.
  *   skipping the ones with non-alphabetic names    
-*/
+ */
 void add_opcode_def(CSOUND *csound, OENTRY *ep) {
   char *name, *varName;
   OPCODEREF ref = {NULL, 0}, *dest;
@@ -1299,7 +1299,7 @@ void add_opcode_def(CSOUND *csound, OENTRY *ep) {
  * and creates read-only variables for all opcodes
  * skipping the ones with non-alphabetic names
  * Variables are initialised to the OENTRIES found.
- **/
+ */
 void add_opcode_defs(CSOUND *csound) {
   CONS_CELL *head, *item;
   OENTRY *ep;
