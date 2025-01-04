@@ -1177,19 +1177,18 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
   CS_TYPE *types[VARGMAX] = {0};
   ARRAYDAT  *array;
   OPCODEOBJ *obj;
-  // check all array args are 1-dim arrays of same size
+  array = (ARRAYDAT *) p->args[p->OUTCOUNT];
+  obj = (OPCODEOBJ *) array->data;
+  n = array->sizes[0];
+  // check all array args are 1-dim arrays of at least same size as obj[]
   for(i = 0; i < p->INCOUNT + p->OUTCOUNT; i++)
     if(csoundGetTypeForArg(p->args[i]) == &CS_VAR_TYPE_ARRAY) {
       array = (ARRAYDAT *) p->args[i];
-      if(n > 0 && n != array->sizes[0])
-        return csound->InitError(csound, "array sizes do not match\n");
       if(array->dimensions > 1)
         return csound->InitError(csound, "only 1-dim arrays are allowed\n");
-      n = array->sizes[0];
-    } 
-    
-  array = (ARRAYDAT *) p->args[p->OUTCOUNT];
-  obj = (OPCODEOBJ *) array->data;
+      if(array->dimensions == 0 || n > array->sizes[0]) 
+        tabinit(csound, array, n, &(p->h));
+  }    
   for(i = 0; i < n; i++) {
     set_line_num_and_loc(&obj[i], p);
     if(context_check(csound, &obj[i], &(p->h)) != OK)
@@ -1199,10 +1198,11 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
     for(j = 0; j < p->OUTCOUNT; j++) {
       if((types[j] = csoundGetTypeForArg(p->args[j]))
           == &CS_VAR_TYPE_ARRAY) {
-      ARRAYDAT *dat = (ARRAYDAT *)  p->args[j]; // each outarg is an array
-      char *data = (char *) dat->data; 
-      types[j] = (CS_TYPE *) dat->arrayType; // set type
-      args[j] = (MYFLT *)(data + i*dat->arrayMemberSize); // set pointer
+      array = (ARRAYDAT *)  p->args[j]; // each outarg is an array
+      char *data = (char *) array->data;
+      types[j] = (CS_TYPE *) array->arrayType; // set type
+      args[j] = (MYFLT *)(data + i*array->arrayMemberSize); // set pointer
+      
       } else // single var
          args[j] = p->args[j];
     }
@@ -1211,10 +1211,10 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
       m = j + p->OUTCOUNT + 1;
       if((types[m] = csoundGetTypeForArg(p->args[m]))
          == &CS_VAR_TYPE_ARRAY) {
-      ARRAYDAT *dat = (ARRAYDAT *)  p->args[m]; // each inarg is an array
-      char *data = (char *) dat->data; // copy loc pointer to args
-      types[m] = (CS_TYPE *) dat->arrayType;
-      args[m] = (MYFLT *)(data + i*dat->arrayMemberSize);
+      array = (ARRAYDAT *)  p->args[m]; // each inarg is an array
+      char *data = (char *) array->data; // copy loc pointer to args
+      types[m] = (CS_TYPE *) array->arrayType;
+      args[m] = (MYFLT *)(data + i*array->arrayMemberSize);
       } else // single var
         args[m] = p->args[m];
     }
@@ -1258,7 +1258,8 @@ int32_t copy_opcode_obj(CSOUND *csound, ASSIGN *p) {
 }
 
 CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYPE *type,
-                               char *name, void *typeArg); 
+                               char *name, void *typeArg);
+
 /** This function takes an OENTRY and adds a corresponding
  *   OpcodeDef global var, if the variable does not exist.
  *   skipping the ones with non-alphabetic names    
