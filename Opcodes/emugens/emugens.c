@@ -1915,9 +1915,9 @@ tab2array_i(CSOUND *csound, TAB2ARRAY *p) {
   of reshape a 1D array to a 2D array, or a 2D array to a 1D
   array
 
-  reshapearray array[], inumrows, inumcols=0
+  reshapearray array[], isize1 [, ..., isizen]
 
-  works with i and k arrays, at i-time and k-time
+  works with i and k arrays, at i-time 
 
   1:  if the sizes of the array and the size of the reshaped array do not match
 it needs an error message. Currently it is rather silent.
@@ -1938,60 +1938,44 @@ multiplying by zero always leads to an error.
 typedef struct {
     OPDS h;
     ARRAYDAT *in;
-    MYFLT *numrows, *numcols;
+    MYFLT *dims[20];
 } ARRAYRESHAPE;
 
 static int32_t
 arrayreshape(CSOUND *csound, ARRAYRESHAPE *p) {
     ARRAYDAT *a = p->in;
-    int32_t dims = a->dimensions;
-    int32_t i;
+    int32_t numdims = p->INOCOUNT - 1;
+    
+    int32_t orig_numitems = 1;
+    for(int i=0; i < a->dimensions; i++) {
+        orig_numitems *= a->sizes[i];
+    }
     int32_t numitems = 1;
-    int32_t numrows = (int32_t)(*p->numrows);
-    int32_t numcols = (int32_t)(*p->numcols);
-
-    if(numrows < 0 || numcols < 0) {
-        return INITERR(Str("reshapearray: neither numcols nor numrows can be negative"));
+    for(int i=0; i < numdims; i++) {
+        MYFLT dim = *(p->dims[i]);
+        int32_t idim = (int32_t)dim;
+        if(idim <= 0) {
+            return INITERRF(Str("reshapearray: invalid dimension at index %d, a dimension must be >= 0, got %d"), i, (int)dim);
+        }
+        numitems *= idim;
     }
-
-    if(dims > 2) {
-        return INITERR(Str("Arrays of more than 2 dimensions are not supported yet"));
-    }
-
-    for(i=0; i<dims; i++) {
-        numitems *= a->sizes[i];
-    }
-    int32_t numitems2 = numrows * (numcols > 0 ? numcols : 1);
-    if(numitems != numitems2)
+    
+    if(numitems != orig_numitems)
       return INITERRF(Str("reshapearray: The number of items do not match."
                           "The array has %d elements, but the new shape"
                           "results in %d total elements"),
-                      numitems, numitems2);
+                      orig_numitems, numitems);
 
-    if(dims == 2) {
-        if(numcols==0) {
-            // 2 dims to 1 dim
-            a->dimensions = 1;
-        }
-        a->sizes[0] = numrows;
-        a->sizes[1] = numcols;
-        return OK;
+    if(a->dimensions != numdims) {
+        a->dimensions = numdims;
+        a->sizes = csound->ReAlloc(csound, a->sizes, sizeof(int32_t)*numdims);
     }
-
-    if(numcols==0) {
-        // 1 dim to 1 dim, nothing to do
-        return OK;
+    
+    for(int i=0; i < numdims; i++) {
+        a->sizes[i] = (int32_t)(*(p->dims[i]));
     }
-
-    if(numcols>0) {
-        // 1 dim. to 2 dimensions
-        a->sizes = csound->ReAlloc(csound, a->sizes, sizeof(int32_t)*2);
-        a->dimensions = 2;
-        a->sizes[0] = numrows;
-        a->sizes[1] = numcols;
-        return OK;
-    }
-    return PERFERR(Str("reshapearray: cannot reshape"));
+    
+    return OK;
 }
 
 
@@ -2041,7 +2025,7 @@ typedef struct {
 } ARRAYPRINT;
 
 #define ARRPRINT_SEP (csound->MessageS(csound, CSOUNDMSG_ORCH, "\n"))
-#define ARRPRINT_MAXLINE 1024
+#define ARRPRINT_MAXLINE 2048
 #define ARRPRINT_IDXLIMIT 100
 
 
@@ -2116,9 +2100,9 @@ static int32_t
 arrayprint_init_notrig(CSOUND *csound, ARRAYPRINT *p) {
     if(p->in->arrayType->varTypeName[0] == 'S' && p->in->dimensions > 1)
         return INITERR(Str("cannot print multidimensional string arrays"));
-    if(p->in->dimensions > 2)
-        return INITERRF(Str("only 1-D and 2-D arrays supported, got %d dimensions"),
-                        p->in->dimensions);
+    // if(p->in->dimensions > 2)
+    //     return INITERRF(Str("only 1-D and 2-D arrays supported, got %d dimensions"),
+    //                     p->in->dimensions);
     char arraytype = p->in->arrayType->varTypeName[0];
     const char *default_fmt =
       arraytype == 'S' ? default_printfmt_str : default_printfmt;
@@ -2165,6 +2149,71 @@ static int32_t arrprint_str(CSOUND *csound, ARRAYDAT *arr,
     }
     return OK;
 }
+
+// Print a 2D matrix from a multidimensional array
+static int32_t _printmtx(CSOUND *csound, MYFLT *data, int32_t offset, const char *fmt, 
+                         int32_t numrows, int32_t numcols, 
+                         int32_t startbrackets, int32_t endbrackets, int32_t margin) {
+                         
+    int32_t cursor = 0;
+    char colstr[ARRPRINT_MAXLINE];
+    int32_t linelength = ARRPRINT_MAXLINE - margin - numcols;
+    for(int r=0; r < numrows; r++) {
+        if(r == 0) {
+            int spaces = MAX(0, margin - startbrackets);        
+            for(int i=0; i < spaces; i++) {
+                colstr[i] = ' ';
+            }
+            for(int i=0; i < startbrackets + 1; i++) {
+                colstr[spaces + i] = '[';
+            }
+            cursor = spaces + startbrackets + 1;
+        } else {
+            int spaces = margin + 1;
+            for(int i=0; i < spaces; i++) {
+                colstr[i] = ' ';
+            }
+            cursor = spaces;
+        }
+        for(int col=0; col < numcols; col++) {
+            if(cursor >= linelength) 
+                break;
+            size_t index = offset + r * numcols + col;
+            MYFLT item = data[index]; 
+            if(col > 0) {
+                colstr[cursor++] = ' ';
+            }
+            cursor += snprintf(colstr + cursor, ARRPRINT_MAXLINE - cursor, fmt, item); 
+        }
+        if(r == numrows - 1) {
+            for(int i=0; i < endbrackets + 1; i++) {
+                colstr[cursor++] = ']';
+            }
+        }
+        colstr[cursor++] = 0;
+        csound->MessageS(csound, CSOUNDMSG_ORCH, "%s\n", (char*)colstr);
+        cursor = 0;
+    }
+    return OK;
+}
+
+static int32_t _printsubarr(CSOUND *csound, MYFLT *data, int offset, const char *fmt, int numdims, const int *dims, int startbrackets, int endbrackets, int margin) {
+    if(numdims == 2) {
+        int numrows = dims[0];
+        int numcols = dims[1];
+        return _printmtx(csound, data, offset, fmt, numrows, numcols, startbrackets, endbrackets, margin);   
+    } else {
+        int subsize = 1;
+        for(int i=1; i < numdims; i++) {
+            subsize *= dims[i];
+        }
+        for(int outerdim=0; outerdim < dims[0]; outerdim++) {
+            _printsubarr(csound, data, offset + outerdim * subsize, fmt, numdims - 1, &(dims[1]), (startbrackets + 1) * (outerdim==0), (endbrackets+1) * (outerdim == dims[0] - 1), margin);
+        }
+    }
+    return OK;
+}
+
 
 // print a numeric array
 static int32_t arrprint(CSOUND *csound, ARRAYDAT *arr,
@@ -2235,6 +2284,9 @@ static int32_t arrprint(CSOUND *csound, ARRAYDAT *arr,
                 charswritten = 0;
             }
         }
+        break;
+    default:
+        _printsubarr(csound, arr->data, 0, fmt, arr->dimensions, arr->sizes, 0, 0, arr->dimensions + 1);
         break;
     }
     return OK;
@@ -3088,7 +3140,7 @@ static OENTRY emugens_localops[] = {
       (SUBR)array_binop_init, (SUBR)array_or},
     { "##and", S(BINOP_AAA), 0,  "k[]", "k[]k[]",
       (SUBR)array_binop_init, (SUBR)array_and},
-    { "reshapearray", S(ARRAYRESHAPE), 0,  "", ".[]io", (SUBR)arrayreshape},
+    { "reshapearray", S(ARRAYRESHAPE), 0,  "", ".[]im", (SUBR)arrayreshape},
 
     { "ftslicei", S(TABSLICE), TB,  "", "iioop", (SUBR)tabslice_i },
 
