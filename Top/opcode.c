@@ -998,7 +998,14 @@ int32_t check_and_set_arg(CSOUND *csound, OPCODEOBJ *obj, uint32_t ndx,
                && csoundGetTypeForArg(arg) == &CS_VAR_TYPE_I)) inargp[ndx] = arg;
        // otherwise no cigar as we can't guarantee the opcode will take arg       
       else return NOTOK;        
-    } else inargp[ndx] = arg;
+    } else if(csoundGetTypeForArg(inargp[ndx]) == &CS_VAR_TYPE_ARRAY) {
+      ARRAYDAT *src = (ARRAYDAT *) arg;
+      ARRAYDAT *dest = (ARRAYDAT *) inargp[ndx];
+      // matching array types only (no i-k equivalence test)
+      if(src->arrayType == dest->arrayType) inargp[ndx] = arg;
+      else return NOTOK;
+    }
+     else inargp[ndx] = arg;
     return OK;
   }
   return NOTOK;
@@ -1352,5 +1359,34 @@ int32_t set_opcode_param(CSOUND *csound, AOP *p) {
   if(check_and_set_arg(csound, obj, ndx, arg) != 0)
     return csound->PerfError(csound, &(p->h), "could not set arg %u \n", ndx);
   return OK;
+}
+
+int32_t get_opcode_output(CSOUND *csound, AOP *p) {
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->a;
+  uint32_t ndx = (uint32_t) (*p->b >= 0 ? *p->b : 0);
+  MYFLT **outarg = (MYFLT **) (obj->dataspace + 1);
+  if(outarg != NULL) {
+  if(context_check(csound, obj, &(p->h)) != OK)
+    return csound->PerfError(csound, &(p->h), "incompatible context for opcode %s \n",
+                             obj->dataspace->optext->t.oentry->opname);
+  if(ndx < obj->dataspace->optext->t.outlist->count) {
+    CS_TYPE *destype = csoundGetTypeForArg(p->r);
+    if(csoundGetTypeForArg(outarg[ndx]) == destype) {
+      if(csoundGetTypeForArg(p->r) == &CS_VAR_TYPE_ARRAY) {
+        ARRAYDAT *dest = (ARRAYDAT *) p->r;
+        ARRAYDAT *src = (ARRAYDAT *) outarg[ndx];
+        if(dest->allocated < src->allocated)
+         tabinit_like(csound, dest, src);
+      }
+      destype->copyValue(csound, destype, p->r, outarg[ndx], &(p->h)); 
+    }
+    else return csound->PerfError(csound, &(p->h), "mimatching argument types: "
+                                  "need %s, got %s \n",
+                                  csoundGetTypeForArg(outarg[ndx])->varTypeName,
+                                  csoundGetTypeForArg(p->r)->varTypeName);                     } else return csound->PerfError(csound, &(p->h),
+                                   "argument index out of range\n");
+   return OK;
+  } else return csound->PerfError(csound, &(p->h),
+                                   "object not initialised\n");
 }
 
