@@ -253,10 +253,11 @@ typedef struct {
    * OPCODE type
    */
   typedef struct opcodeObj {
-    struct opds *dataspace;
-    size_t size;
-    int32_t udo_flag;
-    int32_t readonly;
+    struct opds *dataspace; // opcode dataspace
+    size_t size;            // dataspace size
+    MYFLT **inargp;         // ptr to first input arg
+    int32_t udo_flag;       // set if opcode is UDO
+    int32_t readonly;       // readonly flag
   } OPCODEOBJ;
 
   

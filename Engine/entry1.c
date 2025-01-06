@@ -171,6 +171,7 @@ OENTRY opcodlst_1[] = {
   { "run", S(OPRUN), 0, "*", ":Opcode;[]*", (SUBR) opcode_array_init, (SUBR) opcode_array_perf},
   { "init", S(OPRUN), 0, "*", ":Opcode;*", (SUBR) opcode_object_init},
   { "perf", S(OPRUN), 0, "*", ":Opcode;*", NULL, (SUBR) opcode_object_perf},
+  { "setp", S(AOP), 0, "", ":Opcode;k.", NULL, (SUBR) set_opcode_param },
   { "init.instr", S(ASSIGN) ,0,  ":InstrDef;", ":InstrDef;", (SUBR) copyVarGenericInit},
   { "floatsize", S(ASSIGN) ,0, "i", "", myflt_size },
   /* VL 4.4.24 removing thread field:

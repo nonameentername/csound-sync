@@ -237,6 +237,61 @@ void list_opcodes(CSOUND *csound, int32_t level) {
 struct oentries *find_opcode2(CSOUND *, char *);
 void *find_or_add_constant(CSOUND *csound, CS_HASH_TABLE *constantsPool,
                            const char *name, MYFLT value);
+
+CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYPE *type,
+                               char *name, void *typeArg);
+
+/** This function takes an OENTRY and adds a corresponding
+ *   OpcodeDef global var, if the variable does not exist.
+ *   skipping the ones with non-alphabetic names    
+ */
+void add_opcode_def(CSOUND *csound, OENTRY *ep) {
+  char *name, *varName;
+  OPCODEREF ref = {NULL, 0}, *dest;
+  const CS_TYPE *type = &CS_VAR_TYPE_OPCODEREF;
+  CS_VARIABLE *var;
+  name = get_opcode_short_name(csound, ep->opname);
+  if(isalpha(*name) != 0) { // only alphabetic opcode names
+    // add underscore to name 
+    varName = csound->Calloc(csound, strlen(name) + 2);
+    snprintf(varName, strlen(name) + 2, "_%s", name);  
+    if ((var = csoundFindVariableWithName(csound, csound->engineState.varPool,
+                                          varName)) == NULL) {
+      // create new variable
+      var = addGlobalVariable(csound, &csound->engineState, (CS_TYPE *) type, varName,
+                              NULL);
+    } else csound->Free(csound, varName);
+    if(var != NULL) {
+      dest = (OPCODEREF *) &(var->memBlock->value);      
+      ref.entries = find_opcode2(csound, name);
+      if(dest->entries == NULL ||
+         dest->entries->count < ref.entries->count) {
+        dest->readonly = 0;
+        type->copyValue(csound, type, dest, &ref, NULL);
+        dest->readonly = 1;  // mark it as readonly
+      } else csound->Free(csound, ref.entries);
+    } else csound->Warning(csound, "could not create opcode ref for %s\n", name);
+  }
+}
+
+/**
+ * this function looks at all opcodes in the system
+ * and creates read-only variables for all opcodes
+ * skipping the ones with non-alphabetic names
+ * Variables are initialised to the OENTRIES found.
+ */
+void add_opcode_defs(CSOUND *csound) {
+  CONS_CELL *head, *item;
+  OENTRY *ep;
+  head = cs_hash_table_values(csound, csound->opcodes);
+  while (head != NULL) {
+     item = head->value;
+     ep = item->value;
+     add_opcode_def(csound, ep);
+     head = head->next;
+  }
+}
+
 /**
  * create opcodeRef from an opcode name
  *
@@ -524,7 +579,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h, MYFLT *args[],
   n++;    // skip opc obj arg
   types = ep->intypes;
   // opcode input args located after after outargs
-  inargs = outargs + i;
+  obj->inargp = inargs = outargs + i;
   i = 0;  // set inarg count to 0
   while(*types != '\0') {
     // now deal with multiple inargs
@@ -919,6 +974,36 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h, MYFLT *args[],
   return OK;
 }
 
+/** 
+ *  check the type of an existing argument, and set it 
+ *  this relies on arguments having been previously checked and set
+ *  if types do not match or if object was not initialised,
+ *  return an error
+ */
+int32_t check_and_set_arg(CSOUND *csound, OPCODEOBJ *obj, uint32_t ndx,
+                          MYFLT *arg) {
+  if(obj->inargp != NULL) {
+    MYFLT **inargp = obj->inargp;
+    int32_t n = obj->dataspace->optext->t.inlist->count;
+    if(ndx > n) return NOTOK;
+    if(csoundGetTypeForArg(inargp[ndx]) != csoundGetTypeForArg(arg)) {
+      // We check if set arg was k and now we send in a constant or ivar
+      if(csoundGetTypeForArg(inargp[ndx]) == &CS_VAR_TYPE_K && 
+         (csoundGetTypeForArg(arg) == &CS_VAR_TYPE_I ||
+          csoundGetTypeForArg(arg) == &CS_VAR_TYPE_C)) inargp[ndx] = arg;
+      // also for ivar and constant equivalence
+      else if((csoundGetTypeForArg(inargp[ndx]) == &CS_VAR_TYPE_I
+              && csoundGetTypeForArg(arg) == &CS_VAR_TYPE_C) ||
+              (csoundGetTypeForArg(inargp[ndx]) == &CS_VAR_TYPE_C
+               && csoundGetTypeForArg(arg) == &CS_VAR_TYPE_I)) inargp[ndx] = arg;
+       // otherwise no cigar as we can't guarantee the opcode will take arg       
+      else return NOTOK;        
+    } else inargp[ndx] = arg;
+    return OK;
+  }
+  return NOTOK;
+}
+
 /**
  * connect caller locn to opcode TXT
  */
@@ -1257,57 +1342,15 @@ int32_t copy_opcode_obj(CSOUND *csound, ASSIGN *p) {
   return OK;
 }
 
-CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYPE *type,
-                               char *name, void *typeArg);
-
-/** This function takes an OENTRY and adds a corresponding
- *   OpcodeDef global var, if the variable does not exist.
- *   skipping the ones with non-alphabetic names    
- */
-void add_opcode_def(CSOUND *csound, OENTRY *ep) {
-  char *name, *varName;
-  OPCODEREF ref = {NULL, 0}, *dest;
-  const CS_TYPE *type = &CS_VAR_TYPE_OPCODEREF;
-  CS_VARIABLE *var;
-  name = get_opcode_short_name(csound, ep->opname);
-  if(isalpha(*name) != 0) { // only alphabetic opcode names
-    // add underscore to name 
-    varName = csound->Calloc(csound, strlen(name) + 2);
-    snprintf(varName, strlen(name) + 2, "_%s", name);  
-    if ((var = csoundFindVariableWithName(csound, csound->engineState.varPool,
-                                          varName)) == NULL) {
-      // create new variable
-      var = addGlobalVariable(csound, &csound->engineState, (CS_TYPE *) type, varName,
-                              NULL);
-    } else csound->Free(csound, varName);
-    if(var != NULL) {
-      dest = (OPCODEREF *) &(var->memBlock->value);      
-      ref.entries = find_opcode2(csound, name);
-      if(dest->entries == NULL ||
-         dest->entries->count < ref.entries->count) {
-        dest->readonly = 0;
-        type->copyValue(csound, type, dest, &ref, NULL);
-        dest->readonly = 1;  // mark it as readonly
-      } else csound->Free(csound, ref.entries);
-    } else csound->Warning(csound, "could not create opcode ref for %s\n", name);
-  }
+int32_t set_opcode_param(CSOUND *csound, AOP *p) {
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->r;
+  uint32_t ndx = (uint32_t) (*p->a >= 0 ? *p->a : 0);
+  MYFLT *arg  = p->b;
+  if(context_check(csound, obj, &(p->h)) != OK)
+    return csound->PerfError(csound, &(p->h), "incompatible context for opcode %s \n",
+                             obj->dataspace->optext->t.oentry->opname);
+  if(check_and_set_arg(csound, obj, ndx, arg) != 0)
+    return csound->PerfError(csound, &(p->h), "could not set arg %u \n", ndx);
+  return OK;
 }
 
-
-/**
- * this function looks at all opcodes in the system
- * and creates read-only variables for all opcodes
- * skipping the ones with non-alphabetic names
- * Variables are initialised to the OENTRIES found.
- */
-void add_opcode_defs(CSOUND *csound) {
-  CONS_CELL *head, *item;
-  OENTRY *ep;
-  head = cs_hash_table_values(csound, csound->opcodes);
-  while (head != NULL) {
-     item = head->value;
-     ep = item->value;
-     add_opcode_def(csound, ep);
-     head = head->next;
-  }
-}
