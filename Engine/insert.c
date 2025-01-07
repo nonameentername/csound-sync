@@ -1880,7 +1880,7 @@ int32_t subinstr(CSOUND *csound, SUBINST *p)
         CS_PDS->insdshead->pds = NULL;
         do {
           if(UNLIKELY(!ATOMIC_GET8(p->ip->actflg))){
-            memset(p->ar, 0, sizeof(MYFLT)*CS_KSMPS*p->OUTCOUNT);
+            memset(p->ar, 0, sizeof(MYFLT)*CS_KSMPS*p->OUTOCOUNT);
             goto endin;
           }
           error = (*CS_PDS->perf)(csound, CS_PDS);

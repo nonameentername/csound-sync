@@ -984,7 +984,7 @@ int32_t check_and_set_arg(CSOUND *csound, OPCODEOBJ *obj, uint32_t ndx,
                           MYFLT *arg) {
   if(obj->inargp != NULL) {
     MYFLT **inargp = obj->inargp;
-    int32_t n = obj->dataspace->optext->t.inlist->count;
+    int32_t n = obj->dataspace->optext->t.inArgCount;
     if(ndx > n) return NOTOK;
     if(csoundGetTypeForArg(inargp[ndx]) != csoundGetTypeForArg(arg)) {
       // We check if set arg was k and now we send in a constant or ivar
@@ -1172,15 +1172,15 @@ int32_t opcode_object_info(CSOUND *csound, OPINFO *p) {
  * outargs  init  opc:Opcode, inargs 
  */
 int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
-  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTOCOUNT];
   if(obj->dataspace != NULL) {
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->InitError(csound, "incompatible context, "
                              "cannot initialise opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(obj, p);
-  if(setup_args(csound, obj, &(p->h), p->args, NULL, p->OUTCOUNT,
-                p->INCOUNT - 1) == OK) {
+  if(setup_args(csound, obj, &(p->h), p->args, NULL, p->OUTOCOUNT,
+                p->INOCOUNT - 1) == OK) {
     if(obj->dataspace->init != NULL) {
        int32_t ret = obj->dataspace->init(csound, obj->dataspace);
        return ret;
@@ -1203,16 +1203,16 @@ int32_t opcode_object_init(CSOUND *csound, OPRUN *p) {
  * outargs perf opc:Opcode, inargs
  */
 int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
-  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTOCOUNT];
   if(obj->dataspace != NULL) {
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->PerfError(csound, &(p->h), "incompatible context, "
                              "cannot perform opcode obj for %s\n",
                              obj->dataspace->optext->t.oentry->opname);
   set_line_num_and_loc(obj, p);
-  if(check_consistency(obj, p->args, p->OUTCOUNT, p->INCOUNT - 1)){
-    if(setup_args(csound, obj, &(p->h), p->args, NULL, p->OUTCOUNT,
-                p->INCOUNT - 1) != OK)
+  if(check_consistency(obj, p->args, p->OUTOCOUNT, p->INOCOUNT - 1)){
+    if(setup_args(csound, obj, &(p->h), p->args, NULL, p->OUTOCOUNT,
+                p->INOCOUNT - 1) != OK)
       return csound->PerfError(csound, &(p->h), "mismatching arguments\n"
                            "for opcode obj %s\t"
                            "outypes: %s\tintypes: %s",
@@ -1233,7 +1233,7 @@ int32_t opcode_object_perf(CSOUND *csound, OPRUN *p) {
  * no checks required
  */
 int32_t opcode_run_perf(CSOUND *csound, OPRUN *p) {
-  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTCOUNT];
+  OPCODEOBJ *obj = (OPCODEOBJ *) p->args[p->OUTOCOUNT];
   set_line_num_and_loc(obj, p);                        
   if(obj->dataspace->perf != NULL)
        return obj->dataspace->perf(csound, obj->dataspace);
@@ -1269,11 +1269,11 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
   CS_TYPE *types[VARGMAX] = {0};
   ARRAYDAT  *array;
   OPCODEOBJ *obj;
-  array = (ARRAYDAT *) p->args[p->OUTCOUNT];
+  array = (ARRAYDAT *) p->args[p->OUTOCOUNT];
   obj = (OPCODEOBJ *) array->data;
   n = array->sizes[0];
   // check all array args are 1-dim arrays of at least same size as obj[]
-  for(i = 0; i < p->INCOUNT + p->OUTCOUNT; i++)
+  for(i = 0; i < p->INOCOUNT + p->OUTOCOUNT; i++)
     if(csoundGetTypeForArg(p->args[i]) == &CS_VAR_TYPE_ARRAY) {
       array = (ARRAYDAT *) p->args[i];
       if(array->dimensions > 1)
@@ -1287,7 +1287,7 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
       return csound->InitError(csound, "incompatible context, "
                                "cannot initialise opcode obj for %s\n",
                                obj[i].dataspace->optext->t.oentry->opname);
-    for(j = 0; j < p->OUTCOUNT; j++) {
+    for(j = 0; j < p->OUTOCOUNT; j++) {
       if((types[j] = csoundGetTypeForArg(p->args[j]))
           == &CS_VAR_TYPE_ARRAY) {
       array = (ARRAYDAT *)  p->args[j]; // each outarg is an array
@@ -1298,9 +1298,9 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
       } else // single var
          args[j] = p->args[j];
     }
-    for(j = 0; j < p->INCOUNT - 1; j++) {
+    for(j = 0; j < p->INOCOUNT - 1; j++) {
       // skip the obj argument
-      m = j + p->OUTCOUNT + 1;
+      m = j + p->OUTOCOUNT + 1;
       if((types[m] = csoundGetTypeForArg(p->args[m]))
          == &CS_VAR_TYPE_ARRAY) {
       array = (ARRAYDAT *)  p->args[m]; // each inarg is an array
@@ -1312,7 +1312,7 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
     }
     // call setup_args with array flag checked, passing assigned args
     if(setup_args(csound, &obj[i], &(p->h), args, types,
-                             p->OUTCOUNT, p->INCOUNT - 1) == OK) {
+                             p->OUTOCOUNT, p->INOCOUNT - 1) == OK) {
       if(obj[i].dataspace->init != NULL) 
         obj[i].dataspace->init(csound, obj[i].dataspace);
     } else return csound->InitError(csound, "mismatching arguments\n"
@@ -1330,7 +1330,7 @@ int32_t opcode_array_init(CSOUND *csound, OPRUN *p) {
  *  no checks required
  */
 int32_t opcode_array_perf(CSOUND *csound, OPRUN *p) {
-  ARRAYDAT  *array = (ARRAYDAT *) p->args[p->OUTCOUNT];
+  ARRAYDAT  *array = (ARRAYDAT *) p->args[p->OUTOCOUNT];
   int32_t   n = array->sizes[0], i;
   OPCODEOBJ *obj = (OPCODEOBJ *) array->data;
   for(i = 0; i < n; i++) {
@@ -1369,7 +1369,7 @@ int32_t get_opcode_output(CSOUND *csound, AOP *p) {
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->PerfError(csound, &(p->h), "incompatible context for opcode %s \n",
                              obj->dataspace->optext->t.oentry->opname);
-  if(ndx < obj->dataspace->optext->t.outlist->count) {
+  if(ndx < obj->dataspace->optext->t.outArgCount) {
     CS_TYPE *destype = csoundGetTypeForArg(p->r);
     if(csoundGetTypeForArg(outarg[ndx]) == destype) {
       if(csoundGetTypeForArg(p->r) == &CS_VAR_TYPE_ARRAY) {
@@ -1383,7 +1383,8 @@ int32_t get_opcode_output(CSOUND *csound, AOP *p) {
     else return csound->PerfError(csound, &(p->h), "mimatching argument types: "
                                   "need %s, got %s \n",
                                   csoundGetTypeForArg(outarg[ndx])->varTypeName,
-                                  csoundGetTypeForArg(p->r)->varTypeName);                     } else return csound->PerfError(csound, &(p->h),
+                                  csoundGetTypeForArg(p->r)->varTypeName);
+  } else return csound->PerfError(csound, &(p->h),
                                    "argument index out of range\n");
    return OK;
   } else return csound->PerfError(csound, &(p->h),

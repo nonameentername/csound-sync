@@ -112,11 +112,8 @@ extern "C" {
     ARG             *inArgs;        /* Input args (index into list of values) */
     uint32_t        inArgCount;
     ARG             *outArgs;
-    uint32_t       outArgCount;
+    uint32_t        outArgCount;
   } TEXT;
-
-  
-
 
 
 /**
@@ -714,8 +711,6 @@ typedef struct _FFT_SETUP {
 #define CS_SPIN (p->h.insdshead->spin)
 #define CS_SPOUT (p->h.insdshead->spout)
 #define ORTXT h.optext->t
-#define INCOUNT ORTXT.inlist->count
-#define OUTCOUNT ORTXT.outlist->count /* Not used */
 #define INOCOUNT ORTXT.inArgCount
 #define OUTOCOUNT ORTXT.outArgCount
 #define CURTIME (((double)csound->icurTime) / ((double)csound->esr))
