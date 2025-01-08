@@ -371,7 +371,7 @@ int32_t setup_args(CSOUND *csound, OPCODEOBJ *obj, OPDS *h, MYFLT *args[],
     // opcode args located after OPDS struct
     outargs = (MYFLT **) (obj->dataspace + 1);
   }
- 
+  obj->outargp = outargs;
   // out args first
   types = ep->outypes;
   while(*types != '\0') {
@@ -1364,7 +1364,7 @@ int32_t set_opcode_param(CSOUND *csound, AOP *p) {
 int32_t get_opcode_output(CSOUND *csound, AOP *p) {
   OPCODEOBJ *obj = (OPCODEOBJ *) p->a;
   uint32_t ndx = (uint32_t) (*p->b >= 0 ? *p->b : 0);
-  MYFLT **outarg = (MYFLT **) (obj->dataspace + 1);
+  MYFLT **outarg = obj->outargp;
   if(outarg != NULL) {
   if(context_check(csound, obj, &(p->h)) != OK)
     return csound->PerfError(csound, &(p->h), "incompatible context for opcode %s \n",
