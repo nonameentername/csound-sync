@@ -1580,6 +1580,18 @@ end:
 
 void checkOptions(CSOUND *csound);
 
+char *unquote_arg(CSOUND *csound, char *arg) {
+  char *out = cs_strdup(csound, arg);
+  char *op = out;
+  while(*arg != '\0') {
+    if(*arg != '"') *op++ = *arg;
+    arg++;
+  }
+  *op = '\0';
+  return out;
+}
+
+
 PUBLIC int32_t csoundSetOption(CSOUND *csound, const char *opt) {
   /* if already compiled and running, return */
   if (csound->engineStatus & CS_STATE_COMP)
@@ -1587,7 +1599,7 @@ PUBLIC int32_t csoundSetOption(CSOUND *csound, const char *opt) {
   else {
     char **args;
     char *options, *sp;
-    int32_t cnt = 0, ret, argn;
+    int32_t cnt = 0, ret, argn, i;
     if ((ret = setjmp(csound->exitjmp) != 0))
       return ret;
 
@@ -1611,8 +1623,14 @@ PUBLIC int32_t csoundSetOption(CSOUND *csound, const char *opt) {
     }
 
     int32_t flag = 0;
+    int32_t quote = 0;
     /* count whitespaces */
-    while (*sp++ != '\0') {
+    while (*sp != '\0') {
+      if(*sp == '"') {
+        quote = quote ? 0 : 1;
+      }
+      if(!quote) {
+      // but not when quoted 
       while (*sp == ' ') {
         if(flag == 0) {
           cnt++;
@@ -1622,6 +1640,8 @@ PUBLIC int32_t csoundSetOption(CSOUND *csound, const char *opt) {
         sp++;
       }
       flag = 0;
+      sp++;
+      } else sp++;
     }
     argn = cnt;
     args = (char **)mcalloc(csound, sizeof(char *) * (cnt + 2));
@@ -1629,25 +1649,30 @@ PUBLIC int32_t csoundSetOption(CSOUND *csound, const char *opt) {
     args[1] = sp = options;
     cnt = 1;
     flag = 1;
+    quote  = 0;
     /* split into separate args */
     while (*opt && cnt < argn + 2) {
-      while (*opt == ' ') {
-        opt++;
-        sp++;
-        flag = 1;
+      if(*opt == '"') quote = quote ? 0 : 1;
+      if(!quote) {
+        while (*opt == ' ') {
+          opt++;
+          sp++;
+          flag = 1;
+        }
+        if(flag) {
+          args[cnt++] = unquote_arg(csound, sp);
+          
+        }
+        flag = 0;
       }
-      if(flag) {
-        //printf("%d: %s \n", cnt, sp);
-        args[cnt++] = sp;
-      }
-      flag = 0;
       sp++;
       opt++;
     }
   
     ret = argdecode(csound, argn + 1, (const char **)args);
-    mfree(csound, args);
     mfree(csound, options);
+    for(i = 1; i < argn; i++) mfree(csound, args[i]);
+     mfree(csound, args);
 
     return ret ? 0 : 1;
   }
