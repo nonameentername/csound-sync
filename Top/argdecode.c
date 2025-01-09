@@ -1252,8 +1252,9 @@ PUBLIC int32_t argdecode(CSOUND *csound, int32_t argc, const char **argv_) {
   /* calculate the number of bytes to allocate */
   /* N.B. the argc value passed to argdecode is decremented by one */
   nbytes = (argc + 1) * (int32_t)sizeof(char *);
-  for (i = 0; i <= argc; i++)
+  for (i = 0; i <= argc; i++) {
     nbytes += ((int32_t)strlen(argv_[i]) + 1);
+  }
   p1 = (char *)csound->Malloc(csound, nbytes); /* will be freed by memRESET() */
   p2 = (char *)p1 + ((int32_t)sizeof(char *) * (argc + 1));
   argv = (char **)p1;
@@ -1586,7 +1587,7 @@ PUBLIC int32_t csoundSetOption(CSOUND *csound, const char *opt) {
   else {
     char **args;
     char *options, *sp;
-    int32_t cnt = 0, ret;
+    int32_t cnt = 0, ret, argn;
     if ((ret = setjmp(csound->exitjmp) != 0))
       return ret;
 
@@ -1599,30 +1600,52 @@ PUBLIC int32_t csoundSetOption(CSOUND *csound, const char *opt) {
     /* remove whitespace at start */
     while (*opt == ' ')
       opt++;
+    
     sp = options = cs_strdup(csound, opt);
 
+    /* remove whitespace at end */
+    char *end = sp + strlen(sp) - 1;
+    while (*end == ' '){
+      *end = '\0';
+      end--;
+    }
+
+    int32_t flag = 0;
     /* count whitespaces */
     while (*sp++ != '\0') {
-      if (*sp == ' ') {
-        cnt++;
+      while (*sp == ' ') {
+        if(flag == 0) {
+          cnt++;
+          flag = 1;
+        }    
         *sp = '\0';
         sp++;
       }
+      flag = 0;
     }
+    argn = cnt;
     args = (char **)mcalloc(csound, sizeof(char *) * (cnt + 2));
     args[0] = "csound";
     args[1] = sp = options;
     cnt = 1;
+    flag = 1;
     /* split into separate args */
-    while (*opt) {
-      if (*opt == ' ') {
-        args[++cnt] = sp + 1;
+    while (*opt && cnt < argn + 2) {
+      while (*opt == ' ') {
+        opt++;
+        sp++;
+        flag = 1;
       }
+      if(flag) {
+        //printf("%d: %s \n", cnt, sp);
+        args[cnt++] = sp;
+      }
+      flag = 0;
       sp++;
       opt++;
     }
-
-    ret = argdecode(csound, cnt, (const char **)args);
+  
+    ret = argdecode(csound, argn + 1, (const char **)args);
     mfree(csound, args);
     mfree(csound, options);
 
