@@ -24,15 +24,13 @@ public:
     virtual void SetUp ()
     {
         csoundSetGlobalEnv ("OPCODE6DIR64", "../../");
-        csound = csoundCreate (0);
+        csound = csoundCreate (NULL, NULL);
         csoundCreateMessageBuffer (csound, 0);
         csoundSetOption (csound, "--logfile=NULL");
     }
 
     virtual void TearDown ()
     {
-        csoundCleanup (csound);
-        csoundDestroyMessageBuffer (csound);
         csoundDestroy (csound);
         csound = nullptr;
     }
