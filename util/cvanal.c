@@ -113,7 +113,7 @@ static int32_t cvanal(CSOUND *csound, int32_t argc, char **argv)
     infilnam = *argv++;
     outfilnam = *argv;
 
-    if (UNLIKELY((infd = csound->SndInputFileOpen(csound, infilnam, &p, &beg_time,
+    if (UNLIKELY((infd = (csound->GetUtility(csound))->SndinGetSetSA(csound, infilnam, &p, &beg_time,
                                              &input_dur, &sr, channel)) == NULL)) {
       snprintf(err_msg, 512, Str("error while opening %s"), infilnam);
       return quit(csound, err_msg);
@@ -200,7 +200,7 @@ static int32_t takeFFT(CSOUND *csound, SOUNDIN *p, CVSTRUCT *cvh,
     nchanls = cvh->channel != ALLCHNLS ? 1 : cvh->src_chnls;
     j = (int32_t) (Hlen * nchanls);
     inbuf = fp1 = (MYFLT *) csound->Malloc(csound, j * sizeof(MYFLT));
-    if (UNLIKELY((read_in = csound->SndInputRead(csound, infd, inbuf, j, p)) < j)) {
+    if (UNLIKELY((read_in = (csound->GetUtility(csound))->Sndin(csound, infd, inbuf, j, p)) < j)) {
       csound->Message(csound, "%s", Str("less sound than expected!\n"));
       return -1;
     }
@@ -215,7 +215,7 @@ static int32_t takeFFT(CSOUND *csound, SOUNDIN *p, CVSTRUCT *cvh,
     /* for (i = 0; i < (Hlenpadded + 2); i++) */
     /*   outbuf[i] = FL(0.0); */
     memset(outbuf, 0, sizeof(MYFLT)*(Hlenpadded + 2));
-    setup = csound->RealFFTSetup(csound, Hlenpadded, FFT_FWD);
+    setup = csound->RealFFTSetup(csound, (int32_t)Hlenpadded, FFT_FWD);
 
     for (i = 0; i < nchanls; i++) {
       for (j = Hlen; j > 0; j--) {
@@ -237,7 +237,7 @@ static int32_t takeFFT(CSOUND *csound, SOUNDIN *p, CVSTRUCT *cvh,
       else
         if (UNLIKELY(1!=fwrite(outbuf, cvh->dataBsize/nchanls, 1, ofd)))
           fprintf(stderr, "%s", Str("Write failure\n"));
-      for (j = Hlenpadded - Hlen; j > 0; j--)
+      for (j = (int32_t) (Hlenpadded - Hlen); j > 0; j--)
         fp2[j] = FL(0.0);
       fp2 = outbuf;
     }
@@ -267,13 +267,13 @@ static int32_t CVAlloc(
     if (( (*pphdr) = (CVSTRUCT *) csound->Malloc(csound, hSize)) == NULL )
       return(CVE_MALLOC);
     (*pphdr)->magic        = CVMAGIC;
-    (*pphdr)->headBsize    = hSize;
-    (*pphdr)->dataBsize    = dataBsize;
+    (*pphdr)->headBsize    = (int32_t) hSize;
+    (*pphdr)->dataBsize    = (int32_t) dataBsize;
     (*pphdr)->dataFormat   = dataFormat;
     (*pphdr)->samplingRate = srate;
     (*pphdr)->src_chnls    = src_chnls;
     (*pphdr)->channel      = channel;
-    (*pphdr)->Hlen         = Hlen;
+    (*pphdr)->Hlen         = (int32_t) Hlen;
     (*pphdr)->Format       = Format;
     /* leave info bytes undefined */
     return(CVE_OK);
@@ -283,10 +283,10 @@ static int32_t CVAlloc(
 
 int32_t cvanal_init_(CSOUND *csound)
 {
-    int32_t retval = csound->AddUtility(csound, "cvanal", cvanal);
+    int32_t retval = (csound->GetUtility(csound))->AddUtility(csound, "cvanal", cvanal);
     if (!retval) {
       retval =
-        csound->SetUtilityDescription(csound, "cvanal",
+        (csound->GetUtility(csound))->SetUtilityDescription(csound, "cvanal",
                                       Str("Soundfile analysis for convolve"));
     }
     return retval;

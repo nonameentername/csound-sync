@@ -111,7 +111,7 @@ int32_t spectset(CSOUND *csound, SPECTRUM *p)
     csound->Warning(csound,
                     Str("spectrum: %s window, %s out, making tables ...\n"),
                     (hanning) ? "hanning":"hamming", outstring[p->dbout]);
-      if (GetTypeForArg(p->signal) == csound->KsigType(csound)) {
+    if (IS_KSIG_ARG(p->signal)) {
         dwnp->srate = CS_EKR;            /* define the srate */
         p->nsmps = 1;
       }
@@ -121,7 +121,7 @@ int32_t spectset(CSOUND *csound, SPECTRUM *p)
       }
       hicps = dwnp->srate * 0.375;            /* top freq is 3/4 pi/2 ...   */
       oct = log(hicps / ONEPT) / LOGTWO;      /* octcps()  (see aops.c)     */
-      if (GetTypeForArg(p->signal) != csound->KsigType(csound)) {     /* for sr sampling:           */
+      if (!IS_KSIG_ARG(p->signal)) {     /* for sr sampling:           */
         oct = ((int32_t)(oct*12.0 + 0.5)) / 12.0; /*     semitone round to A440 */
         hicps = pow(2.0, oct) * ONEPT;        /*     cpsoct()               */
       }
@@ -223,7 +223,7 @@ static void linocts(DOWNDAT *dwnp, MYFLT *bufp)
 /* linearize octdown dat to 1 buf */
 {    /* presumes correct buffer alloc'd in set */
   MYFLT  *curp, *endp;
-  int32_t    wrap;
+  int64_t    wrap;
   OCTDAT *octp;
   int32_t    nocts;
   MYFLT  *begp;
@@ -313,7 +313,7 @@ int32_t spectrum(CSOUND *csound, SPECTRUM *p)
     begp = octp->begp;
     curp = octp->curp;
     endp = octp->endp;
-    if ((len = endp - curp) >= winlen)     /*   if no wrap               */
+    if ((len = (int32_t) (endp - curp)) >= winlen)     /*   if no wrap               */
       linbufp = curp;                      /*     use samples in circbuf */
     else {
       len2 = winlen - len;
@@ -354,7 +354,7 @@ int32_t spectrum(CSOUND *csound, SPECTRUM *p)
       *dftp++ = (MYFLT)c;                  /* store in out spectrum   */
     }
   }
-  specp->ktimstamp = CS_KCNT;     /* time-stamp the output   */
+  specp->ktimstamp = (uint32_t) CS_KCNT;     /* time-stamp the output   */
   return OK;
 }
 
@@ -916,7 +916,7 @@ int32_t specaddm(CSOUND *csound, SPECADDM *p)
     for (n=0;n<npts;n++) {
       outp[n] = in1p[n] + in2p[n] * mul2;         /* out = in1 + in2 * mul2 */
     }
-    p->waddm->ktimstamp = CS_KCNT;  /* mark the output spec as new */
+    p->waddm->ktimstamp = (uint32_t) CS_KCNT;  /* mark the output spec as new */
   }
   return OK;
  err1:
@@ -979,7 +979,7 @@ int32_t specdiff(CSOUND *csound, SPECDIFF *p)
       else difp[n] = FL(0.0);               /* else enter zero         */
       prvp[n] = newval;                     /* sav newval for nxt time */
     }
-    p->wdiff->ktimstamp = CS_KCNT; /* mark the output spec as new */
+    p->wdiff->ktimstamp = (uint32_t) CS_KCNT; /* mark the output spec as new */
   }
   return OK;
  err1:
@@ -1085,7 +1085,7 @@ int32_t specscal(CSOUND *csound, SPECSCAL *p)
         outp[n] = inp[n] * sclp[n];             /* no thresh: rescale only */
       }
     }
-    outspecp->ktimstamp = CS_KCNT;     /* mark the outspec as new */
+    outspecp->ktimstamp = (uint32_t) CS_KCNT;     /* mark the outspec as new */
   }
   return OK;
  err1:
@@ -1142,7 +1142,7 @@ int32_t spechist(CSOUND *csound, SPECHIST *p)
       acup[n] = newval;                   /* sav in accumulator   */
       outp[n] = newval;                   /* & copy to output     */
     }
-    p->wacout->ktimstamp = CS_KCNT; /* mark the output spec as new */
+    p->wacout->ktimstamp = (uint32_t) CS_KCNT; /* mark the output spec as new */
   }
   return OK;
  err1:
@@ -1238,7 +1238,7 @@ int32_t specfilt(CSOUND *csound, SPECFILT *p)
       outp[n] = curval = persp[n];               /*   output current point  */
       persp[n] = coefp[n] * curval + newp[n];    /*   decay & addin newval  */
     }
-    outspecp->ktimstamp = CS_KCNT;      /* mark output spec as new */
+    outspecp->ktimstamp = (uint32_t) CS_KCNT;      /* mark output spec as new */
   }
   return OK;
  err1:

@@ -41,7 +41,9 @@
 #ifndef WIN32
 #include <unistd.h>   /* UNIX standard function definitions */
 #include <fcntl.h>    /* File control definitions */
+#ifndef __wasm__
 #include <termios.h>  /* POSIX terminal control definitions */
+#endif
 #include <sys/ioctl.h>
 #else
 #include "winsock2.h"
@@ -186,9 +188,11 @@ int32_t serialPeekByte(CSOUND *csound, SERIALPEEK *p);
 int32_t serialport_init(CSOUND *csound, const char* serialport, int32_t baud)
 {
     IGN(csound);
+#ifndef __wasm__
     struct termios toptions;
-    int32_t fd;
     speed_t brate;
+#endif
+    int32_t fd;
 
     //csound = NULL;              /* Not used */
     fprintf(stderr,"init_serialport: opening port %s @ %d bps\n",
@@ -200,6 +204,7 @@ int32_t serialport_init(CSOUND *csound, const char* serialport, int32_t baud)
       return -1;
     }
 
+#ifndef __wasm__
     if (UNLIKELY(tcgetattr(fd, &toptions) < 0)) {
       perror("init_serialport: Couldn't get term attributes");
       close(fd);
@@ -246,6 +251,7 @@ int32_t serialport_init(CSOUND *csound, const char* serialport, int32_t baud)
       perror("init_serialport: Couldn't set term attributes");
       return -1;
     }
+#endif
 
     return fd;
 }
@@ -453,7 +459,7 @@ int32_t serialPrint(CSOUND *csound, SERIALPRINT *p)
 int32_t serialFlush(CSOUND *csound, SERIALFLUSH *p)
 {
      IGN(csound);
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__wasm__)
     tcflush(*p->port, TCIFLUSH); // who knows if this works...
 #endif
     return OK;
@@ -500,7 +506,7 @@ typedef struct {
     int32_t port;
 #endif
   void *lock;
-    int stop;
+    int32_t stop;
     int32_t values[MAXSENSORS];
     int32_t buffer[MAXSENSORS];
 } ARDUINO_GLOBALS;
@@ -565,7 +571,7 @@ unsigned char arduino_get_byte(HANDLE port)
 uintptr_t arduino_listen(void *p)
 {
 #define SYN (0xf8)
-    unsigned int ans = 0;
+    uint32_t ans = 0;
     uint16_t c, val;
     ARDUINO_GLOBALS *q = (ARDUINO_GLOBALS*)p;
     CSOUND *csound = q->csound;
@@ -576,7 +582,7 @@ uintptr_t arduino_listen(void *p)
     }
     // Should be synced now
     while (1) {
-      unsigned int hi, low;
+      uint32_t hi, low;
       // critical region
       csound->LockMutex(q->lock);
       memcpy(q->values, q->buffer, MAXSENSORS*sizeof(int32_t));
@@ -615,7 +621,7 @@ int32_t arduino_deinit(CSOUND *csound, ARD_START *p)
 int32_t arduinoStart(CSOUND* csound, ARD_START* p)
 {
     ARDUINO_GLOBALS *q;
-    int n;
+    int32_t n;
     MYFLT xx =
       (MYFLT)serialport_init(csound,
                              (const char *)p->portName->data,
@@ -671,7 +677,7 @@ int32_t arduinoRead(CSOUND* csound, ARD_READ* p)
 {
     ARDUINO_GLOBALS *q = p->q;
     MYFLT val;
-    int ind = *p->index;
+    int32_t ind = *p->index;
     if (ind <0 || ind>MAXSENSORS)
       return csound->PerfError(csound, &p->h,
                                "%s", Str("out of range\n"));
@@ -702,10 +708,10 @@ int32_t arduinoReadF(CSOUND* csound, ARD_READF* p)
 {
     ARDUINO_GLOBALS *q = p->q;
     JOINT val;
-    int ind1 = *p->index1;
-    int ind2 = *p->index2;
-    int ind3 = *p->index3;
-    int c1, c2, c3;
+    int32_t ind1 = *p->index1;
+    int32_t ind2 = *p->index2;
+    int32_t ind3 = *p->index3;
+    int32_t c1, c2, c3;
     if (ind1<0 || ind1>MAXSENSORS ||
         ind2<0 || ind2>MAXSENSORS ||
         ind3 <0 || ind3>MAXSENSORS)

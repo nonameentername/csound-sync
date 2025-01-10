@@ -10,7 +10,7 @@ void cscore(CSOUND *cs)
 {
     EVENT  *e, *f;
     EVLIST *a, *b;
-    int n;
+    int32_t n;
 
     a = cscoreListGetSection(cs);            /* read score into event list "a" */
     b = cscoreListSeparateF(cs, a);          /* separate f statements */
@@ -39,7 +39,7 @@ void cscore(CSOUND *cs)
 // TEST (CScoreTests, testCscore)
 // {
 //     csoundSetGlobalEnv("OPCODE6DIR64", "../../");
-//     CSOUND *csound = csoundCreate(0);
+//     CSOUND *csound = csoundCreate(NULL,NULL);
 
 //     FILE *in_file = fopen("cscore_score.sco", "r");
 //     FILE *out_file = fopen("cscore_out.sco", "w");

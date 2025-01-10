@@ -176,7 +176,7 @@ QNAN            "qnan"[ \t]*\(
                   csound_preset_lineno(1+csound_preget_lineno(yyscanner),
                                        yyscanner);
                   if (PARM->isString==0) {
-                    sprintf(bb, "#sline %d ", csound_preget_lineno(yyscanner));
+                    snprintf(bb, 80, "#sline %d ", csound_preget_lineno(yyscanner));
                     corfile_puts(csound, bb, csound->expanded_orc);
                   }
                 }
@@ -502,7 +502,7 @@ QNAN            "qnan"[ \t]*\(
                   //print_csound_predata(csound,"After pre_line", yyscanner);
                   if (PARM->alt_stack[PARM->macro_stack_ptr].included) {
                     char bb[80];
-                    sprintf(bb, "\n#line   %d\n",
+                    snprintf(bb, 80, "\n#line   %d\n",
                             PARM->alt_stack[PARM->macro_stack_ptr].line);
                     corfile_puts(csound, bb, csound->expanded_orc);
                   }
@@ -780,7 +780,7 @@ void do_include(CSOUND *csound, int term, yyscan_t yyscanner)
       uint8_t n = file_to_int(csound, buffer);
       char bb[128];
       PARM->lstack[PARM->depth] = n;
-      sprintf(bb, "#source %"PRIu64"\n", PARM->locn = make_location(PARM)) ;
+      snprintf(bb, 80, "#source %"PRIu64"\n", PARM->locn = make_location(PARM)) ;
       PARM->llocn = PARM->locn;
       corfile_puts(csound, bb, csound->expanded_orc);
     }
@@ -858,7 +858,7 @@ void  do_new_include(CSOUND *csound, yyscan_t yyscanner)
       uint8_t n = file_to_int(csound, buffer);
       char bb[128];
       PARM->lstack[PARM->depth] = n;
-      sprintf(bb, "#source %"PRIu64"\n", PARM->locn = make_location(PARM));
+      snprintf(bb, 128, "#source %"PRIu64"\n", PARM->locn = make_location(PARM));
       PARM->llocn = PARM->locn;
       corfile_puts(csound, bb, csound->expanded_orc);
     }
@@ -1040,7 +1040,7 @@ static void do_macro_arg(CSOUND *csound, char *name0, yyscan_t yyscanner)
       if (UNLIKELY(c == EOF || c == '\0'))
         csound->Die(csound, Str("define macro with args: unexpected EOF"));
       if (c=='$') {             /* munge macro name? */
-        int n = strlen(name0)+4;
+        int32_t n = (int32_t) strlen(name0)+4;
         if (UNLIKELY(i+n >= size)) {
           mm->body = csound->ReAlloc(csound, mm->body, size += 100);
           if (UNLIKELY(mm->body == NULL)) {
@@ -1326,7 +1326,7 @@ static void add_math_const_macro(CSOUND *csound, char * name, char *body)
 
     mm = (MACRO*) csound->Calloc(csound, sizeof(MACRO));
     mm->name = (char*) csound->Calloc(csound, strlen(name) + 3);
-    sprintf(mm->name, "M_%s", name);
+    snprintf(mm->name, strlen(name) + 3, "M_%s", name);
     mm->next = csound->orc_macros;
     csound->orc_macros = mm;
     mm->margs = MARGS;    /* Initial size */
@@ -1427,13 +1427,13 @@ void csound_pre_line(CSOUND *csound, CORFIL* cf, void *yyscanner)
       uint64_t llocn = PARM->llocn;
       if (UNLIKELY(locn != llocn)) {
         char bb[80];
-        sprintf(bb, "#source %"PRIu64"\n", locn);
+        snprintf(bb, 80, "#source %"PRIu64"\n", locn);
         corfile_puts(csound, bb, cf);
       }
       PARM->llocn = locn;
       if (UNLIKELY(n!=PARM->line+1)) {
         char bb[80];
-        sprintf(bb, "#line   %d\n", n);
+        snprintf(bb, 80, "#line   %d\n", n);
         corfile_puts(csound, bb, cf);
       }
     }

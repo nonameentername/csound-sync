@@ -117,8 +117,8 @@ struct LFSR : csnd::Plugin<1, 3> {
         return shift_register & ~(0xffffffff << length_);
     }
 
-    int init() {
-        srand(time(NULL));
+    int32_t init() {
+      srand((uint32_t) time(NULL));
 
         length_ = inargs[0];
         probability_ = inargs[1];
@@ -127,7 +127,7 @@ struct LFSR : csnd::Plugin<1, 3> {
         return OK;
     }
 
-    int kperf() {
+    int32_t kperf() {
         outargs[0] = (int) _process();
         return OK;
     }

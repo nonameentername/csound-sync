@@ -72,7 +72,7 @@ int32_t mp3in_cleanup(CSOUND *csound, MP3IN *p)
 int32_t mp3ininit_(CSOUND *csound, MP3IN *p, int32_t stringname)
 {
   char    name[1024];
-  int32_t fd;
+  FILE *f;
   mp3dec_t mpa           = NULL;
   mpadec_config_t config = { MPADEC_CONFIG_FULL_QUALITY, MPADEC_CONFIG_STEREO,
                              MPADEC_CONFIG_16BIT, MPADEC_CONFIG_LITTLE_ENDIAN,
@@ -94,7 +94,7 @@ int32_t mp3ininit_(CSOUND *csound, MP3IN *p, int32_t stringname)
   }
   /* set default format parameters */
   /* open file */
-  p->mpa = mpa = mp3dec_init();
+  p->mpa = mpa = mp3dec_init(csound);
   if (UNLIKELY(!mpa)) {
     return csound->InitError(csound, "%s", Str("Not enough memory\n"));
   }
@@ -114,9 +114,8 @@ int32_t mp3ininit_(CSOUND *csound, MP3IN *p, int32_t stringname)
   }
   else strncpy(name, ((STRINGDAT *)p->iFileCode)->data, 1023);
 
-  if (UNLIKELY(csound->FileOpen(csound, &fd, CSFILE_FD_R,
-                                name, "rb", "SFDIR;SSDIR",
-                                CSFTYPE_OTHER_BINARY, 0) == NULL)) {
+
+  if (UNLIKELY(mp3dec_open_file(mpa, name, &f) == NULL)) {
     mp3dec_uninit(mpa);
     return
       csound->InitError(csound, Str("mp3in: %s: failed to open file"), name);
@@ -125,7 +124,7 @@ int32_t mp3ininit_(CSOUND *csound, MP3IN *p, int32_t stringname)
   /* memset(&(p->fdch), 0, sizeof(FDCH)); */
   /* p->fdch.fd = fd; */
   /* fdrecord(csound, &(p->fdch)); */
-  if (UNLIKELY((r = mp3dec_init_file(mpa, fd, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
+  if (UNLIKELY((r = mp3dec_init_file(mpa, f, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
     mp3dec_uninit(mpa);
     return csound->InitError(csound, "%s", mp3dec_error(r));
   }
@@ -149,7 +148,8 @@ int32_t mp3ininit_(CSOUND *csound, MP3IN *p, int32_t stringname)
     if (mpainfo.layer == 1) strcat(temp, "Layer I");
     else if (mpainfo.layer == 2) strcat(temp, "Layer II");
     else strcat(temp, "Layer III");
-    csound->Warning(csound, "Input:  %s, %s, %d kbps, %d Hz  (%d:%02d)\n",
+    if(csound->GetDebug(csound))
+      csound->Warning(csound, "Input:  %s, %s, %d kbps, %d Hz  (%d:%02d)\n",
                     temp, ((mpainfo.channels > 1) ? "stereo" : "mono"),
                     mpainfo.bitrate, mpainfo.frequency, mpainfo.duration/60,
                     mpainfo.duration%60);
@@ -215,19 +215,19 @@ int32_t mp3in(CSOUND *csound, MP3IN *p)
   uint8_t *buffer = p->buf;
   MYFLT *al       = p->ar[0];
   MYFLT *ar       = p->ar[1];
-  int32_t pos     = p->pos;
+  int64_t pos     = p->pos;
   uint32_t early  = p->h.insdshead->ksmps_no_end;
   uint32_t offset = p->h.insdshead->ksmps_offset;
   uint32_t i, n, nsmps = CS_KSMPS;
 
   if (UNLIKELY(offset)) {
     memset(al, '\0', offset*sizeof(MYFLT));
-    memset(ar, '\0', offset*sizeof(MYFLT));
+    if(p->OUTCOUNT > 1)  memset(ar, '\0', offset*sizeof(MYFLT));
   }
   if (UNLIKELY(early)) {
     nsmps -= early;
     memset(&al[nsmps], '\0', early*sizeof(MYFLT));
-    memset(&ar[nsmps], '\0', early*sizeof(MYFLT));
+   if(p->OUTCOUNT > 1)  memset(&ar[nsmps], '\0', early*sizeof(MYFLT));
   }
   for (n=offset; n<nsmps; n++) {
     for (i=0; i<p->OUTOCOUNT; i++) {     /* stereo */
@@ -237,7 +237,7 @@ int32_t mp3in(CSOUND *csound, MP3IN *p)
         r = mp3dec_decode(mpa, buffer, p->bufSize, &p->bufused);
         if (UNLIKELY(p->bufused == 0)) {
           memset(&al[n], 0, (nsmps-n)*sizeof(MYFLT));
-          memset(&ar[n], 0, (nsmps-n)*sizeof(MYFLT));
+          if(p->OUTCOUNT > 1) memset(&ar[n], 0, (nsmps-n)*sizeof(MYFLT));
           goto ending;
         }
         pos = 0;
@@ -263,7 +263,7 @@ int32_t mp3in(CSOUND *csound, MP3IN *p)
 int32_t mp3len_(CSOUND *csound, MP3LEN *p, int32_t stringname)
 {
   char     name[1024];
-  int32_t  fd;
+  FILE     *f;
   mp3dec_t mpa           = NULL;
   mpadec_config_t config = { MPADEC_CONFIG_FULL_QUALITY, MPADEC_CONFIG_STEREO,
                              MPADEC_CONFIG_16BIT, MPADEC_CONFIG_LITTLE_ENDIAN,
@@ -273,7 +273,7 @@ int32_t mp3len_(CSOUND *csound, MP3LEN *p, int32_t stringname)
   int32_t  r;
 
   /* open file */
-  mpa = mp3dec_init();
+  mpa = mp3dec_init(csound);
   if (UNLIKELY(!mpa)) {
     return csound->InitError(csound, "%s", Str("Not enough memory\n"));
   }
@@ -288,33 +288,31 @@ int32_t mp3len_(CSOUND *csound, MP3LEN *p, int32_t stringname)
     else csound->StringArg2Name(csound, name, p->iFileCode, "soundin.",0);
   }
   else strncpy(name, ((STRINGDAT *)p->iFileCode)->data, 1023);
-  if (UNLIKELY(csound->FileOpen(csound, &fd, CSFILE_FD_R,
-                                name, "rb", "SFDIR;SSDIR",
-                                CSFTYPE_OTHER_BINARY, 0) == NULL)) {
+
+  if (UNLIKELY(mp3dec_open_file(mpa, name, &f) == NULL)) {
     mp3dec_uninit(mpa);
     return
       csound->InitError(csound,  Str("mp3in: %s: failed to open file"), name);
   }
-  if (UNLIKELY((r = mp3dec_init_file(mpa, fd, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
+  if (UNLIKELY((r = mp3dec_init_file(mpa, f, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
     mp3dec_uninit(mpa);
     return csound->InitError(csound, "%s", mp3dec_error(r));
   }
   if (UNLIKELY((r = mp3dec_get_info(mpa, &mpainfo, MPADEC_INFO_STREAM)) !=
                MP3DEC_RETCODE_OK)) {
-    close(fd);
+    fclose(f);
     mp3dec_uninit(mpa);
     return csound->InitError(csound, "%s", mp3dec_error(r));
   }
-  close(fd);
-  if(!strcmp(GetOpcodeName(&p->h), "mp3len.i"))
-    *p->ir = (MYFLT)mpainfo.duration;
-  else if(!strcmp(GetOpcodeName(&p->h), "mp3sr.i"))
+  fclose(f);
+  if(!strcmp(GetOpcodeName(&p->h), "mp3len"))
+    *p->ir = (MYFLT) mpainfo.duration;
+  else if(!strcmp(GetOpcodeName(&p->h), "mp3sr"))
     *p->ir = (MYFLT) mpainfo.frequency;
-  else if(!strcmp(GetOpcodeName(&p->h), "mp3bitrate.i"))
+  else if(!strcmp(GetOpcodeName(&p->h), "mp3bitrate"))
     *p->ir = (MYFLT) mpainfo.bitrate;
-  else if(!strcmp(GetOpcodeName(&p->h), "mp3nchnls.i"))
+  else if(!strcmp(GetOpcodeName(&p->h), "mp3nchnls"))
     *p->ir = (MYFLT) mpainfo.channels;
-
   mp3dec_uninit(mpa);
   return OK;
 }
@@ -441,7 +439,7 @@ static int32_t sinit3_(CSOUND *csound, DATASPACE *p)
   uint32_t size;
   char *name;
   // open file
-  int32_t  fd;
+  FILE  *f;
   int32_t  r;
   mp3dec_t mpa           = NULL;
   mpadec_config_t config = { MPADEC_CONFIG_FULL_QUALITY, MPADEC_CONFIG_STEREO,
@@ -454,7 +452,7 @@ static int32_t sinit3_(CSOUND *csound, DATASPACE *p)
     clock_gettime(CLOCK_MONOTONIC, &ts);
     dtime = ts.tv_sec + 1e-9*ts.tv_nsec;*/
   name = ((STRINGDAT *)p->knum)->data;
-  p->mpa = mpa = mp3dec_init();
+  p->mpa = mpa = mp3dec_init(csound);
   if (UNLIKELY(!mpa)) {
     return csound->InitError(csound, "%s", Str("Not enough memory\n"));
   }
@@ -463,15 +461,14 @@ static int32_t sinit3_(CSOUND *csound, DATASPACE *p)
     p->mpa = NULL;
     return csound->InitError(csound, "%s", mp3dec_error(r));
   }
-  if (UNLIKELY(csound->FileOpen(csound, &fd, CSFILE_FD_R,
-                                name, "rb", "SFDIR;SSDIR",
-                                CSFTYPE_OTHER_BINARY, 0) == NULL)) {
+
+  if (UNLIKELY(mp3dec_open_file(mpa, name, &f) == NULL)) {
     mp3dec_uninit(mpa);
     return
       csound->InitError(csound,  Str("mp3scale: %s: failed to open file"), name);
   }// else
   // csound->Message(csound, "%s", Str("mp3scale: open %s\n"), name);
-  if (UNLIKELY((r = mp3dec_init_file(mpa, fd, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
+  if (UNLIKELY((r = mp3dec_init_file(mpa, f, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
     mp3dec_uninit(mpa);
     return csound->InitError(csound, "%s", mp3dec_error(r));
   } // else
@@ -626,7 +623,7 @@ static int32_t sprocess3(CSOUND *csound, DATASPACE *p)
   MYFLT *tab, **table,frac;
   int32_t N = p->N, hsize = p->hsize, cnt = p->cnt;
   int32_t  nsmps = CS_KSMPS, n;
-  int32_t size = p->fdata[0].size/sizeof(MYFLT), post, i, j;
+  int32_t size = (int32_t) p->fdata[0].size/sizeof(MYFLT), post, i, j;
   double pos, spos = p->pos;
   MYFLT *fwin, *bwin;
   MYFLT in, *prev;
@@ -851,15 +848,15 @@ static int32_t sprocess3(CSOUND *csound, DATASPACE *p)
 static OENTRY mp3in_localops[] =
   {
     {"mp3in",  S(MP3IN),  _QQ,  "mm", "Soooo", (SUBR) mp3ininit_S, (SUBR)mp3in, (SUBR) mp3in_cleanup},
-    {"mp3in.i",  S(MP3IN),  _QQ,  "mm", "ioooo", (SUBR) mp3ininit, (SUBR)mp3in, (SUBR) mp3in_cleanup},
+    {"mp3in",  S(MP3IN),  _QQ,  "mm", "ioooo", (SUBR) mp3ininit, (SUBR)mp3in, (SUBR) mp3in_cleanup},
     {"mp3len", S(MP3LEN), _QQ,  "i",  "S",     (SUBR) mp3len_S,    NULL,  NULL},
-    {"mp3len.i", S(MP3LEN), _QQ,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
+    {"mp3len", S(MP3LEN), _QQ,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
     {"mp3sr", S(MP3LEN), 0,  "i",  "S",     (SUBR) mp3len_S,    NULL,  NULL},
-    {"mp3sr.i", S(MP3LEN), 0,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
+    {"mp3sr", S(MP3LEN), 0,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
     {"mp3bitrate", S(MP3LEN), 0,  "i",  "S",     (SUBR) mp3len_S,    NULL,  NULL},
-    {"mp3bitrate.i", S(MP3LEN), 0,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
+    {"mp3bitrate", S(MP3LEN), 0,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
     {"mp3nchnls", S(MP3LEN), 0,  "i",  "S",     (SUBR) mp3len_S,    NULL,  NULL},
-    {"mp3nchnls.i", S(MP3LEN), 0,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
+    {"mp3nchnls", S(MP3LEN), 0,  "i",  "i",     (SUBR) mp3len,    NULL,  NULL},
     {"mp3scal", sizeof(DATASPACE), 0,  "aak", "SkkkoooPP",
      (SUBR)sinit3,(SUBR)sprocess3, (SUBR) mp3scale_cleanup},
   };
@@ -916,7 +913,7 @@ static CS_NOINLINE FUNC *ftalloc(const FGDATA *ff, FUNC *ftp)
   return ftp;
 }
 
-int gen49raw(FGDATA *ff, FUNC *ftp)
+int32_t gen49raw(FGDATA *ff, FUNC *ftp)
 {
   CSOUND  *csound        = ff->csound;
   MYFLT   *fp           = ftp == NULL ? NULL: ftp->ftable;
@@ -925,14 +922,15 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
                              MPADEC_CONFIG_16BIT, MPADEC_CONFIG_LITTLE_ENDIAN,
                              MPADEC_CONFIG_REPLAYGAIN_NONE, TRUE, TRUE, TRUE,
                              0.0 };
-  int     skip              = 0, chan = 0, r, fd;
-  int p                     = 0;
+  int32_t     skip              = 0, chan = 0, r;
+  FILE    *f;
+  int32_t p                     = 0;
   char    sfname[1024];
   mpadec_info_t mpainfo;
   uint32_t bufsize, bufused = 0;
   uint8_t *buffer;
-  int size = 0x1000;
-  int flen, nchanls, def = 0;
+  int32_t size = 0x1000;
+  int32_t flen, nchanls, def = 0;
 
   if (UNLIKELY(ff->e.pcnt < 7)) {
     return csound->FtError(ff, "%s", Str("insufficient arguments"));
@@ -941,7 +939,7 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
     int32 filno /*= (int32) MYFLT2LRND(ff->e.p[5])*/;
     if (IsStringCode(ff->e.p[5])) {
       if (ff->e.strarg[0] == '"') {
-        int len = (int) strlen(ff->e.strarg) - 2;
+        int32_t len = (int32_t) strlen(ff->e.strarg) - 2;
         strncpy(sfname, ff->e.strarg + 1, 1024);
         if (len >= 0 && sfname[len] == '"')
           sfname[len] = '\0';
@@ -952,9 +950,9 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
     else if ((filno= (int32) MYFLT2LRND(ff->e.p[5])) >= 0)
       snprintf(sfname, 1024, "soundin.%d", filno);   /* soundin.filno */
   }
-  chan  = (int) MYFLT2LRND(ff->e.p[7]);
+  chan  = (int32_t) MYFLT2LRND(ff->e.p[7]);
   if (UNLIKELY(chan < 0)) {
-    return csound->FtError(ff, Str("channel %d illegal"), (int) chan);
+    return csound->FtError(ff, Str("channel %d illegal"), (int32_t) chan);
   }
   switch (chan) {
   case 0:
@@ -968,7 +966,7 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
   case 4:
     config.mode = MPADEC_CONFIG_CHANNEL2; break;
   }
-  mpa = mp3dec_init();
+  mpa = mp3dec_init(csound);
   if (UNLIKELY(!mpa)) {
     return csound->FtError(ff, "%s", Str("Not enough memory\n"));
   }
@@ -976,15 +974,13 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
     mp3dec_uninit(mpa);
     return csound->FtError(ff,"%s", mp3dec_error(r));
   }
-  (void)csound->FileOpen(csound, &fd, CSFILE_FD_R,
-                         sfname, NULL, "SFDIR;SSDIR",
-                         CSFTYPE_UNKNOWN_AUDIO, 0);
+  (void)mp3dec_open_file(mpa, sfname, &f);
   //    fd = open(sfname, O_RDONLY); /* search paths */
-  if (UNLIKELY(fd < 0)) {
+  if (UNLIKELY(f < 0)) {
     mp3dec_uninit(mpa);
     return csound->FtError(ff, "sfname");
   }
-  if (UNLIKELY((r = mp3dec_init_file(mpa, fd, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
+  if (UNLIKELY((r = mp3dec_init_file(mpa, f, 0, FALSE)) != MP3DEC_RETCODE_OK)) {
     mp3dec_uninit(mpa);
     return csound->FtError(ff,"%s", mp3dec_error(r));
   }
@@ -1023,7 +1019,7 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
   r = mp3dec_decode(mpa, buffer, size, &bufused);
   nchanls = (chan == 2 && mpainfo.channels == 2 ? 2 : 1);
   if (ff->flen == 0) {    /* deferred ftalloc */
-    int fsize, frames;
+    int32_t fsize, frames;
     frames = mpainfo.frames * mpainfo.decoded_frame_samples;
     fsize  = frames * nchanls;
     if (UNLIKELY((ff->flen = fsize) <= 0))
@@ -1038,11 +1034,11 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
     def = 1;
   }
   ftp->gen01args.sample_rate = mpainfo.frequency;
-  ftp->cvtbas = LOFACT * mpainfo.frequency * ftp->sr;
+  ftp->cvtbas = mpainfo.frequency * ftp->sr; 
   flen = ftp->flen;
   //printf("gen49: flen=%d size=%d bufsize=%d\n", flen, size, bufsize);
   while ((r == MP3DEC_RETCODE_OK) && bufused) {
-    unsigned int i;
+    uint32_t i;
     short *bb = (short*)buffer;
     //printf("gen49: p=%d bufused=%d\n", p, bufused);
     for (i=0; i<bufused*nchanls/mpainfo.decoded_sample_size; i++)  {
@@ -1066,7 +1062,7 @@ int gen49raw(FGDATA *ff, FUNC *ftp)
   return ((r == MP3DEC_RETCODE_OK) ? OK : NOTOK);
 }
 
-int gen49(FGDATA *ff, FUNC *ftp)
+int32_t gen49(FGDATA *ff, FUNC *ftp)
 {
   CSOUND *csound = ff->csound;
   if (UNLIKELY(ff->e.pcnt < 7)) {
@@ -1103,10 +1099,10 @@ PUBLIC NGFENS *csound_fgen_init(CSOUND *csound)                         \
   return   mp3in_fgen_init(csound);
 }
 
-PUBLIC int csoundModuleInfo(void)                                      
+PUBLIC int32_t csoundModuleInfo(void)                                      
 {
-  return ((CS_APIVERSION << 16)
-          + (CS_APISUBVER << 8)
-          + (int) sizeof(MYFLT));
+  return ((CS_VERSION << 16)
+          + (CS_SUBVER << 8)
+          + (int32_t) sizeof(MYFLT));
 }
 #endif

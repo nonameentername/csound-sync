@@ -44,7 +44,7 @@
 #define MATSIZE (4)
 #define ATORAD  (TWOPI_F / FL(360.0))
 
-static int GetZaBounds(CSOUND *csound, MYFLT **zastart){
+static int64_t GetZaBounds(CSOUND *csound, MYFLT **zastart){
     ZAK_GLOBALS *zz;
     zz = (ZAK_GLOBALS*) csound->QueryGlobalVariable(csound, "_zak_globals");
     if (zz==NULL) {
@@ -1917,7 +1917,7 @@ int32_t vbap_init_a(CSOUND *csound, VBAPA *p)
                              "%s", Str("vbap system NOT configured.\nMissing"
                                        " vbaplsinit opcode in orchestra?"));
   //printf("**** size = %d\n", p->q.ls_set_am);
-  tabinit(csound,  p->tabout, p->q.ls_set_am);
+  tabinit(csound,  p->tabout, p->q.ls_set_am, &(p->h));
   cnt = p->q.number = p->tabout->sizes[0];
   csound->AuxAlloc(csound, p->q.ls_set_am * sizeof(LS_SET), &p->q.aux);
   if (UNLIKELY(p->q.aux.auxp == NULL)) {
@@ -2600,7 +2600,7 @@ int32_t vbap_zak_init(CSOUND *csound, VBAP_ZAK *p)
   char name[24];
   /* Check to see this index is within the limits of za space.    */
   MYFLT* zastart;
-  int zalast = GetZaBounds(csound, &zastart);
+  int64_t zalast = GetZaBounds(csound, &zastart);
   indx = (int32) *p->ndx;
   if (UNLIKELY(indx > zalast)) {
     return csound->PerfError(csound, &(p->h),
@@ -2914,7 +2914,7 @@ int32_t vbap_zak_moving_init(CSOUND *csound, VBAP_ZAK_MOVING *p)
   p->n = (int32_t)MYFLT2LONG(*p->numb); /* Set size */
   /* Check to see this index is within the limits of za space.    */
   MYFLT* zastart;
-  int zalast = GetZaBounds(csound, &zastart);
+  int64_t zalast = GetZaBounds(csound, &zastart);
   indx = (int32) *p->ndx;
   if (UNLIKELY(indx > zalast)) {
     return csound->PerfError(csound, &(p->h),

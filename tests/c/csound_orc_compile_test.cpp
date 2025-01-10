@@ -13,6 +13,9 @@
 #include "csoundCore.h"
 #include "gtest/gtest.h"
 
+#define csoundCompileOrc(a,b) csoundCompileOrc(a,b,0)
+#define csoundReadScore(a,b) csoundEventString(a,b,0)
+
 class OrcCompileTests : public ::testing::Test {
 public:
     OrcCompileTests ()
@@ -25,16 +28,13 @@ public:
 
     virtual void SetUp ()
     {
-        csoundSetGlobalEnv ("OPCODE6DIR64", "../../");
-        csound = csoundCreate (0);
+        csound = csoundCreate (NULL,NULL);
         csoundCreateMessageBuffer (csound, 0);
-        csoundSetOption (csound, "-odac --logfile=NULL");
+        csoundSetOption (csound, "-odac --logfile=null");
     }
 
     virtual void TearDown ()
     {
-        csoundCleanup (csound);
-        csoundDestroyMessageBuffer (csound);
         csoundDestroy (csound);
         csound = nullptr;
     }
@@ -43,8 +43,8 @@ public:
 };
 
 extern "C" {
-    extern int argsRequired (char* arrayName);
-    extern char** splitArgs (CSOUND* csound, char* argString);
+    extern int32_t argsRequired (const char* arrayName);
+    extern char** splitArgs (CSOUND* csound, const char* argString);
 }
 
 TEST_F (OrcCompileTests, testArgsRequired)
@@ -87,15 +87,15 @@ TEST_F (OrcCompileTests, testSplitArgs)
 
 TEST_F (OrcCompileTests, testCompile)
 {
-    int result, compile_again = 0;
-    char* instrument =
+    int32_t result, compile_again = 0;
+    const char* instrument =
         "instr 1 \n"
         "k1 expon p4, p3, p4*0.001 \n"
         "a1 randi  k1, p5   \n"
         "out  a1   \n"
         "endin \n";
 
-    char* instrument2 =
+    const char* instrument2 =
         "instr 2 \n"
         "k1 expon p4, p3, p4*0.001 \n"
         "a1 vco2  k1, p5   \n"
@@ -105,8 +105,7 @@ TEST_F (OrcCompileTests, testCompile)
 
     result = csoundCompileOrc(csound, instrument);
     ASSERT_TRUE (result == 0);
-    result = csoundReadScore(csound,  "i 1 0  1 10000 5000\n i 1 3 1 10000 1000\n");
-    ASSERT_TRUE (result == 0);
+    csoundReadScore(csound,  "i 1 0  1 10000 5000\n i 1 3 1 10000 1000\n");
     result = csoundStart(csound);
     ASSERT_TRUE (result == 0);
 
@@ -127,8 +126,8 @@ TEST_F (OrcCompileTests, testCompile)
 
 TEST_F (OrcCompileTests, testReuse)
 {
-    int result;
-    char* instrument =
+    int32_t result;
+    const char* instrument =
         "instr 1 \n"
         "k1 expon p4, p3, p4*0.001 \n"
         "a1 randi  k1, p5   \n"
@@ -137,28 +136,27 @@ TEST_F (OrcCompileTests, testReuse)
 
     result = csoundCompileOrc(csound, instrument);
     ASSERT_TRUE(result == 0);
-    result = csoundReadScore(csound,  "i 1 0  1 10000 5000\n");
-    ASSERT_TRUE(result == 0);
+    csoundReadScore(csound,  "i 1 0  1 10000 5000\n");
     result = csoundStart(csound);
     ASSERT_TRUE(result == 0);
-    csoundPerform(csound);
+    while(csoundPerformKsmps(csound) == 0);
     csoundReset(csound);
     result = csoundCompileOrc(csound, instrument);
     csoundRewindScore(csound);
-    result = csoundReadScore(csound,  "i 1 0  1 10000 5000\n");
+    csoundReadScore(csound,  "i 1 0  1 10000 5000\n");
 
-    csoundPerform(csound);
+    while(csoundPerformKsmps(csound) == 0);
     csoundReset(csound);
     result = csoundCompileOrc(csound, instrument);
     csoundRewindScore(csound);
-    result = csoundReadScore(csound,  "i 1 0  1 10000 5000\n i 1 3 1 10000 1000\n");
+    csoundReadScore(csound,  "i 1 0  1 10000 5000\n i 1 3 1 10000 1000\n");
 
-    csoundPerform(csound);
+    while(csoundPerformKsmps(csound) == 0);
 }
 
 TEST_F (OrcCompileTests, testLineNumber)
 {
-    char* instrument =
+    const char* instrument =
         "instr 1 \n"
         "k1 expon p4, p3, p4*0.001 \n"
         "a1 randi  k1, p5   \n"
@@ -166,6 +164,34 @@ TEST_F (OrcCompileTests, testLineNumber)
         "endin \n";
 
     TREE *tree = csoundParseOrc(csound, instrument);
-    // TODO this test doesn't return the expected value, 1 instead of 0
-    // ASSERT_EQ (tree->next->line, 0);
+    ASSERT_TRUE(tree != NULL);
 }
+
+TEST_F (OrcCompileTests, testMaxTableSize)
+{
+    const char* instrument = R"(
+instr 1
+a1 oscil 0,0,1
+endin
+     )";
+
+const char* event = R"(
+ f 1 0 [2^30-1] 2 0 [2^30-1] 0
+ i1 0 1
+   )";
+
+   csoundEventString(csound, event, 0);
+   int32_t result =
+     csoundCompileOrc(csound, instrument);
+     ASSERT_TRUE(result == 0);
+     result = csoundStart(csound);
+     ASSERT_TRUE(result == 0);
+     result = csoundPerformKsmps(csound);
+    if(sizeof(MYFLT) > 4) {
+    ASSERT_TRUE(result == 0);
+    ASSERT_TRUE(csoundTableLength(csound,1) == pow(2,30)-1);
+   }
+   else
+    ASSERT_FALSE(result == 0);
+}
+

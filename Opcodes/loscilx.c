@@ -46,8 +46,8 @@ static int32_t sndload_opcode_init_(CSOUND *csound, SNDLOAD_OPCODE *p,
   SNDMEMFILE  *sf;
   SFLIB_INFO     sfinfo;
   int32_t         sampleFormat, loopMode;
-  OPARMS parms;
-  csound->GetOParms(csound, &parms);
+ const OPARMS *parms;
+  parms =   csound->GetOParms(csound) ;
 
 
   if (isstring) fname = ((STRINGDAT *)p->Sfname)->data;
@@ -63,7 +63,7 @@ static int32_t sndload_opcode_init_(CSOUND *csound, SNDLOAD_OPCODE *p,
     
   switch (sampleFormat) {
   case -1: sfinfo.format = 0; break;
-  case 0:  sfinfo.format |= (int32_t) FORMAT2SF(parms.outformat); break;
+  case 0:  sfinfo.format |= (int32_t) FORMAT2SF(parms->outformat); break;
   case 1:  sfinfo.format |= (int32_t) FORMAT2SF(AE_CHAR);   break;
   case 2:  sfinfo.format |= (int32_t) FORMAT2SF(AE_ALAW);   break;
   case 3:  sfinfo.format |= (int32_t) FORMAT2SF(AE_ULAW);   break;
@@ -295,7 +295,7 @@ static int32_t loscilx_opcode_init(CSOUND *csound, LOSCILX_OPCODE *p)
         frqScale = 1.0 / (double) *(p->ibas);
     }
     else if (ftp->cpscvt > FL(0.0)) {
-      frqScale = (double) ftp->cpscvt * (1.0 / (double) LOFACT);
+      frqScale = (double) ftp->cpscvt; 
     }
     else if (ftp->gen01args.sample_rate > FL(0.0))
       frqScale = (double) ftp->gen01args.sample_rate / (double) CS_ESR;
@@ -390,7 +390,7 @@ static int32_t loscilxa_opcode_init(CSOUND *csound, LOSCILXA_OPCODE *p)
       sf->loopEnd = tmp;
     }
     p->nChannels = sf->nChannels;
-    tabinit(csound, p->arr, p->nChannels);
+    tabinit(csound, p->arr, p->nChannels, &(p->h));
     dataPtr = (void*) &(sf->data[0]);
     p->curPos = loscilx_convert_phase(sf->startOffs);
     p->curLoopMode = sf->loopMode - 1;
@@ -417,7 +417,7 @@ static int32_t loscilxa_opcode_init(CSOUND *csound, LOSCILXA_OPCODE *p)
     if (ftp == NULL)
       return NOTOK;
     p->nChannels = ftp->nchanls;
-    tabinit(csound, p->arr, p->nChannels);
+    tabinit(csound, p->arr, p->nChannels, &(p->h));
     dataPtr = (void*) &(ftp->ftable[0]);
     p->curPos = (int_least64_t) 0;
     switch ((int32_t) ftp->loopmode1) {
@@ -440,7 +440,7 @@ static int32_t loscilxa_opcode_init(CSOUND *csound, LOSCILXA_OPCODE *p)
         frqScale = 1.0 / (double) *(p->ibas);
     }
     else if (ftp->cpscvt > FL(0.0)) {
-      frqScale = (double) ftp->cpscvt * (1.0 / (double) LOFACT);
+      frqScale = (double) ftp->cpscvt; 
     }
     else if (ftp->gen01args.sample_rate > FL(0.0))
       frqScale = (double) ftp->gen01args.sample_rate / (double) CS_ESR;

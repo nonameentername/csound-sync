@@ -31,7 +31,7 @@ typedef struct overlap {
   struct overlap *nxtact;
   struct overlap *nxtfree;
   int32          timrem, dectim, formphs, forminc;
-  uint32         risphs;
+  int32         risphs;
   int32          risinc, decphs, decinc;
   double         formphsf, formincf, risphsf, risincf, decphsf, decincf;
   MYFLT          curamp, expamp;

@@ -48,6 +48,7 @@
 #include "ugrw1.h"
 #include <math.h>
 #include <ctype.h>
+#include "csound_standard_types.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -112,7 +113,7 @@ int32_t elapsedtime(CSOUND *csound, RDTIME *p)
 int32_t instimset(CSOUND *csound, RDTIME *p)
 {
    IGN(csound);
-    p->instartk = CS_KCNT;
+   p->instartk = CS_KCNT;
     *p->rslt = FL(0.0);
     return OK;
 }
@@ -217,9 +218,14 @@ int32_t printk(CSOUND *csound, PRINTK *p)
        * Print instrument number and time. Instrument number stuff from
        * printv() in disprep.c.
        */
-      csound->MessageS(csound, CSOUNDMSG_ORCH, " i%4d ",
+      if(p->h.insdshead->instr->opcode_info == NULL)
+         csound->MessageS(csound, CSOUNDMSG_ORCH, "instr %d:",
                                (int32_t)p->h.insdshead->p1.value);
-      csound->MessageS(csound, CSOUNDMSG_ORCH, Str("time %11.5f: "),
+       else
+        csound->MessageS(csound, CSOUNDMSG_ORCH,
+                         "UDO %s:", p->h.insdshead->instr->opcode_info->name); //
+ 
+       csound->MessageS(csound, CSOUNDMSG_ORCH, Str("\ttime %11.5f: "),
                                csound->icurTime/CS_ESR-CS_ONEDKR);
       /* Print spaces and then the value we want to read.   */
       if (p->pspace > 0L) {
@@ -708,19 +714,23 @@ int32_t printk2(CSOUND *csound, PRINTK2 *p)
     MYFLT   value = *p->val;
 
     if (p->oldvalue != value) {
-      csound->MessageS(csound, CSOUNDMSG_ORCH, " i%d ",
+     if(p->h.insdshead->instr->opcode_info == NULL)      
+       csound->MessageS(csound, CSOUNDMSG_ORCH, "instr %d:",
                                                (int32_t)p->h.insdshead->p1.value);
+     else
+     csound->MessageS(csound, CSOUNDMSG_ORCH,
+                      "UDO %s:", p->h.insdshead->instr->opcode_info->name);
       if (p->pspace > 0) {
         char  s[128];   /* p->pspace is limited to 120 in printk2set() above */
         memset(s, ' ', (size_t) p->pspace);
         s[p->pspace] = '\0';
-        csound->MessageS(csound, CSOUNDMSG_ORCH, "%s", s);
+        csound->MessageS(csound, CSOUNDMSG_ORCH, "\t%s", s);
       }
       if (*p->named)
-        csound->MessageS(csound, CSOUNDMSG_ORCH, "%s = %11.5f\n",
+        csound->MessageS(csound, CSOUNDMSG_ORCH, "\t%s = %11.5f\n",
                          *p->h.optext->t.inlist->arg, *p->val);
       else
-        csound->MessageS(csound, CSOUNDMSG_ORCH, "%11.5f\n", *p->val);
+        csound->MessageS(csound, CSOUNDMSG_ORCH, "\t%11.5f\n", *p->val);
       p->oldvalue = value;
     }
     return OK;
@@ -755,7 +765,7 @@ int32_t printk3(CSOUND *csound, PRINTK3 *p)
 }
 
 #include "../Opcodes/zak.h"
-static int GetZaBounds(CSOUND *csound, MYFLT **zastart){
+static int64_t GetZaBounds(CSOUND *csound, MYFLT **zastart){
     ZAK_GLOBALS *zz;
     zz = (ZAK_GLOBALS*) csound->QueryGlobalVariable(csound, "_zak_globals");
     if (zz==NULL) {
@@ -776,7 +786,7 @@ int32_t inz(CSOUND *csound, IOZ *p)
     uint32_t n, nsmps = CS_KSMPS;
     /* Check to see this index is within the limits of za space.     */
     MYFLT* zastart;
-    int zalast = GetZaBounds(csound, &zastart);
+    int64_t zalast = GetZaBounds(csound, &zastart);
     indx = (int32_t) *p->ndx;
     if (UNLIKELY(indx + nchns >= zalast)) goto err1;
     else if (UNLIKELY(indx < 0)) goto err2;
@@ -812,7 +822,7 @@ int32_t outz(CSOUND *csound, IOZ *p)
 
     /* Check to see this index is within the limits of za space.    */
     MYFLT* zastart;
-    int zalast = GetZaBounds(csound, &zastart);
+    int64_t zalast = GetZaBounds(csound, &zastart);
     indx = (int32) *p->ndx;
     if (UNLIKELY((indx + nchns) >= zalast)) goto err1;
     else if (UNLIKELY(indx < 0)) goto err2;
@@ -826,7 +836,7 @@ int32_t outz(CSOUND *csound, IOZ *p)
             spout[n + i*nsmps] += readloc[n];
           }
           readloc += nsmps;
-        } 
+        }
     }
     return OK;
  err1:

@@ -28,7 +28,7 @@ parserType = ""
 ##csoundExecutable = r"C:/Users/new/csound-csound6-git/csound.exe "
 csoundExecutable = ""
 sourceDirectory = "."
-useWine = False
+runtimeEnvironment = None
 
 class Test:
     def __init__(self, fileName, description, expected=True):
@@ -121,6 +121,7 @@ def runTest():
 	["test46.csd", "if-then with expression in boolean comparison"],
 	["test47.csd", "until loop and t-variables"],
 	["test48.csd", "expected failure with variable used before defined", 1],
+    ["test_instr_redefinition.csd", "allow instr redefinition"],
 	["test_instr0_labels.csd", "test labels in instr0 space"],
 	["test_string.csd", "test string assignment and printing"],
 	["test_sprintf.csd", "test string assignment and printing"],
@@ -138,7 +139,7 @@ def runTest():
 	["test_asig_as_array.csd", "test using a-sig with array get/set syntax"],
 	["test_arrays_negative_dimension_fail.csd",
              "test expected failure with negative dimension size and array", 1],
-
+	["test_booleans.csd", "tests using boolean data-types"],
 	["test_audio_in.csd", "test the parsing of the 'in' operator as opcode"],
 
 	["test_empty_conditional_branches.csd", "tests that empty branches do not cause compiler issues"],
@@ -157,21 +158,31 @@ def runTest():
 	["test_polymorphic_udo.csd", "test polymorphic udo"],
 	["test_udo_a_array.csd", "test udo with a-array"],
 	["test_udo_2d_array.csd", "test udo with 2d-array"],
-        ["test_udo_string_array_join.csd", "test udo with S[] arg returning S"],
-        ["test_array_function_call.csd", "test synthesizing an array arg from a function-call"],
-
-        ["test_explicit_types.csd", "test typed identifiers (i.e. signals:a[], sigLeft:a)"],
-        ["test_parser3_opcall_ambiguities.csd", "test T_OPCALL ambiguities"],
-        ["test_new_udo_syntax.csd", "test new-style UDO syntax"],
-        ["test_new_udo_syntax_explicit_types.csd", "test new-style UDO syntax with explicit types"],
-        ["test_multiple_return.csd", "test multiple return from express (i.. a1,a2 = xx())"],
-        ["test_array_operations.csd", "test multiple operations on multiple array types"],
-        ["prints_number_no_crash.csd", "test prints does not crash when given a number arguments", 1],
-        ["test_newlines_within_function_calls.csd", "test newlines allowed within function calls"],
-        ["test_comma_newline.csd", "test commas followed by newlines"],
-
+    ["test_udo_string_array_join.csd", "test udo with S[] arg returning S"],
+    ["test_array_function_call.csd", "test synthesizing an array arg from a function-call"],
+    ["test_explicit_types.csd", "test typed identifiers (i.e. signals:a[], sigLeft:a)"],
+    ["test_parser3_opcall_ambiguities.csd", "test T_OPCALL ambiguities"],
+    ["test_new_udo_syntax.csd", "test new-style UDO syntax"],
+    ["test_new_udo_syntax_explicit_types.csd", "test new-style UDO syntax with explicit types"],
+    ["test_multiple_return.csd", "test multiple return from express (i.. a1,a2 = xx())"],
+    ["test_array_operations.csd", "test multiple operations on multiple array types"],
+    ["prints_number_no_crash.csd", "test prints does not crash when given a number arguments", 1],
+    ["test_newlines_within_function_calls.csd", "test newlines allowed within function calls"],
+    ["test_comma_newline.csd", "test commas followed by newlines"],
+    ["test_bool_with_explicit_type.csd", "test use of explicit type in bool expression"],
+    ["test_explicit_globals.csd", "test global declaration of explicit types"],
+    ["test_fail_mismatched_types.csd", "syntax error on mismatched type declaration", 1],        
     ["test_declare.csd", "test declare keyword (CS7)"],
     ["test_plusname.csd", "test +Name for instr name"],
+    ["testnewline.csd", "test newline in statements"],
+    ["testmidichannels.csd", "test use of mapped multiport channels"],
+    ["test_instr_type.csd", "test instr type and variables"],
+    ["test_delete_instr.csd", "test creating and deleting instr"],
+    ["test_create_instr.csd", "testing creating and scheduling instr"],
+    ["test_complex_numbers.csd", "testing complex number operations"],
+    ["test_schedule_named_instance.csd", "testing schedule with named instr instance"],
+    ["test_instr_type_var_new_compilation.csd", "testing schedule of named instr in new compilations"],
+    ["test_ambiguous_opcall.csd", "test ambiguous opcall examples"],
     ]
 
     arrayTests = [["arrays/arrays_i_local.csd", "local i[]"],
@@ -183,7 +194,9 @@ def runTest():
         ["arrays/arrays_S_local.csd", "local S[]"],
         ["arrays/arrays_S_global.csd", "global S[]"],
         ["arrays/array_get_inline.csd", "tests parsing and eval of inline array[getters]"],
-        ["arrays/arrays_for_loop.csd", "tests for loops over array types"]
+        ["arrays/arrays_for_loop.csd", "tests for loops over array types"],
+        ["arrays/test_redef_fail.csd", "fail on redefinition of variable by array", 1],
+        ["arrays/array_copy.csd", "test for =.generic copy on k-rate only"],        
     ]
 
 
@@ -198,11 +211,22 @@ def runTest():
         ["udo/fail_invalid_xin.csd", "fail due to invalid xin", 1],
         ["udo/fail_invalid_xout.csd", "fail due to invalid xout", 1],
         ["udo/test_udo_xout_const.csd", "Constants as xout inputs work"],
+        ["udo/pass_by_ref.csd", "Pass-by-ref works with new-style UDOs"],
+    ]
+
+    maxallocTests = [
+        ["test_maxalloc_turnoff_lt_0.csd", "Test maxalloc opcode less than 0", 1],
+        ["test_maxalloc_turnoff_gt_2.csd", "Test maxalloc opcode greater than 2", 1],
+        ["test_maxalloc_turnoff_default.csd", "Test maxalloc opcode defaults 0"],
+        ["test_maxalloc_turnoff_eq_0.csd", "Test maxalloc opcode value of 0"],
+        ["test_maxalloc_turnoff_eq_1.csd", "Test maxalloc opcode value of 1"],
+        ["test_maxalloc_turnoff_eq_2.csd", "Test maxalloc opcode value of 2"]
     ]
 
     tests += arrayTests
     tests += structTests
     tests += udoTests
+    tests += maxallocTests
 
     output = ""
     tempfile = 'csound_test_output.txt'
@@ -219,18 +243,17 @@ def runTest():
         desc = t[1]
         expectedResult = (len(t) == 3) and 1 or 0
 
-        if useWine:
-            executable = (csoundExecutable == "") and "csound" or csoundExecutable
-            command = "wine %s %s %s %s/%s 2> %s"%(executable, parserType, runArgs, sourceDirectory, filename, tempfile)
-            print(command)
-            retVal = os.system(command)
-        elif(os.sep == '\\' or os.name == 'nt'):
-            executable = (csoundExecutable == "") and "..\csound.exe" or csoundExecutable
+        if(os.sep == '\\' or os.name == 'nt'):
+            executable = (csoundExecutable == "") and os.path.join("..", "csound.exe") or csoundExecutable
+            if runtimeEnvironment:
+                executable = "%s %s" % (runtimeEnvironment, executable)
             command = "%s %s %s %s/%s 2> %s"%(executable, parserType, runArgs, sourceDirectory, filename, tempfile)
             print(command)
             retVal = os.system(command)
         else:
             executable = (csoundExecutable == "") and "csound" or csoundExecutable
+            if runtimeEnvironment:
+                executable = "%s %s" % (runtimeEnvironment, executable)
             command = "%s %s %s %s/%s 2> %s"%(executable, parserType, runArgs, sourceDirectory, filename, tempfile)
             print(command)
             retVal = os.system(command)
@@ -272,7 +295,6 @@ def runTest():
         counter += 1
 
 #    print output
-
     print("%s\n\n"%("=" * 80))
     print("Tests Passed: %i\nTests Failed: %i\n"%(testPass, testFail))
 
@@ -284,7 +306,7 @@ def runTest():
     f.flush()
     f.close()
 
-    return retVals
+    return testFail
 
 if __name__ == "__main__":
     if(len(sys.argv) > 1):
@@ -299,14 +321,14 @@ if __name__ == "__main__":
             elif arg.startswith("--csound-executable="):
                 csoundExecutable = arg[20:]
                 print(csoundExecutable)
-            elif arg.startswith("--opcode6dir64="):
-                os.environ['OPCODE6DIR64'] = arg[15:]
-                print(os.environ['OPCODE6DIR64'])
+            elif arg.startswith("--opcode7dir64="):
+                os.environ['OPCODE7DIR64'] = arg[15:]
+                print(os.environ['OPCODE7DIR64'])
             elif arg.startswith("--source-dir="):
                 sourceDirectory = arg[13:]
-            elif arg.startswith("--use-wine="):
-                useWine = arg[11:] == 'true'
-                
+            elif arg.startswith("--runtime-environment="):
+                runtimeEnvironment = arg[22:]
     results = runTest()
+    sys.exit(results)
     # if (showUIatClose):
     #     showUI(results)

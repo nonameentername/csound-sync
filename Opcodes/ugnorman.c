@@ -911,6 +911,7 @@ static int32_t atsadd(CSOUND *csound, ATSADD *p)
     lobits = ftp->lobits;
     amp = csound->Get0dBFS(csound) * (MYFLT) p->buf[i].amp;
     phase = MYFLT2LONG(*oscphase);
+    phasef = *oscphase;
     ar = p->aoutput;         /* ar is a pointer to the audio output */
     inca = (amp-oldamps[i])/nsmps;
     a = oldamps[i];
@@ -1059,7 +1060,7 @@ static MYFLT randiats(CSOUND *csound, RANDIATS *radat)
 /* ------------------------------------------------------------------ */
 
 static void FetchADDNZbands(int32_t ptls, int32_t firstband, double *datastart,
-                            int32_t frmInc, int32_t maxFr, int swapped,
+                            int32_t frmInc, int32_t maxFr, int32_t swapped,
                             double *buf, MYFLT position)
 {
   double  frac;               /* the distance in time we are between frames */
@@ -2942,6 +2943,7 @@ static int32_t atscross(CSOUND *csound, ATSCROSS *p)
     lobits = ftp->lobits;
     amp = csound->Get0dBFS(csound) * (MYFLT) p->buf[i].amp;
     phase = MYFLT2LONG (oscphase[i]);
+    phasef = *oscphase;
     ar = p->aoutput;         /* ar is a pointer to the audio output */
     inca = (amp-oldamps[i])/nsmps;
     /* put in * kfmod */

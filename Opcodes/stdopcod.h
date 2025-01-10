@@ -53,7 +53,7 @@ typedef struct STDOPCOD_GLOBALS_ {
     struct fileinTag  *file_opened;
     int32_t         file_max;
     int32_t         file_num;
-    int32        fout_kreset;
+    int64_t        fout_kreset;
    /* MYFLT       *buf;
       int32_t         buf_size; */ /* VL - now using per instance buffer */
     /* oscbnk.c */
@@ -74,7 +74,7 @@ typedef struct STDOPCOD_GLOBALS_ {
     MYFLT       *tb[16];       /* gab: updated */
     int32_t         tb_ixmode[16]; /* gab: added */
     int32       tb_size[16];   /* gab: added */
-    OPARMS  oparms;
+  //OPARMS  oparms;
 } STDOPCOD_GLOBALS;
 
 extern int32_t ambicode_init_(CSOUND *);

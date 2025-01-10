@@ -94,7 +94,9 @@ typedef uint32_t uintptr_t;
 #endif
 
 #ifdef WIN32
+#ifndef strcasecmp
 #define strcasecmp stricmp
+#endif
 #endif
 
 #ifndef M_PI

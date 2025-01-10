@@ -25,8 +25,7 @@
 */
 
                         /*                                      PITCH.H */
-//#include "spectra.h"
-//#include "uggab.h"
+
 #define MAXPTL 10
 typedef struct {
         OPDS    h;
@@ -59,6 +58,11 @@ typedef struct {
     OPDS        h;
     MYFLT       *instrnum, *ipercent, *iopc;    /* IV - Oct 31 2002 */
 } CPU_PERC;
+
+typedef struct {
+    OPDS        h;
+    MYFLT       *instrnum, *icount, *iturnoff_mode;
+} CPU_MAXALLOC;
 
 /*
 

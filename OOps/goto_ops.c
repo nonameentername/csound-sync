@@ -26,6 +26,7 @@
 #include "csoundCore.h" /*                            GOTO_OPS.C        */
 #include "insert.h"     /* for goto's */
 #include "aops.h"       /* for cond's */
+#include "csound_standard_types.h"
 extern int32_t strarg2insno(CSOUND *, void *p, int32_t is_string);
 
 int32_t igoto(CSOUND *csound, GOTO *p)
@@ -179,6 +180,8 @@ int32_t turnoff(CSOUND *csound, LINK *p)/* terminate the current instrument  */
   return OK;
 }
 
+
+int32_t instr_num(CSOUND *csound, INSTRTXT *instr);
 /* turnoff2 opcode */
 int32_t turnoff2(CSOUND *csound, TURNOFF2 *p, int32_t isStringArg)
 {
@@ -186,8 +189,12 @@ int32_t turnoff2(CSOUND *csound, TURNOFF2 *p, int32_t isStringArg)
   INSDS *ip, *ip2, *nip;
   int32_t   mode, insno, allow_release;
 
-  if (isStringArg) {
+  if (isStringArg == 1) {
     p1 = (MYFLT) strarg2insno(csound, ((STRINGDAT *)p->kInsNo)->data, 1);
+  }
+  else if (isStringArg == 2) {
+    INSTREF *ref = (INSTREF *) p->kInsNo;
+    p1 = (MYFLT) instr_num(csound, ref->instr);
   }
   else if (IsStringCode(*p->kInsNo)) {
     p1 = (MYFLT) strarg2insno(csound, get_arg_string(csound, *p->kInsNo), 1);
@@ -271,6 +278,10 @@ int32_t turnoff2S(CSOUND *csound, TURNOFF2 *p){
   return turnoff2(csound, p, 1);
 }
 
+int32_t turnoff2Instr(CSOUND *csound, TURNOFF2 *p){
+  return turnoff2(csound, p, 2);
+}
+
 int32_t turnoff2k(CSOUND *csound, TURNOFF2 *p){
   return turnoff2(csound, p, 0);
 }
@@ -283,6 +294,10 @@ int32_t turnoff3(CSOUND *csound, TURNOFF2 *p, int32_t isStringArg)
 
   if (isStringArg) {
     p1 = (MYFLT) strarg2insno(csound, ((STRINGDAT *)p->kInsNo)->data, 1);
+  }
+  else if (isStringArg == 2) {
+    INSTREF *ref = (INSTREF *) p->kInsNo;
+    p1 = (MYFLT) instr_num(csound, ref->instr);
   }
   else if (IsStringCode(*p->kInsNo)) {
     p1 = (MYFLT) strarg2insno(csound, get_arg_string(csound, *p->kInsNo), 1);
@@ -305,6 +320,10 @@ int32_t turnoff3(CSOUND *csound, TURNOFF2 *p, int32_t isStringArg)
 
 int32_t turnoff3S(CSOUND *csound, TURNOFF2 *p){
   return turnoff3(csound, p, 1);
+}
+
+int32_t turnoff3Instr(CSOUND *csound, TURNOFF2 *p){
+  return turnoff3(csound, p, 2);
 }
 
 int32_t turnoff3k(CSOUND *csound, TURNOFF2 *p){

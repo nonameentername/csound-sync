@@ -132,7 +132,7 @@ static uintptr_t udpRecv(void *pdata)
 
     while (p->threadon) {
       /* get the data from the socket and store it in a tmp buffer */
-      if ((bytes = recvfrom(p->sock, (void *)tmp, MTU, 0, &from, &clilen)) > 0) {
+      if ((bytes = (int32_t) recvfrom(p->sock, (void *)tmp, MTU, 0, &from, &clilen)) > 0) {
         csound->WriteCircularBuffer(csound, p->cb, tmp, bytes/sizeof(MYFLT));
       }
     }
@@ -167,7 +167,7 @@ static uintptr_t udpRecv_S(void *pdata)
 
     while (p->threadon) {
       /* get the data from the socket and store it in a tmp buffer */
-      if ((bytes = recvfrom(p->sock, (void *)tmp, MTU, 0, &from, &clilen)) > 0) {
+      if ((bytes = (int32_t) recvfrom(p->sock, (void *)tmp, MTU, 0, &from, &clilen)) > 0) {
         bytes = (bytes+sizeof(MYFLT)-1)/sizeof(MYFLT);
         csound->WriteCircularBuffer(csound, p->cb, tmp, bytes);
       }
@@ -227,7 +227,7 @@ static int32_t init_recv(CSOUND *csound, SOCKRECV *p)
       buf = (MYFLT *) p->tmp.auxp;      /* make sure buffer is empty */
       memset(buf, 0, MTU);
     }
-    p->buffsize = p->buffer.size/sizeof(MYFLT);
+    p->buffsize = (int32_t)(p->buffer.size/sizeof(MYFLT));
     p->cb = csound->CreateCircularBuffer(csound,  *p->ptr3, sizeof(MYFLT));
     /* create thread */
     p->threadon = 1;
@@ -282,7 +282,7 @@ static int32_t init_recv_S(CSOUND *csound, SOCKRECVSTR *p)
       buf = (MYFLT *) p->tmp.auxp;      /* make sure buffer is empty */
       memset(buf, 0, MTU);
     }
-    p->buffsize = p->buffer.size/sizeof(MYFLT);
+    p->buffsize = (int32_t) (p->buffer.size/sizeof(MYFLT));
     p->cb = csound->CreateCircularBuffer(csound,  *p->ptr3, sizeof(MYFLT));
     /* create thread */
     p->threadon = 1;
@@ -402,7 +402,7 @@ static int32_t init_recvS(CSOUND *csound, SOCKRECV *p)
     p->thrid = csound->CreateThread(udpRecv, (void *) p);
     p->buf = p->buffer.auxp;
     p->outsamps = p->rcvsamps = 0;
-    p->buffsize = p->buffer.size/sizeof(MYFLT);
+    p->buffsize = (int32_t)(p->buffer.size/sizeof(MYFLT));
     return OK;
 }
 
@@ -525,7 +525,11 @@ static int32_t send_srecv(CSOUND *csound, SOCKRECVT *p)
     memset(q, '\0', k);
  again:
     errno = 0;
-    n = recv(p->conn, q, k, 0);
+#ifndef WIN32    
+    n = (int32_t) recv(p->conn, q, k, 0);
+#else
+    n = (int32_t) recv(p->conn, (char *) q, k, 0);
+#endif    
     if (n==0) {      /* Connection broken */
       if (p->res) *p->res = -1;
       close(p->sock);
@@ -618,31 +622,12 @@ static int32_t init_raw_osc(CSOUND *csound, RAWOSC *p)
       memset(buf, 0, MTU);
     }
     if(p->sout->data == NULL)
-      tabinit(csound, p->sout, 2);
+      tabinit(csound, p->sout, 2, &(p->h));
 
   return OK;
 }
 
-static inline char le_test(){
-    union _le {
-      char c[2];
-      short s;
-    } le = {{0x0001}};
-    return le.c[0];
-}
 
-static inline char *byteswap(char *p, int32_t N){
-    if (le_test()) {
-      char tmp;
-      int32_t j ;
-      for(j = 0; j < N/2; j++) {
-        tmp = p[j];
-        p[j] = p[N - j - 1];
-        p[N - j - 1] = tmp;
-      }
-    }
-    return p;
-}
 
 static int32_t perf_raw_osc(CSOUND *csound, RAWOSC *p) {
 
@@ -662,7 +647,7 @@ static int32_t perf_raw_osc(CSOUND *csound, RAWOSC *p) {
     char *types  = NULL;
     struct sockaddr from;
     socklen_t clilen = sizeof(from);
-    int32_t bytes =
+    int32_t bytes = (int32_t)
       recvfrom(p->sock, (void *)buf, MTU-1, 0, &from, &clilen);
     if (bytes < 0) bytes = 0;
 

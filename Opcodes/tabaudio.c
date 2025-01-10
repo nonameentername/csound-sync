@@ -120,7 +120,7 @@ static uintptr_t write_tab(void* pp)
   return 0;
 }
 
-int on_reset_audio(CSOUND *csound, void *pp)
+int32_t on_reset_audio(CSOUND *csound, void *pp)
 {
   SAVE_THREAD *p =  (SAVE_THREAD *) pp;
   csound->JoinThread(p->thread);
@@ -138,8 +138,8 @@ static int32_t tabaudiok(CSOUND *csound, TABAUDIOK *p)
     int32_t  format = MYFLT2LRND(*p->format);
     int32_t  skip = MYFLT2LRND(*p->beg);
     int32_t  end = MYFLT2LRND(*p->end);
-    OPARMS parms;
-    csound->GetOParms(csound, &parms);
+   const OPARMS *parms;
+    parms =   csound->GetOParms(csound) ;
     if (UNLIKELY((ftp = csound->FTFind(csound, p->itab)) == NULL)) {
       return csound->PerfError(csound, &(p->h), Str("tabaudio: No table %g"), *p->itab);
     }
@@ -149,29 +149,29 @@ static int32_t tabaudiok(CSOUND *csound, TABAUDIOK *p)
     if (end<=0) size -= skip;
     else size = end - skip;
     if (UNLIKELY(size<0 || size>ftp->flenfrms))
-      return csound->PerfError(csound, &(p->h), "%s", Str("ftudio: ilegal size"));
+      return csound->PerfError(csound, &(p->h), "%s", Str("ftaudio: illegal size"));
     memset(&sfinfo, 0, sizeof(SFLIB_INFO));
     if (format >= 51)
       sfinfo.format = AE_SHORT | TYP2SF(TYP_RAW);
     else if (format < 0) {
-      sfinfo.format = FORMAT2SF(parms.outformat);
-      sfinfo.format |= TYPE2SF(parms.filetyp);
+      sfinfo.format = FORMAT2SF(parms->outformat);
+      sfinfo.format |= TYPE2SF(parms->filetyp);
     }
     else sfinfo.format = format_table[format];
     if (!SF2FORMAT(sfinfo.format))
-      sfinfo.format |= FORMAT2SF(parms.outformat);
+      sfinfo.format |= FORMAT2SF(parms->outformat);
     if (!SF2TYPE(sfinfo.format))
-      sfinfo.format |= TYPE2SF(parms.filetyp);
+      sfinfo.format |= TYPE2SF(parms->filetyp);
     sfinfo.samplerate = (int32_t) MYFLT2LRND(CS_ESR);
     sfinfo.channels = ftp->nchanls;
     ff = csound->FileOpen(csound, &ff, CSFILE_SND_W, p->file->data, &sfinfo, NULL,
-                           csound->Type2CsfileType(parms.filetyp, parms.outformat), 0);
+                           csound->Type2CsfileType(parms->filetyp, parms->outformat), 0);
     if (ff==NULL)
       return csound->PerfError(csound, &(p->h),
                                Str("tabaudio: failed to open file %s"),
                                p->file->data);
     if (*p->sync==FL(0.0)) {  /* write in perf thread */
-      if ((n=csound->SndfileWrite(csound, ff, t, size)) != size) {
+      if ((n= (int32_t) csound->SndfileWrite(csound, ff, t, size)) != size) {
         printf("%s\n", csound->FileError(csound, ff));
         csound->FileClose(csound, ff);
         return csound->PerfError(csound, &(p->h),
@@ -214,8 +214,8 @@ static int32_t tabaudioi(CSOUND *csound, TABAUDIO *p)
   int32_t  skip = MYFLT2LRND(*p->beg);
   int32_t  end = MYFLT2LRND(*p->end);
 
-  OPARMS parms;
-  csound->GetOParms(csound, &parms);
+ const OPARMS *parms;
+  parms =   csound->GetOParms(csound) ;
 
   if (UNLIKELY((ftp = csound->FTFind(csound, p->itab)) == NULL)) {
     return csound->InitError(csound, "%s", Str("tabaudio: No table"));
@@ -226,29 +226,29 @@ static int32_t tabaudioi(CSOUND *csound, TABAUDIO *p)
   if (end<=0) size -= skip;
   else size = end - skip;
   if (UNLIKELY(size<0 || size>ftp->flenfrms))
-    return csound->InitError(csound, "%s", Str("ftudio: ilegal size"));
+    return csound->InitError(csound, "%s", Str("ftaudio: illegal size"));
   memset(&sfinfo, 0, sizeof(SFLIB_INFO));
   if (format >= 51)
     sfinfo.format = AE_SHORT | TYP2SF(TYP_RAW);
   else if (format < 0) {
-    sfinfo.format = FORMAT2SF(parms.outformat);
-    sfinfo.format |= TYPE2SF(parms.filetyp);
+    sfinfo.format = FORMAT2SF(parms->outformat);
+    sfinfo.format |= TYPE2SF(parms->filetyp);
   }
   else sfinfo.format = format_table[format];
   if (!SF2FORMAT(sfinfo.format))
-    sfinfo.format |= FORMAT2SF(parms.outformat);
+    sfinfo.format |= FORMAT2SF(parms->outformat);
   if (!SF2TYPE(sfinfo.format))
-    sfinfo.format |= TYPE2SF(parms.filetyp);
+    sfinfo.format |= TYPE2SF(parms->filetyp);
 
   sfinfo.samplerate = (int32_t) MYFLT2LRND(CS_ESR);
   sfinfo.channels = ftp->nchanls;
 
   ff = csound->FileOpen(csound, &ff, CSFILE_SND_W, p->file->data, &sfinfo, NULL,
-                         csound->Type2CsfileType(parms.filetyp, parms.outformat), 0);
+                         csound->Type2CsfileType(parms->filetyp, parms->outformat), 0);
   if (ff==NULL)
     return csound->InitError(csound, Str("tabaudio: failed to open file %s"),
                              p->file->data);
-  if ((n=csound->SndfileWrite(csound, ff, t, size)) != size) {
+  if ((n=(int32_t)csound->SndfileWrite(csound, ff, t, size)) != size) {
     csound->FileClose(csound, ff);
     return csound->InitError(csound, Str("tabaudio: failed to write data: %s"),
                              csound->FileError(csound,ff));

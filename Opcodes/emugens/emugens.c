@@ -107,8 +107,8 @@ typedef struct {
 
 
 static int32_t linlinarr1_init(CSOUND *csound, LINLINARR1 *p) {
-    int numitems = p->xs->sizes[0];
-    tabinit(csound, p->ys, numitems);
+    int32_t numitems = p->xs->sizes[0];
+    tabinit(csound, p->ys, numitems, &(p->h));
     CHECKARR1D(p->xs);
     CHECKARR1D(p->ys);
     return OK;
@@ -159,7 +159,7 @@ blendarray_init(CSOUND *csound, BLENDARRAY *p) {
     int32_t numitemsA = p->A->sizes[0];
     int32_t numitemsB = p->B->sizes[0];
     int32_t numitems = numitemsA < numitemsB ? numitemsA : numitemsB;
-    tabinit(csound, p->out, numitems);
+    tabinit(csound, p->out, numitems, &(p->h));
     p->numitems = numitems;
     return OK;
 }
@@ -299,7 +299,7 @@ typedef struct {
   OPDS h;
   MYFLT *r, *k, *irnd;
   MYFLT freqA4;
-  int rnd;
+  int32_t rnd;
 } PITCHCONV;
 
 static inline MYFLT
@@ -352,8 +352,8 @@ typedef struct {
     ARRAYDAT *outarr, *inarr;
     MYFLT *irnd;
     MYFLT freqA4;
-    int rnd;
-    int skip;
+    int32_t rnd;
+    int32_t skip;
 } PITCHCONV_ARR;
 
 
@@ -385,7 +385,7 @@ static int32_t
 ftom_arr_init(CSOUND *csound, PITCHCONV_ARR *p) {
     p->freqA4 = csound->GetA4(csound);
     p->rnd = (int)*p->irnd;
-    tabinit(csound, p->outarr, p->inarr->sizes[0]);
+    tabinit(csound, p->outarr, p->inarr->sizes[0], &(p->h));
     p->skip = 0;
     ftom_arr(csound, p);
     p->skip = 1;
@@ -416,7 +416,7 @@ mtof_arr(CSOUND *csound, PITCHCONV_ARR *p) {
 static int32_t
 mtof_arr_init(CSOUND *csound, PITCHCONV_ARR *p) {
     p->freqA4 = csound->GetA4(csound);
-    tabinit(csound, p->outarr, p->inarr->sizes[0]);
+    tabinit(csound, p->outarr, p->inarr->sizes[0], &(p->h));
     p->skip = 0;
     mtof_arr(csound, p);
     p->skip = 1;
@@ -700,7 +700,7 @@ static int32_t bpfcos_k_kKK_kr(CSOUND *csound, BPF_k_kKK *p) {
     MYFLT *xs = p->xs->data;
     MYFLT *ys = p->ys->data;
     MYFLT x = *p->x;
-    int32_t i = bpfarr_find(x, xs, N, p->lastidx);
+    int32_t i = (int32_t) bpfarr_find(x, xs, N, p->lastidx);
     MYFLT x0, y0, x1, y1, dx;
     if(i == -1) {
         *p->y = ys[0];
@@ -753,7 +753,7 @@ static int32_t bpf_a_aKK_kr(CSOUND *csound, BPF_k_kKK *p) {
 
     for(n=offset; n<nsmps; n++) {
         x = in[n];
-        i = bpfarr_find(x, xs, N, lastidx);
+        i = (int32_t) bpfarr_find(x, xs, N, lastidx);
         if(i == -1) {
             out[n] = firsty;
             lastidx = -1;
@@ -798,7 +798,7 @@ static int32_t bpfcos_a_aKK_kr(CSOUND *csound, BPF_k_kKK *p) {
 
     for(n=offset; n<nsmps; n++) {
         x = in[n];
-        i = bpfarr_find(x, xs, N, lastidx);
+        i = (int32_t) bpfarr_find(x, xs, N, lastidx);
         if(i == -1) {
             out[n] = firsty;
             lastidx = -1;
@@ -846,7 +846,7 @@ static int32_t bpf_kk_kKKK_kr(CSOUND *csound, BPF_kk_kKKK *p) {
     MYFLT *ys = p->ys->data;
     MYFLT *zs = p->zs->data;
     MYFLT x = *p->x;
-    int32_t i = bpfarr_find(x, xs, N, p->lastidx);
+    int32_t i = (int32_t) bpfarr_find(x, xs, N, p->lastidx);
 
     if(i == -1) {
         *p->y = ys[0];
@@ -887,7 +887,7 @@ typedef struct {
 
 
 static int32_t bpf_K_Km_init(CSOUND *csound, BPF_K_Km *p) {
-    tabinit(csound, p->out, p->in->sizes[0]);
+  tabinit(csound, p->out, p->in->sizes[0], &(p->h));
     p->lastidx = -1;
     int32_t datalen = p->INOCOUNT - 1;
     if(datalen % 2)
@@ -897,7 +897,7 @@ static int32_t bpf_K_Km_init(CSOUND *csound, BPF_K_Km *p) {
     if(datalen >= BPF_MAXPOINTS)
         return INITERR(Str("bpf: too many pargs (max=256)"));
     int32_t N = p->in->sizes[0];
-    tabinit(csound, p->out, N);
+    tabinit(csound, p->out, N, &(p->h));
     return OK;
 }
 
@@ -918,7 +918,7 @@ static int32_t bpf_K_Km_kr(CSOUND *csound, BPF_K_Km *p) {
 
     for(idx=0; idx<N; idx++) {
         x = in[idx];
-        i = bpfx_find(data, x, datalen, lastidx);
+        i = (int32_t) bpfx_find(data, x, datalen, lastidx);
 
         if(i == -1) {
             out[idx] = firsty;
@@ -982,7 +982,7 @@ static int32_t bpf_a_am_kr(CSOUND *csound, BPF_a_am *p) {
 
     for(n=offset; n<nsmps; n++) {
         x = in[n];
-        i = bpfx_find(data, x, datalen, lastidx);
+        i = (int32_t) bpfx_find(data, x, datalen, (int32_t) lastidx);
         if(i == -1) {
             out[n] = firsty;
             lastidx = -1;
@@ -1024,7 +1024,7 @@ static int32_t bpfcos_a_am_kr(CSOUND *csound, BPF_a_am *p) {
 
     for(n=offset; n<nsmps; n++) {
         x = in[n];
-        i = bpfx_find(data, x, datalen, lastidx);
+        i = (int32_t) bpfx_find(data, x, datalen, (int32_t) lastidx);
         if(i == -1) {
             out[n] = firsty;
             lastidx = -1;
@@ -1077,7 +1077,7 @@ static int32_t bpfcos_K_Km_kr(CSOUND *csound, BPF_K_Km *p) {
 
     for(idx=0; idx<N; idx++) {
         x = in[idx];
-        i = bpfx_find(data, x, datalen, lastidx);
+        i = (int32_t) bpfx_find(data, x, datalen, (int32_t) lastidx);
 
         if(i == -1) {
             out[idx] = firsty;
@@ -1125,7 +1125,7 @@ static int32_t _pcs[] = {9, 11, 0, 2, 4, 5, 7};
 
 static MYFLT ntomfunc(CSOUND *csound, char *note) {
     char *n = note;
-    uint32_t notelen = strlen(note);
+    uint32_t notelen = (uint32_t) strlen(note);
     int32_t octave = n[0] - '0';
     int32_t pcidx = n[1] - 'A';
     if (pcidx < 0 || pcidx >= 7) {
@@ -1336,7 +1336,7 @@ typedef struct {
     int32_t mode;
 } Cmp2_array1;
 
-static int32_t op2mode(char *op, int32_t opsize) {
+static int32_t op2mode(char *op, int64_t opsize) {
     int32_t mode;
     if (op[0] == '>') {
         mode = (opsize == 1) ? 0 : 1;
@@ -1354,7 +1354,7 @@ static int32_t op2mode(char *op, int32_t opsize) {
 
 static int32_t
 cmp_init(CSOUND *csound, Cmp *p) {
-    int32_t mode = op2mode(p->op->data, p->op->size-1);
+    int32_t mode = (int32_t) op2mode(p->op->data, p->op->size-1);
     if(mode == -1) {
         return INITERR(Str("cmp: unknown operator. "
                            "Expecting <, <=, >, >=, ==, !="));
@@ -1366,8 +1366,8 @@ cmp_init(CSOUND *csound, Cmp *p) {
 static int32_t
 cmparray1_init(CSOUND *csound, Cmp_array1 *p) {
     int32_t N = p->in->sizes[0];
-    tabinit(csound, p->out, N);
-    int32_t mode = op2mode(p->op->data, p->op->size-1);
+    tabinit(csound, p->out, N, &(p->h));
+    int32_t mode = (int32_t) op2mode(p->op->data, p->op->size-1);
     if(mode == -1) {
         return INITERR(Str("cmp: unknown operator. "
                            "Expecting <, <=, >, >=, ==, !="));
@@ -1384,8 +1384,8 @@ cmparray2_init(CSOUND *csound, Cmp_array2 *p) {
 
     // make sure that we can put the result in `out`,
     // grow the array if necessary
-    tabinit(csound, p->out, N);
-    int32_t mode = op2mode(p->op->data, p->op->size-1);
+    tabinit(csound, p->out, N, &(p->h));
+    int32_t mode = (int32_t) op2mode(p->op->data, p->op->size-1);
     if(mode == -1) {
         return INITERR(Str("cmp: unknown operator. "
                            "Expecting <, <=, >, >=, ==, !="));
@@ -1397,12 +1397,12 @@ cmparray2_init(CSOUND *csound, Cmp_array2 *p) {
 static int32_t
 cmp2array1_init(CSOUND *csound, Cmp2_array1 *p) {
     int32_t N = p->in->sizes[0];
-    tabinit(csound, p->out, N);
+    tabinit(csound, p->out, N, &(p->h));
 
     char *op1 = (char*)p->op1->data;
-    int32_t op1size = p->op1->size - 1;
+    int64_t op1size = p->op1->size - 1;
     char *op2 = (char*)p->op2->data;
-    int32_t op2size = p->op2->size - 1;
+    int64_t op2size = p->op2->size - 1;
     int32_t mode;
 
     if (op1[0] == '<') {
@@ -1731,7 +1731,7 @@ tabslice_allk(CSOUND *csound, TABSLICE *p) {
 
 static int32_t
 tabslice_i(CSOUND *csound, TABSLICE *p) {
-    int error = tabslice_init(csound, p);
+    int32_t error = tabslice_init(csound, p);
     if(error)
         return NOTOK;
     return tabslice_k(csound, p);
@@ -1760,7 +1760,7 @@ typedef struct {
     OPDS h;
     MYFLT *tabnum, *value, *kstart, *kend, *kstep;
     FUNC *tab;
-    int lastTabnum;
+    int32_t lastTabnum;
 } FTSET;
 
 
@@ -1776,7 +1776,7 @@ ftset_common(CSOUND *csound, FTSET *p) {
     IGN(csound);
     FUNC *tab = p->tab;
     MYFLT *data = tab->ftable;
-    int tablen = tab->flen;
+    int32_t tablen = tab->flen;
     int32_t start = (int32_t)*p->kstart;
     int32_t end = (int32_t)*p->kend;
     int32_t step = (int32_t)*p->kstep;
@@ -1793,7 +1793,7 @@ ftset_common(CSOUND *csound, FTSET *p) {
         return OK;
     }
 
-    for(int i=start; i<end; i+=step) {
+    for(int32_t i=start; i<end; i+=step) {
         data[i] = value;
     }
     return OK;
@@ -1801,7 +1801,7 @@ ftset_common(CSOUND *csound, FTSET *p) {
 
 static int32_t
 ftset_k(CSOUND *csound, FTSET *p) {
-    int tabnum = (int)(*p->tabnum);
+    int32_t tabnum = (int)(*p->tabnum);
     FUNC *tab;
     if(UNLIKELY(tabnum != p->lastTabnum)) {
         tab = csound->FTFind(csound, p->tabnum);
@@ -1847,7 +1847,7 @@ typedef struct {
     ARRAYDAT *out;
     MYFLT *ifn, *kstart, *kend, *kstep;
     FUNC * ftp;
-    int numitems;
+    int32_t numitems;
 } TAB2ARRAY;
 
 static int
@@ -1857,16 +1857,16 @@ tab2array_init(CSOUND *csound, TAB2ARRAY *p) {
     if (UNLIKELY(ftp == NULL))
         return NOTOK;
     p->ftp = ftp;
-    int start = (int)*p->kstart;
-    int end   = (int)*p->kend;
-    int step  = (int)*p->kstep;
+    int32_t start = (int)*p->kstart;
+    int32_t end   = (int)*p->kend;
+    int32_t step  = (int)*p->kstep;
     if (end < 1)
         end = ftp->flen;
-    int numitems = (int) (ceil((end - start) / (float)step));
+    int32_t numitems = (int) (ceil((end - start) / (float)step));
     if(numitems < 0) {
         return PERFERR(Str("tab2array: cannot copy a negative number of items"));
     }
-    tabinit(csound, p->out, numitems);
+    tabinit(csound, p->out, numitems, &(p->h));
     p->numitems = numitems;
     return OK;
 }
@@ -1874,12 +1874,12 @@ tab2array_init(CSOUND *csound, TAB2ARRAY *p) {
 static int
 tab2array_k(CSOUND *csound, TAB2ARRAY *p) {
     FUNC *ftp = p->ftp;
-    int start = (int)*p->kstart;
-    int end   = (int)*p->kend;
-    int step  = (int)*p->kstep;
+    int32_t start = (int)*p->kstart;
+    int32_t end   = (int)*p->kend;
+    int32_t step  = (int)*p->kstep;
     if (end < 1)
         end = ftp->flen;
-    int numitems = (int) (ceil((end - start) / (double)step));
+    int32_t numitems = (int) (ceil((end - start) / (double)step));
     if(numitems < 0)
         return PERFERR(Str("tab2array: cannot copy a negative number of items"));
 
@@ -1889,7 +1889,7 @@ tab2array_k(CSOUND *csound, TAB2ARRAY *p) {
     MYFLT *out   = p->out->data;
     MYFLT *table = ftp->ftable;
 
-    int i, j=0;
+    int32_t i, j=0;
     for(i=start; i<end; i+=step) {
         out[j++] = table[i];
     }
@@ -1915,9 +1915,9 @@ tab2array_i(CSOUND *csound, TAB2ARRAY *p) {
   of reshape a 1D array to a 2D array, or a 2D array to a 1D
   array
 
-  reshapearray array[], inumrows, inumcols=0
+  reshapearray array[], isize1 [, ..., isizen]
 
-  works with i and k arrays, at i-time and k-time
+  works with i and k arrays, at i-time 
 
   1:  if the sizes of the array and the size of the reshaped array do not match
 it needs an error message. Currently it is rather silent.
@@ -1938,60 +1938,44 @@ multiplying by zero always leads to an error.
 typedef struct {
     OPDS h;
     ARRAYDAT *in;
-    MYFLT *numrows, *numcols;
+    MYFLT *dims[20];
 } ARRAYRESHAPE;
 
 static int32_t
 arrayreshape(CSOUND *csound, ARRAYRESHAPE *p) {
     ARRAYDAT *a = p->in;
-    int32_t dims = a->dimensions;
-    int32_t i;
+    int32_t numdims = p->INOCOUNT - 1;
+    
+    int32_t orig_numitems = 1;
+    for(int i=0; i < a->dimensions; i++) {
+        orig_numitems *= a->sizes[i];
+    }
     int32_t numitems = 1;
-    int32_t numrows = (int32_t)(*p->numrows);
-    int32_t numcols = (int32_t)(*p->numcols);
-
-    if(numrows < 0 || numcols < 0) {
-        return INITERR(Str("reshapearray: neither numcols nor numrows can be negative"));
+    for(int i=0; i < numdims; i++) {
+        MYFLT dim = *(p->dims[i]);
+        int32_t idim = (int32_t)dim;
+        if(idim <= 0) {
+            return INITERRF(Str("reshapearray: invalid dimension at index %d, a dimension must be >= 0, got %d"), i, (int)dim);
+        }
+        numitems *= idim;
     }
-
-    if(dims > 2) {
-        return INITERR(Str("Arrays of more than 2 dimensions are not supported yet"));
-    }
-
-    for(i=0; i<dims; i++) {
-        numitems *= a->sizes[i];
-    }
-    int32_t numitems2 = numrows * (numcols > 0 ? numcols : 1);
-    if(numitems != numitems2)
+    
+    if(numitems != orig_numitems)
       return INITERRF(Str("reshapearray: The number of items do not match."
                           "The array has %d elements, but the new shape"
                           "results in %d total elements"),
-                      numitems, numitems2);
+                      orig_numitems, numitems);
 
-    if(dims == 2) {
-        if(numcols==0) {
-            // 2 dims to 1 dim
-            a->dimensions = 1;
-        }
-        a->sizes[0] = numrows;
-        a->sizes[1] = numcols;
-        return OK;
+    if(a->dimensions != numdims) {
+        a->dimensions = numdims;
+        a->sizes = csound->ReAlloc(csound, a->sizes, sizeof(int32_t)*numdims);
     }
-
-    if(numcols==0) {
-        // 1 dim to 1 dim, nothing to do
-        return OK;
+    
+    for(int i=0; i < numdims; i++) {
+        a->sizes[i] = (int32_t)(*(p->dims[i]));
     }
-
-    if(numcols>0) {
-        // 1 dim. to 2 dimensions
-        a->sizes = csound->ReAlloc(csound, a->sizes, sizeof(int32_t)*2);
-        a->dimensions = 2;
-        a->sizes[0] = numrows;
-        a->sizes[1] = numcols;
-        return OK;
-    }
-    return PERFERR(Str("reshapearray: cannot reshape"));
+    
+    return OK;
 }
 
 
@@ -2041,7 +2025,7 @@ typedef struct {
 } ARRAYPRINT;
 
 #define ARRPRINT_SEP (csound->MessageS(csound, CSOUNDMSG_ORCH, "\n"))
-#define ARRPRINT_MAXLINE 1024
+#define ARRPRINT_MAXLINE 2048
 #define ARRPRINT_IDXLIMIT 100
 
 
@@ -2116,9 +2100,9 @@ static int32_t
 arrayprint_init_notrig(CSOUND *csound, ARRAYPRINT *p) {
     if(p->in->arrayType->varTypeName[0] == 'S' && p->in->dimensions > 1)
         return INITERR(Str("cannot print multidimensional string arrays"));
-    if(p->in->dimensions > 2)
-        return INITERRF(Str("only 1-D and 2-D arrays supported, got %d dimensions"),
-                        p->in->dimensions);
+    // if(p->in->dimensions > 2)
+    //     return INITERRF(Str("only 1-D and 2-D arrays supported, got %d dimensions"),
+    //                     p->in->dimensions);
     char arraytype = p->in->arrayType->varTypeName[0];
     const char *default_fmt =
       arraytype == 'S' ? default_printfmt_str : default_printfmt;
@@ -2151,7 +2135,7 @@ static int32_t arrprint_str(CSOUND *csound, ARRAYDAT *arr,
             currline[charswritten++] = ',';
             currline[charswritten++] = ' ';
         }
-        charswritten += sprintf(currline + charswritten, fmt, strs[i].data);
+        charswritten += snprintf(currline + charswritten, ARRPRINT_MAXLINE - charswritten, fmt, strs[i].data);
         if(charswritten >= linelength) {
             currline[charswritten+1] = '\0';
             csound->MessageS(csound, CSOUNDMSG_ORCH, " %s\n", (char*)currline);
@@ -2165,6 +2149,71 @@ static int32_t arrprint_str(CSOUND *csound, ARRAYDAT *arr,
     }
     return OK;
 }
+
+// Print a 2D matrix from a multidimensional array
+static int32_t _printmtx(CSOUND *csound, MYFLT *data, int32_t offset, const char *fmt, 
+                         int32_t numrows, int32_t numcols, 
+                         int32_t startbrackets, int32_t endbrackets, int32_t margin) {
+                         
+    int32_t cursor = 0;
+    char colstr[ARRPRINT_MAXLINE];
+    int32_t linelength = ARRPRINT_MAXLINE - margin - numcols;
+    for(int r=0; r < numrows; r++) {
+        if(r == 0) {
+            int spaces = MAX(0, margin - startbrackets);        
+            for(int i=0; i < spaces; i++) {
+                colstr[i] = ' ';
+            }
+            for(int i=0; i < startbrackets + 1; i++) {
+                colstr[spaces + i] = '[';
+            }
+            cursor = spaces + startbrackets + 1;
+        } else {
+            int spaces = margin + 1;
+            for(int i=0; i < spaces; i++) {
+                colstr[i] = ' ';
+            }
+            cursor = spaces;
+        }
+        for(int col=0; col < numcols; col++) {
+            if(cursor >= linelength) 
+                break;
+            size_t index = offset + r * numcols + col;
+            MYFLT item = data[index]; 
+            if(col > 0) {
+                colstr[cursor++] = ' ';
+            }
+            cursor += snprintf(colstr + cursor, ARRPRINT_MAXLINE - cursor, fmt, item); 
+        }
+        if(r == numrows - 1) {
+            for(int i=0; i < endbrackets + 1; i++) {
+                colstr[cursor++] = ']';
+            }
+        }
+        colstr[cursor++] = 0;
+        csound->MessageS(csound, CSOUNDMSG_ORCH, "%s\n", (char*)colstr);
+        cursor = 0;
+    }
+    return OK;
+}
+
+static int32_t _printsubarr(CSOUND *csound, MYFLT *data, int offset, const char *fmt, int numdims, const int *dims, int startbrackets, int endbrackets, int margin) {
+    if(numdims == 2) {
+        int numrows = dims[0];
+        int numcols = dims[1];
+        return _printmtx(csound, data, offset, fmt, numrows, numcols, startbrackets, endbrackets, margin);   
+    } else {
+        int subsize = 1;
+        for(int i=1; i < numdims; i++) {
+            subsize *= dims[i];
+        }
+        for(int outerdim=0; outerdim < dims[0]; outerdim++) {
+            _printsubarr(csound, data, offset + outerdim * subsize, fmt, numdims - 1, &(dims[1]), (startbrackets + 1) * (outerdim==0), (endbrackets+1) * (outerdim == dims[0] - 1), margin);
+        }
+    }
+    return OK;
+}
+
 
 // print a numeric array
 static int32_t arrprint(CSOUND *csound, ARRAYDAT *arr,
@@ -2186,7 +2235,7 @@ static int32_t arrprint(CSOUND *csound, ARRAYDAT *arr,
             showidx = 1;
         }
         for(i=0; i<arr->sizes[0]; i++) {
-            charswritten += sprintf(currline+charswritten, fmt, in[i]);
+          charswritten += snprintf(currline+charswritten, ARRPRINT_MAXLINE - charswritten, fmt, in[i]);
             if(charswritten < linelength) {
                 currline[charswritten++] = ' ';
             } else {
@@ -2215,9 +2264,9 @@ static int32_t arrprint(CSOUND *csound, ARRAYDAT *arr,
         break;
     case 2:
         for(i=0; i<arr->sizes[0]; i++) {
-            charswritten += sprintf(currline+charswritten, " %3d: ", i);
+          charswritten += snprintf(currline+charswritten, ARRPRINT_MAXLINE - charswritten, " %3d: ", i);
             for(j=0; j<arr->sizes[1]; j++) {
-                charswritten += sprintf(currline+charswritten, fmt, *in);
+              charswritten += snprintf(currline+charswritten, ARRPRINT_MAXLINE - charswritten, fmt, *in);
                 if(charswritten < linelength) {
                     currline[charswritten++] = ' ';
                 }
@@ -2235,6 +2284,9 @@ static int32_t arrprint(CSOUND *csound, ARRAYDAT *arr,
                 charswritten = 0;
             }
         }
+        break;
+    default:
+        _printsubarr(csound, arr->data, 0, fmt, arr->dimensions, arr->sizes, 0, 0, arr->dimensions + 1);
         break;
     }
     return OK;
@@ -2341,7 +2393,7 @@ ftprint_init(CSOUND *csound, FTPRINT *p) {
 
 /** allow negative indices to count from the end
  */
-static int handle_negative_idx(uint32_t *out, int32_t idx, uint32_t length) {
+static int32_t handle_negative_idx(uint32_t *out, int32_t idx, uint32_t length) {
     if(idx >= 0) {
         *out = (uint32_t) idx;
         return OK;
@@ -2370,7 +2422,7 @@ ftprint_perf(CSOUND *csound, FTPRINT *p) {
     const uint32_t numcols = (uint32_t)p->numcols;
     const uint32_t step = (uint32_t)*p->kstep;
     uint32_t end, start;
-    int error = handle_negative_idx(&start, (int32_t)*p->kstart, ftplen);
+    int32_t error = handle_negative_idx(&start, (int32_t)*p->kstart, ftplen);
     if(error)
         return PERFERRF(Str("Could not handle start index: %d"),
                         (int32_t)*p->kstart);
@@ -2391,7 +2443,7 @@ ftprint_perf(CSOUND *csound, FTPRINT *p) {
     csound->MessageS(csound, CSOUNDMSG_ORCH,
                      "ftable %d:\n", (int32_t)*p->ifn);
     for(i=start; i < end; i+=step) {
-        charswritten += sprintf(currline+charswritten, fmt, ftable[i]);
+        charswritten += snprintf(currline+charswritten, ARRPRINT_MAXLINE - charswritten, fmt, ftable[i]);
         elemsprinted++;
         if(elemsprinted < numcols) {
             currline[charswritten++] = ' ';
@@ -2433,7 +2485,7 @@ array_binop_init(CSOUND *csound, BINOP_AAA *p) {
     for(i=0; i<p->in1->dimensions; i++) {
         numitems *= p->in1->sizes[i];
     }
-    tabinit(csound, p->out, numitems);
+    tabinit(csound, p->out, numitems, &(p->h));
     p->numitems = numitems;
     return OK;
 }
@@ -2479,7 +2531,7 @@ typedef struct {
 
 static int32_t
 ftexists_init(CSOUND *csound, FTEXISTS *p) {
-    int ifn = (int)*p->ifn;
+    int32_t ifn = (int)*p->ifn;
     if(ifn == 0) {
         csound->DebugMsg(csound, "%s", Str("ftexists: table number is 0"));
         *p->iout = 0.;
@@ -2504,13 +2556,13 @@ ftexists_init(CSOUND *csound, FTEXISTS *p) {
 typedef struct {
     OPDS h;
     MYFLT *out;
-    int extracycles;
-    int numcycles;
+    int32_t extracycles;
+    int32_t numcycles;
     // 0 - tied note, has extra time;
     // 1 - fixed p3, no extra time
     // 2 - fixed p3, extra time
-    int mode;
-    int fired;
+    int32_t mode;
+    int32_t fired;
 } LASTCYCLE;
 
 static int32_t
@@ -2595,7 +2647,7 @@ lastcycle(CSOUND *csound, LASTCYCLE *p) {
 
 // make sure that the out string has enough allocated space
 // This can be run only at init time
-static int32_t _string_ensure(CSOUND *csound, STRINGDAT *s, int size) {
+static int32_t _string_ensure(CSOUND *csound, STRINGDAT *s, int32_t size) {
     if (s->size >= (size_t)size)
         return OK;
     csound->ReAlloc(csound, s->data, size);
@@ -2627,7 +2679,7 @@ stripl(CSOUND *csound, STR1_1 *p) {
     }
     str += idx0;
     size_t insize = strlen(str);
-    _string_ensure(csound, p->out, insize);
+    _string_ensure(csound, p->out, (int32_t) insize);
     memcpy(p->out->data, str, insize);
     return OK;
 }
@@ -2636,7 +2688,7 @@ static int32_t
 stripr(CSOUND *csound, STR1_1 *p) {
     // Trim trailing space
     char *str = p->in->data;
-    int size = strlen(str) - 1;
+    int32_t size = (int32_t) strlen(str) - 1;
     const char *end = str + size;
     while(size && isspace(*end)) {
         end--;
@@ -2667,9 +2719,9 @@ stripside(CSOUND *csound, STR1_1 *p) {
 }
 
 // returns length
-int _str_find_edges(const char *str, int *startidx) {
+int32_t _str_find_edges(const char *str, int32_t *startidx) {
     // left
-    int idx0 = 0;
+    int32_t idx0 = 0;
     while(isspace((unsigned char)*str)) {
         str++;
         idx0++;
@@ -2681,7 +2733,7 @@ int _str_find_edges(const char *str, int *startidx) {
     }
 
     // right
-    int size = strlen(str) - 1;
+    int32_t size = (int32_t) strlen(str) - 1;
     const char *end = str + size;
     while(size && isspace(*end)) {
         end--;
@@ -2694,8 +2746,8 @@ int _str_find_edges(const char *str, int *startidx) {
 
 static int32_t
 strstrip(CSOUND *csound, STR1_1 *p) {
-    int startidx;
-    int size = _str_find_edges(p->in->data, &startidx);
+    int32_t startidx;
+    int32_t size = _str_find_edges(p->in->data, &startidx);
     if(size > 0) {
         _string_ensure(csound, p->out, size);
         memcpy(p->out->data, p->in->data + startidx, size);
@@ -2723,12 +2775,12 @@ typedef struct {
     OPDS    h;
     STRINGDAT   *sfmt;
     MYFLT   *args[64];
-    int allocatedBuf;
-    int newline;
-    int fmtlen;
+    int32_t allocatedBuf;
+    int32_t newline;
+    int32_t fmtlen;
     STRINGDAT buf;
     STRINGDAT strseg;
-    int initDone;
+    int32_t initDone;
 } PRINTLN;
 
 
@@ -2773,13 +2825,13 @@ int32_t printsk_init(CSOUND *csound, PRINTLN *p) {
         p->allocatedBuf = 0;
     }
     p->newline = 0;
-    p->fmtlen = fmtlen;
+    p->fmtlen = (int32_t) fmtlen;
     p->initDone = 1;
     return OK;
 }
 
 int32_t println_init(CSOUND *csound, PRINTLN *p) {
-    int ret = printsk_init(csound, p);
+    int32_t ret = printsk_init(csound, p);
     if(ret != OK)
         return INITERR(Str("Error while inititalizing println"));
     p->newline = 1;
@@ -2802,7 +2854,7 @@ sprintf_opcode_(CSOUND *csound,
                 PRINTLN *p,       /* opcode data structure pointer       */
                 STRINGDAT *str,   /* pointer to space for output string  */
                 const char *fmt,  /* format string                       */
-                int fmtlen,       /* length of format string             */
+                int32_t fmtlen,       /* length of format string             */
                 MYFLT **kvals,    /* array of argument pointers          */
                 int32_t numVals,      /* number of arguments             */
                 int32_t strCode)      /* bit mask for string arguments   */
@@ -2815,7 +2867,7 @@ sprintf_opcode_(CSOUND *csound,
     int32_t i = 0, j = 0, n;
     const char *segwaiting = NULL;
     int32_t maxChars;
-    int32_t strsegsize = p->strseg.size;
+    size_t strsegsize = p->strseg.size;
     char *strseg = p->strseg.data;
 
     const char *fmtend = fmt+(fmtlen-0);
@@ -2856,7 +2908,7 @@ sprintf_opcode_(CSOUND *csound,
 
         /* if already a segment waiting, then lets print it */
         if (segwaiting != NULL) {
-            maxChars = str->size - len;
+          maxChars = (int32_t) (str->size - len);
             strseg[i] = '\0';
             if (UNLIKELY(numVals <= 0)) {
                 return PERFERR(Str("insufficient arguments for format"));
@@ -2873,7 +2925,7 @@ sprintf_opcode_(CSOUND *csound,
             case 'X':
             case 'u':
             case 'c':
-                n = sprintf(outstring, strseg, (int32_t) MYFLT2LRND(*parm));
+                 n = snprintf(outstring, str->size, strseg, (int32_t) MYFLT2LRND(*parm));
                 break;
             case 'e':
             case 'E':
@@ -2881,7 +2933,7 @@ sprintf_opcode_(CSOUND *csound,
             case 'F':
             case 'g':
             case 'G':
-                n = sprintf(outstring, strseg, (double)*parm);
+                n = snprintf(outstring, str->size, strseg, (double)*parm);
                 break;
             case 's':
                 if(!IS_STRING_ARG(parm)) {
@@ -2893,8 +2945,8 @@ sprintf_opcode_(CSOUND *csound,
                                        "the same as any of the input args"));
                 }
                 if ((((STRINGDAT*)parm)->size+strlen(strseg)) >= (uint32_t)maxChars) {
-                    int32_t offs = outstring - str->data;
-                    int newsize = str->size  +
+                    size_t offs = outstring - str->data;
+                    size_t newsize = str->size  +
                       ((STRINGDAT*)parm)->size + strlen(strseg);
                     csound->Warning(csound, "%s",
                                     Str("println/printsk: Allocating extra "
@@ -2914,7 +2966,7 @@ sprintf_opcode_(CSOUND *csound,
             }
             if (n < 0 || n >= maxChars) {
                 /* safely detected excess string length */
-                int32_t offs = outstring - str->data;
+                size_t offs = outstring - str->data;
                 csound->Warning(csound, "%s",
                                 Str("Allocating extra memory for output string"));
                 str->data = csound->ReAlloc(csound, str->data, maxChars*2);
@@ -3088,7 +3140,7 @@ static OENTRY emugens_localops[] = {
       (SUBR)array_binop_init, (SUBR)array_or},
     { "##and", S(BINOP_AAA), 0,  "k[]", "k[]k[]",
       (SUBR)array_binop_init, (SUBR)array_and},
-    { "reshapearray", S(ARRAYRESHAPE), 0,  "", ".[]io", (SUBR)arrayreshape},
+    { "reshapearray", S(ARRAYRESHAPE), 0,  "", ".[]im", (SUBR)arrayreshape},
 
     { "ftslicei", S(TABSLICE), TB,  "", "iioop", (SUBR)tabslice_i },
 

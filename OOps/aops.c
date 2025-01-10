@@ -1,6 +1,7 @@
 /* aops.c:
 
    Copyright (C) 1991 Barry Vercoe, John ffitch, Gabriel Maldonado
+   (c) 2024 V Lazzarini
 
    This file is part of Csound.
 
@@ -490,7 +491,7 @@ AA(mulaa,*)
 int32_t divaa(CSOUND *csound, AOP *p)
 {
   MYFLT   *r, *a, *b;
-  int     err = 0;
+  int32_t     err = 0;
   IGN(csound);
   uint32_t n, nsmps = CS_KSMPS;
   if (LIKELY(nsmps!=1)) {
@@ -1881,7 +1882,7 @@ int32_t outch(CSOUND *csound, OUTCH *p)
     return csound->PerfError(csound, &(p->h),
                              Str("outch must have an even number of arguments"));
   for(n=0; n < count; n+=2) {
-    ch = (int) *p->args[n] - 1;
+    ch = (int32_t) *p->args[n] - 1;
     if (ch < nchnls)
       ret = outn(csound, ch, ch+1, &p->args[n+1],
                  p->h.insdshead, NULL);
@@ -2049,7 +2050,7 @@ int32_t subinak(CSOUND *csound, ASSIGN *p)
  * must explicitly copy rather than assign the data to test.
  */
 #ifndef __MINGW32__
-static inline int _isnan(MYFLT x) {
+static inline int32_t _isnan(MYFLT x) {
 #ifdef USE_DOUBLE
   uint64_t bits;
   memcpy(&bits, &x, sizeof(MYFLT));
@@ -2219,9 +2220,7 @@ int32_t hw_channels(CSOUND *csound, ASSIGN *p){
 int32_t inRange_i(CSOUND *csound, INRANGE *p)
 {
   p->narg = p->INOCOUNT-1;
-  OPARMS oparms;
-  csound->GetOParms(csound, &oparms);
-  if (UNLIKELY(!oparms.sfread))
+  if (UNLIKELY(!csound->GetOParms(csound)->sfread))
     return csound->InitError(csound, "%s", Str("inrg: audio input is not enabled"));
   p->numChans = csound->GetNchnls(csound);
   return OK;
@@ -2336,10 +2335,43 @@ int32_t painit(CSOUND *csound, PAINIT *p)
   if (*p->end!=FL(0.0)) {
     if (k<pargs) pargs = k;
   }
-  tabinit(csound, p->inits, pargs-start+1);
+  tabinit(csound, p->inits, pargs-start+1, &(p->h));
   for (n=0; n<=pargs-start; n++) {
     ((MYFLT*)p->inits->data)[n] = csound->init_event->p[n+start];
   }
+  return OK;
+}
+
+int32_t init_instr_ref(CSOUND *csound, IREF_INIT *p) {
+  INSTRTXT **instrs = csound->GetInstrumentList(csound);
+  if(!p->out->readonly) // can write to it
+    p->out->instr = instrs[(int32_t) *p->in];
+  else csound->Warning(csound, "instr ref var %s is read-only: cannot copy",
+                              GetOutputArgName(&(p->h),0));
+  return OK;
+}
+
+int32_t instr_num(CSOUND *csound, INSTRTXT *instr) {
+   int32_t inum = 0;
+   INSTRTXT **instrs = csound->GetInstrumentList(csound);
+   while(instrs[inum] != instr) inum++;
+   return inum;
+}
+
+
+int32_t get_instr_num(CSOUND *csound, IREF_NUM *p) {
+  *p->out = instr_num(csound, p->in->instr);
+  return OK;
+}
+
+int32_t get_instr_name(CSOUND *csound, IREF_NUM *p) {
+  char *name = cs_strdup(csound, p->in->instr->insname);
+  STRINGDAT *out = (STRINGDAT *) p->out;
+  if(strlen(name) >= out->size) {
+    csound->Free(csound, out->data);
+    out->data = cs_strdup(csound, name);
+    out->size = strlen(name) + 1;
+  } else strNcpy(out->data, name, out->size);
   return OK;
 }
 
