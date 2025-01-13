@@ -1260,15 +1260,10 @@ static inline uint64_t time2kcnt(CSOUND *csound, double tval)
 {
   if (tval > 0.0) {
     tval *= (double) csound->ekr;
-#ifdef HAVE_C99
-    return (uint64_t) llrint(tval);
-#else
-    return (uint64_t) (tval + 0.5);
-#endif
+    return !csound->oparms->sampleAccurate ? MYFLT2UINT64(tval) : (uint64_t) FLOOR(tval);
   }
   return 0UL;
 }
-
 
 /* Schedule new score event to be played. 'time_ofs' is the amount of */
 /* time in seconds to add to evt->p[2] to get the actual start time   */

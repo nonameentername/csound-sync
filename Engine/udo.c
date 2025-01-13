@@ -548,14 +548,13 @@ int32_t useropcd1(CSOUND *csound, UOPCODE *p)
   /* sample-accurate offset */
   ofs = offset;
 
-  /* clear offsets, since with CS_KSMPS=1
-     they don't apply to opcodes, but to the
-     calling code (ie. this code)
-  */
-  this_instr->ksmps_offset = 0;
-  this_instr->ksmps_no_end = 0;
-
   if (this_instr->ksmps == 1) {           /* special case for local kr == sr */
+    /* clear offsets, since with CS_KSMPS=1
+       they don't apply to opcodes, but to the
+       calling code (ie. this code)
+    */
+    this_instr->ksmps_offset = 0;
+    this_instr->ksmps_no_end = 0;
     do {
       this_instr->kcounter++; /*kcounter needs to be incremented BEFORE perf */
       /* copy inputs */
@@ -703,6 +702,9 @@ int32_t useropcd1(CSOUND *csound, UOPCODE *p)
         current = current->next;
       }
 
+      this_instr->ksmps_offset = 0; /* reset sample-accuracy offset for UDO */
+      this_instr->ksmps_no_end = 0;  /* reset end of loop samples for UDO */
+
       /*  run each opcode  */
       if ((opstart = (OPDS *) (this_instr->nxtp)) != NULL) {
         int32_t error = 0;
@@ -810,6 +812,7 @@ int32_t useropcd1(CSOUND *csound, UOPCODE *p)
   /* check if instrument was deactivated (e.g. by perferror) */
   if (!p->ip)                                         /* loop to last opds */
     while (CS_PDS && CS_PDS->nxtp) CS_PDS = CS_PDS->nxtp;
+
   return OK;
 }
 
@@ -828,6 +831,9 @@ int32_t useropcd2(CSOUND *csound, UOPCODE *p)
   if (UNLIKELY(!done)) /* init not done, exit */
     return OK;
 
+  /* VL 18.12.24: ksmps_no_end is copied here as it
+     applies only to last kcycle */ 
+  p->ip->ksmps_no_end = p->h.insdshead->ksmps_no_end;
   p->ip->spin = p->parent_ip->spin;
   p->ip->spout = p->parent_ip->spout;
 
@@ -930,6 +936,8 @@ int32_t useropcd2(CSOUND *csound, UOPCODE *p)
       CS_PDS = CS_PDS->nxtp;
     }
   }
+  p->ip->ksmps_offset = 0; /* reset sample-accuracy offset */
+  p->ip->ksmps_no_end = 0;  /* reset end of loop samples */
   return OK;
 }
 
