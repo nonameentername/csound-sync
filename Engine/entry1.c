@@ -450,7 +450,7 @@ OENTRY opcodlst_1[] = {
   { "expsegb", S(EXXPSEG),0,       "k",    "iim",  xsgset_bkpt, kxpseg, NULL },
   { "expsegb.a", S(EXXPSEG),0,      "a",    "iim",  xsgset_bkpt, expseg },
   { "expsega",S(EXPSEG2),0,       "a",    "iim",  xsgset2, expseg2  },
-  { "exp=segba",S(EXPSEG2),0,       "a",    "iim",  xsgset2b, expseg2 },
+  { "expsegba",S(EXPSEG2),0,       "a",    "iim",  xsgset2b, expseg2 },
   { "expsegr",S(EXPSEG),0,        "k",    "iim",  xsgrset,kxpsegr,NULL },
   { "expsegr.a",S(EXPSEG),0,        "a",    "iim",  xsgrset,expsegr },
   { "linen",  S(LINEN),0,         "k",    "kiii", lnnset, klinen, NULL   },
