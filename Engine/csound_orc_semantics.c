@@ -1650,15 +1650,15 @@ int32_t add_args(CSOUND* csound, TREE* tree, TYPE_TABLE* typeTable)
 {
   TREE* current;
   char* varName;
+  
 
   if (tree == NULL) {
     return 1;
   }
 
   current = tree;
-
   while (current != NULL) {
-
+    
     switch (current->type) {
     case T_ARRAY_IDENT:
       varName = current->value->lexeme;
@@ -1951,6 +1951,8 @@ int32_t verify_opcode(CSOUND* csound, TREE* root, TYPE_TABLE* typeTable) {
   leftArgString = get_arg_string_from_tree(csound, left, typeTable);
   rightArgString = get_arg_string_from_tree(csound, right, typeTable);
 
+ 
+
   OENTRIES* entries = find_opcode2(csound, opcodeName);
   if (UNLIKELY(entries == NULL || entries->count == 0)) {
     synterr(csound, Str("Unable to find opcode with name: %s\n"),
@@ -1962,12 +1964,14 @@ int32_t verify_opcode(CSOUND* csound, TREE* root, TYPE_TABLE* typeTable) {
   }
 
   OENTRY* oentry;
-  if (root->value->optype == NULL)
+  if (root->value->optype == NULL ||
+      leftArgString == NULL)
     oentry = resolve_opcode(csound, entries,
                             leftArgString, rightArgString);
   /* if there is type annotation, try to resolve it */
   else oentry = resolve_opcode(csound, entries,
                                root->value->optype, rightArgString);
+
 
 
   if (UNLIKELY(oentry == NULL)) {

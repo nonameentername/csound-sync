@@ -57,11 +57,16 @@ static int32_t vaget(CSOUND *csound, VA_GET *p)
     int32 ndx = (int32) MYFLOOR((double)*p->kindx);
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
+    if(LIKELY(ndx >= 0 && ndx < CS_KSMPS)) {
     if (UNLIKELY(ndx<(int32)offset || ndx>=(int32)(CS_KSMPS-early)))
-      return csound->PerfError(csound, &(p->h),
-                               Str("Out of range in vaget (%d)"), ndx);
+      csound->Warning(csound, "index %d outside sample-accurate bounds (%d, %d]",
+                      ndx, offset, CS_KSMPS-early);
     *p->kout = p->avar[ndx];
     return OK;
+    } else
+      return csound->PerfError(csound, &(p->h),
+                               Str("Out of range in vaget.k (%d)"), ndx);
+
 }
 
 static int32_t vaset(CSOUND *csound, VA_SET *p)
@@ -69,11 +74,15 @@ static int32_t vaset(CSOUND *csound, VA_SET *p)
     int32 ndx = (int32) MYFLOOR((double)*p->kindx);
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
+    if(LIKELY(ndx >= 0 && ndx < CS_KSMPS)) {
     if (UNLIKELY(ndx<(int32)offset || ndx>=(int32)(CS_KSMPS-early)))
-      return csound->PerfError(csound, &(p->h),
-                               Str("Out of range in vaset (%d)"), ndx);
-    p->avar[ndx] = *p->kval;
-    return OK;
+      csound->Warning(csound, "index %d outside sample-accurate bounds (%d, %d]",
+                      ndx, offset, CS_KSMPS-early);
+     p->avar[ndx] = *p->kval;
+     return OK;
+    }
+    else return csound->PerfError(csound, &(p->h),
+                               Str("Out of range in vaset.k (%d)"), ndx);
 }
 
 
@@ -82,11 +91,15 @@ static int32_t vasigget(CSOUND *csound, VASIG_GET *p)
     int32 ndx = (int32) MYFLOOR((double)*p->kindx);
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
+    if(LIKELY(ndx >= 0 && ndx < CS_KSMPS)) {
     if (UNLIKELY(ndx<(int32)offset || ndx>=(int32)(CS_KSMPS-early)))
-      return csound->PerfError(csound, &(p->h),
-                               Str("Out of range in vaget (%d)"), ndx);
+      csound->Warning(csound, "index %d outside sample-accurate bounds (%d, %d]",
+                      ndx, offset, CS_KSMPS-early);
     *p->kout = p->avar[ndx];
     return OK;
+    } else
+      return csound->PerfError(csound, &(p->h),
+                               Str("Out of range in vasigget.k (%d)"), ndx);
 }
 
 static int32_t vasigset(CSOUND *csound, VASIG_SET *p)
@@ -94,11 +107,16 @@ static int32_t vasigset(CSOUND *csound, VASIG_SET *p)
     int32 ndx = (int32) MYFLOOR((double)*p->kindx);
     uint32_t offset = p->h.insdshead->ksmps_offset;
     uint32_t early  = p->h.insdshead->ksmps_no_end;
+    if(LIKELY(ndx >= 0 && ndx < CS_KSMPS)) {
     if (UNLIKELY(ndx<(int32)offset || ndx>=(int32)(CS_KSMPS-early)))
-      return csound->PerfError(csound, &(p->h),
-                               Str("Out of range in vaset (%d)"), ndx);
-    p->avar[ndx] = *p->kval;
-    return OK;
+      csound->Warning(csound, "index %d outside sample-accurate bounds (%d, %d]",
+                      ndx, offset, CS_KSMPS-early);
+     p->avar[ndx] = *p->kval;
+     return OK;
+    }
+    else return csound->PerfError(csound, &(p->h),
+                               Str("Out of range in vasigset.k (%d)"), ndx);
+    
 }
 
 #define S(x)    sizeof(x)
