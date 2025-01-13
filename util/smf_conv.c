@@ -70,17 +70,17 @@ int is_valid_mask(CSOUND *csound, const char *mask_str, uint16_t *mask) {
     long mask_long = strtol(mask_str, &end_ptr, 16);
 
     if (errno != 0 || *end_ptr != '\0') {
-        csound->Message(csound, Str("Error: Invalid mask format.\n"));
+        csound->Message(csound, "%s", Str("Error: Invalid mask format.\n"));
         return 0;
     }
 
     if (mask_long > 0xFFFF) {
-        csound->Message(csound, Str("Error: Mask value is too large (max FFFF).\n"));
+        csound->Message(csound, "%s", Str("Error: Mask value is too large (max FFFF).\n"));
         return 0; 
     }
 
     if (mask_long == 0) {
-        csound->Message(csound, Str("Error: Mask is 0, no channels will be written.\n"));
+        csound->Message(csound, "%s", Str("Error: Mask is 0, no channels will be written.\n"));
         return 0; 
     }
     *mask = (uint16_t)mask_long;
@@ -149,19 +149,19 @@ typedef struct {
 int read_smf0_file(CSOUND *csound, const char *input_file, Smf0Data *smf0_data) {
     FILE *in = fopen(input_file, "rb");
     if (!in) {
-        csound->Message(csound, Str("Error opening input file"));
+        csound->Message(csound, "%s", Str("Error opening input file"));
         return -1;
     }
 
     uint8_t header[HEADER_SIZE];
     if (fread(header, 1, HEADER_SIZE, in) != HEADER_SIZE) {
-        csound->Message(csound, Str("Error reading header"));
+        csound->Message(csound, "%s", Str("Error reading header"));
         fclose(in);
         return -1;
     }
 
     if (memcmp(header, "MThd", 4) != 0 || read_be32(header + 4) != 6 || read_be16(header + 8) != 0) {
-        csound->Message(csound, Str("Invalid SMF0 file\n"));
+        csound->Message(csound, "%s", Str("Invalid SMF0 file\n"));
         fclose(in);
         return -1;
     }
@@ -170,13 +170,13 @@ int read_smf0_file(CSOUND *csound, const char *input_file, Smf0Data *smf0_data) 
 
     uint8_t track_header[TRACK_HEADER_SIZE];
     if (fread(track_header, 1, TRACK_HEADER_SIZE, in) != TRACK_HEADER_SIZE) {
-        csound->Message(csound,Str("Error reading track header"));
+        csound->Message(csound, "%s", Str("Error reading track header"));
         fclose(in);
         return -1;
     }
 
     if (memcmp(track_header, "MTrk", 4) != 0) {
-        csound->Message(csound, Str("Invalid track header\n"));
+        csound->Message(csound, "%s", Str("Invalid track header\n"));
         fclose(in);
         return -1;
     }
@@ -184,7 +184,7 @@ int read_smf0_file(CSOUND *csound, const char *input_file, Smf0Data *smf0_data) 
     uint32_t track_size = read_be32(track_header + 4);
     uint8_t *track_data = malloc(track_size);
     if (!track_data || fread(track_data, 1, track_size, in) != track_size) {
-        csound->Message(csound, Str("Error reading track data"));
+        csound->Message(csound, "%s", Str("Error reading track data"));
         free(track_data);
         fclose(in);
         return -1;
@@ -251,7 +251,7 @@ ChannelData parse_track_data(CSOUND *csound, uint8_t *track_data, uint32_t track
             channel_data.channel_buffers[channel][channel_data.channel_sizes[channel]++] = event;
             pos += event_size;
         } else if (status == 0xFF) {
-            uint8_t meta_type = track_data[pos++];
+          // uint8_t meta_type = track_data[pos++]; not used
             uint32_t meta_size = 0;
 
             do {
@@ -271,7 +271,7 @@ ChannelData parse_track_data(CSOUND *csound, uint8_t *track_data, uint32_t track
 int write_smf1_file(CSOUND *csound, const char *output_file, uint16_t track_mask, uint16_t division, ChannelData channel_data) {
     FILE *out = fopen(output_file, "wb");
     if (!out) {
-        csound->Message(csound, Str("Error opening output file"));
+        csound->Message(csound, "%s", Str("Error opening output file"));
         for (int i = 0; i < MAX_TRACKS; i++) {
             free(channel_data.channel_buffers[i]); 
         }
@@ -312,7 +312,7 @@ int write_smf1_file(CSOUND *csound, const char *output_file, uint16_t track_mask
 
             uint8_t *new_track_data = malloc(new_track_size);
             if (!new_track_data) {
-                csound->Message(csound, Str("Error allocating memory for new track data"));
+                csound->Message(csound, "%s", Str("Error allocating memory for new track data"));
                 free(channel_data.channel_buffers[i]);
                 continue;
             }
@@ -357,13 +357,14 @@ int write_smf1_file(CSOUND *csound, const char *output_file, uint16_t track_mask
 int convert_smf0_to_smf1(CSOUND *csound, const char *input_file, const char *output_file, uint16_t track_mask) {
     Smf0Data smf0_data;
     if (read_smf0_file(csound, input_file, &smf0_data) == -1) {
-	csound->Message(csound,Str("Failed to read SMF0 file\n"));
+	csound->Message(csound, "%s", Str("Failed to read SMF0 file\n"));
 	return -1;
     }
     ChannelData channel_data = parse_track_data(csound, smf0_data.track_data, smf0_data.track_size);
     free(smf0_data.track_data);
     write_smf1_file(csound, output_file, track_mask, smf0_data.division, channel_data);
     csound->Message(csound, Str("Converted %s to %s\n"), input_file, output_file);
+    return 0;
 }
 
 static int32_t smf_conv(CSOUND *csound, int32_t argc, char *argv[]) {
@@ -385,7 +386,7 @@ static int32_t smf_conv(CSOUND *csound, int32_t argc, char *argv[]) {
     }
 
     if (argc != file_arg_index + 2) {
-        csound->Message(csound, Str("Error: Invalid number of arguments. Expected 2 files after the flag.\n"));
+        csound->Message(csound, "%s", Str("Error: Invalid number of arguments. Expected 2 files after the flag.\n"));
         return -1;
     }
 

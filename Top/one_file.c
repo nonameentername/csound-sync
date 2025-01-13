@@ -233,9 +233,9 @@ static char *my_fgets_cf(CSOUND *csound, char *s, int32_t n, CORFIL *stream)
 
 /* Remove the 0x03 and 0x18 characters that the option parser inserted
  * to handle quoted arguments and escaped characters. */
-static void remove_special_placeholders(char *s, int n)
+static void remove_special_placeholders(char *s, size_t n)
 {
-    int i, offset = 0;
+    int32_t i, offset = 0;
 
     for (i = 0; i <= n; i++) {
         if (s[i] == 0x03 || s[i] == 0x18) {
