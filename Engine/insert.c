@@ -523,17 +523,8 @@ int32_t insert_event(CSOUND *csound, int32_t insno, EVTBLK *newevtp)
   ip->opcod_iobufs = NULL;
   ip->strarg       = newevtp->strarg;  /* copy strarg so it does not get lost */
 
-  // current event needs to be reset here
-  csound->init_event = newevtp;
-  error = init_pass(csound, ip);
-  if(error == 0)
-    ATOMIC_SET(ip->init_done, 1);
-  if (UNLIKELY(csound->inerrcnt || ip->p3.value == FL(0.0))) {
-    xturnoff_now(csound, ip);
-    return csound->inerrcnt;
-  }
-
   /* new code for sample-accurate timing, not for tied notes */
+  /* VL 18 Dec 24 - needs to be set before init pass to propagate to UDOS */
   if (O->sampleAccurate && !tie) {
     int64_t start_time_samps, start_time_kcycles;
     double duration_samps;
@@ -560,6 +551,16 @@ int32_t insert_event(CSOUND *csound, int32_t insno, EVTBLK *newevtp)
     ip->ksmps_offset = 0;
     ip->ksmps_no_end = 0;
     ip->no_end = 0;
+  }
+  
+  // current event needs to be reset here
+  csound->init_event = newevtp;
+  error = init_pass(csound, ip);
+  if(error == 0)
+    ATOMIC_SET(ip->init_done, 1);
+  if (UNLIKELY(csound->inerrcnt || ip->p3.value == FL(0.0))) {
+    xturnoff_now(csound, ip);
+    return csound->inerrcnt;
   }
 
 #ifdef BETA
@@ -613,6 +614,25 @@ int32_t insert_event(CSOUND *csound, int32_t insno, EVTBLK *newevtp)
   return 0;
 }
 
+/** offsetsmps
+ *  returns the sample accurate offset at i or k time
+ *
+ *  [i/k]offs offsetsmps
+*/    
+int32 sa_offset(CSOUND *csound, AOP *p){
+  *p->r = p->h.insdshead->ksmps_offset;
+  return OK;
+}
+
+/** earlysmps
+ *  returns the sample accurate early exit length at k time
+ *
+ *  kearly earlysmps
+*/    
+int32 sa_early(CSOUND *csound, AOP *p){
+  *p->r = p->h.insdshead->ksmps_no_end;
+  return OK;
+}
 
 /* insert a MIDI instr copy into active list */
 /*  then run an init pass                    */

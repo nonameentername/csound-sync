@@ -26,6 +26,7 @@
 
 #include "csoundCore.h"
 #include "udo.h"
+#include "aops.h"
 
 typedef struct {                        /*       INSERT.H                */
     OPDS    h;
@@ -61,6 +62,9 @@ typedef struct {
 } KILLOP;
 
 
+int32 sa_early(CSOUND *csound, AOP *p);
+int32 sa_offset(CSOUND *csound, AOP *p);
+  
 /* the number of optional outputs defined in entry.c */
 #define SUBINSTNUMOUTS  8
 

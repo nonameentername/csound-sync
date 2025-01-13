@@ -29,7 +29,7 @@ public:
     virtual void SetUp ()
     {
         csound = csoundCreate (NULL,NULL);
-        csoundCreateMessageBuffer (csound, 0);
+        //csoundCreateMessageBuffer (csound, 0);
         csoundSetOption (csound, "-odac --logfile=null");
     }
 
@@ -193,5 +193,30 @@ const char* event = R"(
    }
    else
     ASSERT_FALSE(result == 0);
+}
+
+TEST_F (OrcCompileTests, testSampleAccurate)
+{
+  const char* instrument = R"(
+instr 1
+a1 oscili 1, 440, -1, 0.25
+out a1
+endin
+schedule(1,6/sr,0.5)
+     )";
+
+    
+  int32_t result = csoundSetOption(csound, "--sample-accurate");
+  ASSERT_TRUE(result == 0);
+  result = csoundCompileOrc(csound, instrument);
+  ASSERT_TRUE(result == 0);
+  result = csoundStart(csound);
+  ASSERT_TRUE(result == 0);
+  result = csoundPerformKsmps(csound);
+  const MYFLT *spout = csoundGetSpout(csound);
+  ASSERT_TRUE(spout[5] == 0.0);
+  ASSERT_TRUE(spout[6] == 1.0);
+ 
+
 }
 
