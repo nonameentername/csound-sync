@@ -134,11 +134,11 @@ OENTRY opcodlst_1[] = {
   { "midglobal",S(MIDGLOBAL),0,   "",     "Sm", midglobal, NULL, NULL, NULL},
   { "ihold",  S(LINK),0,          "",     "",     ihold, NULL, NULL, NULL  },
   { "turnoff",S(LINK),0,           "",     "",     NULL,   turnoff, NULL, NULL },
+  { "offsetsmps", S(AOP), 0, "k", "", NULL,(SUBR) sa_offset, NULL},
+  { "earlysmps", S(AOP), 0, "k", "", NULL,(SUBR) sa_early, NULL},
   { "str", S(IREF_NUM) ,0,  "S", ":InstrDef;", (SUBR) get_instr_name},
-  /* VL: 10.2.22 this was thread  but with parser3 we need to make string assignment on threads 1 & 2 */
   {  "=.S",   S(STRCPY_OP),0,     "S",    "S",
      (SUBR) strcpy_opcode_S, (SUBR) strassign_k, (SUBR) NULL, NULL    },
-  /* VL: 11.2.22 this was thread   but with an update count, we need to be initialised */
   {  "#=.S",   S(STRCPY_OP),0,     "S",    "S",
      (SUBR) strcpy_opcode_S, (SUBR) strassign_k, (SUBR) NULL, NULL    },
   {  "=.T",   S(STRCPY_OP),0,     "S",    "i",

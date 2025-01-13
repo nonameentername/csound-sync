@@ -7,6 +7,7 @@ set(stdutil_SRCS
     lpc_export.c    lpc_import.c    mixer.c     pvanal.c
     pv_export.c     pv_import.c     pvlook.c    scale.c
     sndinfo.c       srconv.c        std_util.c  xtrct.c
+    smf_conv.c
     SDIF/sdif.c )
 
 if(BUILD_UTILITIES)
@@ -31,6 +32,7 @@ if(BUILD_UTILITIES)
     make_utility(scale       scale_main.c)
     make_utility(sndinfo     sndinfo_main.c)
     make_utility(srconv      srconv_main.c)
+    make_utility(smf_conv    smf_conv_main.c)
 
     if (BUILD_SRC_CONV)
         if (USE_VCPKG)

@@ -186,7 +186,10 @@ int32_t csoundCompileArgs(CSOUND *csound, int32_t argc, const char **argv) {
     csound->LongJmp(csound, 1);
   /* do not allow orc/sco/csd name in .csound7rc */
   csound->orcname_mode = 2;
-  checkOptions(csound);
+  if(!csound->options_checked) {
+    checkOptions(csound);
+    csound->options_checked = 1;
+  }
   if (csound->delayederrormessages) {
     if (O->msglevel > 8)
       csound->Warning(csound, "%s", csound->delayederrormessages);
@@ -423,7 +426,7 @@ PUBLIC int32_t csoundStart(CSOUND *csound) // DEBUG
   OPARMS *O = csound->oparms;
   int32_t n;
 
-  /* if a CSD was not used or options were not checked, check options */
+  /* if a CSD was not used and options were not checked, check options */
   if (csound->csdname == NULL && !csound->options_checked) {
     checkOptions(csound);
   }

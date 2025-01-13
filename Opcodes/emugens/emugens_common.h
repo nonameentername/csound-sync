@@ -15,6 +15,11 @@
 #define PERFERR(m) (csound->PerfError(csound, &(p->h), "%s", m))
 #define PERFERRF(fmt, ...) (csound->PerfError(csound, &(p->h), fmt, __VA_ARGS__))
 
+#ifndef MAX
+#define MAX(a,b) ((a>b)?(a):(b))
+#define MIN(a,b) ((a>b)?(b):(a))
+#endif
+
 
 #define CHECKARR1D(arr)           \
     if((arr)->dimensions != 1)    \
