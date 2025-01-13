@@ -6,13 +6,13 @@
 0dbfs = 1
 ksmps = 10
 
-opcode Test,0,ik
- i1,k1 xin
- ioffs offsetsmps
- if ioffs != i1 then
-  exitnow(-1)
+opcode Test,0,kk
+ k2,k1 xin
+ koffs offsetsmps
+ if koffs != k2 then
+  schedulek(2,0,0)
  else
-  print ioffs
+  printk2 koffs
  endif
  kearly earlysmps
  if kearly != k1 then
@@ -23,15 +23,17 @@ opcode Test,0,ik
 endop
 
 instr 1
- ioffs offsetsmps
- if ioffs == 0 then
-  exitnow(-1)
- else
-  print ioffs
- endif
+kflag init 1
+koffs offsetsmps
+if koffs == 0 && kflag == 1 then
+  schedulek(2,0,0)
+else
+ kflag = 0
+ printk2 koffs
+endif
 
 kearly earlysmps
-Test ioffs,kearly
+Test koffs,kearly
 
 if release() != 0 then
  if kearly == 0 then
