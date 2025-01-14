@@ -967,8 +967,7 @@ static CS_NOINLINE void atsa_sound_read_noninterleaved(CSOUND *csound, SNDFILE *
           m = (nFrames - i);
           k = m * nChannels;
         }
-        if (sizeof(mus_sample_t) == sizeof(float))
-          n = (int) csound->SndfileRead(csound, sf, (void *) &(tmpBuf[0]), (sf_count_t) m);
+        n = (int) csound->SndfileRead(csound, sf, (void *) &(tmpBuf[0]), (sf_count_t) m);
         if (n < 0)
           n = 0;
         n *= nChannels;
