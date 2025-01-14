@@ -134,6 +134,25 @@ extern "C" {
     double timeVal);
   
   /**
+     Compiles the given orchestra code
+  */  
+  PUBLIC void csoundPerformanceThreadCompileOrc(CS_PERF_THREAD* pt, 
+    const char* code);
+    
+  /**
+     Evaluates the given code, calls the `returncb` callback with the 
+     value passed to the `return` opcode in global space. 
+  */
+  PUBLIC void csoundPerformanceThreadEvalCode(CS_PERF_THREAD* pt, 
+    const char *code, void (*returncb)(MYFLT));
+    
+  /**
+     Calls the given callback within the context of the callback thread
+  */
+  PUBLIC void csoundPerformanceThreadRequestCallback(CS_PERF_THREAD *pt,
+    void (*func)(void *));
+    
+  /**
      Waits until the performance is finished or fails.
      Returns a positive value if the end of score was reached or
      stop() was called, and a negative value if an error occured.

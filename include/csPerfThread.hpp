@@ -214,6 +214,23 @@ class PUBLIC CsoundPerformanceThread {
      * and a negative value if an error occured. Also releases any resources
      * associated with the performance thread object.
      */
+     
+    void CompileOrc(const char *code);
+    /**
+     * Compiles the given orchestra code
+     */
+    
+    void EvalCode(const char *code, void (*returncb)(MYFLT));
+    /**
+     * Evaluates the given code, calls the `returncb` callback with the 
+     * value passed to the `return` opcode in global space. 
+     */
+     
+    void RequestCallback(void (*func)(CsoundPerformanceThread *));
+    /**
+     * Calls the given callback within the context of the performance thread
+     */
+    
     int32_t Join();
     /**
      * Waits until all pending messages (pause, send score event, etc.)
