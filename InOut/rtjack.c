@@ -420,14 +420,18 @@ static void openJackStreams(RtJackGlobals *p)
       }
     }
     if (UNLIKELY(p->bufSize < 8 || p->bufSize > 32768))
-      rtJack_Error(csound, -1, Str("invalid period size (-b)"));
+      rtJack_Error(csound, -1, Str("invalid period size (-b%d)"));
     if (p->nBuffers < 2)
       p->nBuffers = 2;
     if (UNLIKELY((uint32_t) (p->nBuffers * p->bufSize) > (uint32_t) 65536))
       rtJack_Error(csound, -1, Str("invalid buffer size (-B)"));
-    if (UNLIKELY(((p->nBuffers - 1) * p->bufSize)
-                 < (int32_t) jack_get_buffer_size(p->client)))
-      rtJack_Error(csound, -1, Str("buffer size (-B) is too small"));
+    if (UNLIKELY(((p->nBuffers-1) * p->bufSize)
+                 < (int32_t) jack_get_buffer_size(p->client))) {
+      snprintf(&(buf[0]), 256, Str("buffer size (-B) %d is too small (period size=%d, num. buffers=%d, jack buffer=%d)"),
+          (p->nBuffers - 1) * p->bufSize, p->bufSize, p->nBuffers - 1,
+          jack_get_buffer_size(p->client));
+      rtJack_Error(csound, -1, &(buf[0]));
+    }
 
     /* register ports */
     rtJack_RegisterPorts(p);
