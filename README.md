@@ -1,7 +1,7 @@
 # CSOUND
 Version 7.0.0 (beta)
 
-This is the the develop branch of the Csound main code repository. At
+This is the develop branch of the Csound main code repository. At
 the moment, we are developing the next main version (moving from 6.x
 to 7.0), and this branch reflects current work-in-progress. This is
 still undergoing changes and fixes until the first release. The
