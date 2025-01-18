@@ -419,8 +419,10 @@ static void openJackStreams(RtJackGlobals *p)
         rtJack_Error(p->csound, -1, &(buf[0]));
       }
     }
-    if (UNLIKELY(p->bufSize < 8 || p->bufSize > 32768))
-      rtJack_Error(csound, -1, Str("invalid period size (-b%d)"));
+    if (UNLIKELY(p->bufSize < 8 || p->bufSize > 32768)) {
+      snprintf(&(buf[0]), 256, Str("invalid period size (-b): %d"), p->bufSize);
+      rtJack_Error(csound, -1, &(buf[0]));
+    }
     if (p->nBuffers < 2)
       p->nBuffers = 2;
     if (UNLIKELY((uint32_t) (p->nBuffers * p->bufSize) > (uint32_t) 65536))
@@ -510,7 +512,7 @@ static void openJackStreams(RtJackGlobals *p)
         for (i = 0; i < p->nChannels_i; i++) {
           if (num+i+1 >= (int32_t)numPorts){
             csound->Warning(csound, Str("Trying to connect input channel %d but there are "
-                                        "not enough ports available\n"), num+i);
+                                        "not enough ports available (%d ports available)\n"), num+i, (int32_t)numPorts);
             break;
           }
           if (portNames[num+i] != NULL){
@@ -520,8 +522,8 @@ static void openJackStreams(RtJackGlobals *p)
             if (jack_connect(p->client, portNames[num+i],
                              jack_port_name(p->inPorts[i])) != 0) {
               csound->Warning(csound,
-                              Str("failed to autoconnect input channel %d\n"
-                                  "(needs manual connection)"), i+1);
+                              Str("failed to autoconnect input channel %d ('%s') to port '%s'\n"
+                                  "(needs manual connection)"), i+1, portNames[num+i], jack_port_name(p->inPorts[i]));
             }
           } else
             csound->Warning(csound, Str("jack port %d not valid\n"
@@ -566,8 +568,8 @@ static void openJackStreams(RtJackGlobals *p)
               if (UNLIKELY(jack_connect(p->client, dev_final,
                                         jack_port_name(p->inPorts[i])) != 0)) {
                 csound->Warning(csound,
-                                Str("failed to autoconnect input channel %d\n"
-                                    "(needs manual connection)"), i+1);
+                                Str("failed to autoconnect input channel %d ('%s') to port '%s'\n"
+                                    "(needs manual connection)"), i+1, dev_final, jack_port_name(p->inPorts[i]));
               }
             }
           }
@@ -605,8 +607,8 @@ static void openJackStreams(RtJackGlobals *p)
             if (jack_connect(p->client, jack_port_name(p->outPorts[i]),
                              portNames[num+i]) != 0) {
               csound->Warning(csound,
-                              Str("failed to autoconnect output channel %d\n"
-                                  "(needs manual connection)"), i+1);
+                              Str("failed to autoconnect output channel %d (%s) to %s\n"
+                                  "(needs manual connection)"), i+1, jack_port_name(p->outPorts[i]), portNames[num+i]);
             }
           } else
             csound->Warning(csound, Str("jack port %d not valid\n"
