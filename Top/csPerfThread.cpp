@@ -482,6 +482,99 @@ public:
     ~CsPerfThreadMsg_SetScoreOffsetSeconds() {}
 };
 
+
+#define _PERFTHREAD_COMPILE_BUFSIZE 1024
+
+class CsPerfThreadMsg_CompileOrc
+      : public CsoundPerformanceThreadMessage {
+private:
+    int32_t len;
+    char    *sp;
+    char    s[_PERFTHREAD_COMPILE_BUFSIZE];
+    
+public:
+    CsPerfThreadMsg_CompileOrc(CsoundPerformanceThread *pt, const char *code)
+    : CsoundPerformanceThreadMessage(pt)
+    {
+      len = (int32_t)strlen(code);
+      if(len < _PERFTHREAD_COMPILE_BUFSIZE) 
+        this->sp = &(this->s[0]);
+      else
+        this->sp = new char[(unsigned int)(len + 1)];
+      strcpy(this->sp, code);
+    }
+    int run()
+    {
+      // 1=async, 0=block
+      // async does not seem to work, needs more debugging...
+      csoundCompileOrc(pt_->GetCsound(), sp, 0);  
+      return 0;
+    }
+    
+    ~CsPerfThreadMsg_CompileOrc() {
+      if(len >= _PERFTHREAD_COMPILE_BUFSIZE)
+        delete[] sp;
+    }
+};
+
+
+class CsPerfThreadMsg_EvalCode
+      : public CsoundPerformanceThreadMessage {
+private:
+    int32_t len;
+    char    *sp;
+    char    s[_PERFTHREAD_COMPILE_BUFSIZE];
+    void (*returncb)(MYFLT out);
+   
+public:
+    CsPerfThreadMsg_EvalCode(CsoundPerformanceThread *pt, const char *code, void (*returncb)(MYFLT))
+    : CsoundPerformanceThreadMessage(pt)
+    {
+      this->returncb = returncb; 
+      len = (int32_t)strlen(code);
+      if(len < _PERFTHREAD_COMPILE_BUFSIZE) 
+        this->sp = &(this->s[0]);
+      else
+        this->sp = new char[(unsigned int)(len + 1)];
+      strcpy(this->sp, code);
+    }
+    int run()
+    {
+      MYFLT out = csoundEvalCode(pt_->GetCsound(), sp);
+      this->returncb(out);
+      return 0;
+    }
+    
+    ~CsPerfThreadMsg_EvalCode() {
+      if(len >= _PERFTHREAD_COMPILE_BUFSIZE)
+        delete[] sp;
+    }
+};
+
+
+class CsPerfThreadMsg_RequestCallback
+      : public CsoundPerformanceThreadMessage {
+private:
+    void (*func)(CsoundPerformanceThread *pt);
+   
+public:
+    CsPerfThreadMsg_RequestCallback(CsoundPerformanceThread *pt, void (*func)(CsoundPerformanceThread*))
+    : CsoundPerformanceThreadMessage(pt)
+    {
+      this->func = func;
+    }
+    
+    int run()
+    {
+      this->func(this->pt_);
+      return 0;
+    }
+    
+    ~CsPerfThreadMsg_RequestCallback() {}
+};
+
+
+
 // ----------------------------------------------------------------------------
 
 /**
@@ -777,6 +870,22 @@ void CsoundPerformanceThread::SetScoreOffsetSeconds(double timeVal)
     QueueMessage(new CsPerfThreadMsg_SetScoreOffsetSeconds(this, timeVal));
 }
 
+void CsoundPerformanceThread::CompileOrc(const char *code)
+{
+    QueueMessage(new CsPerfThreadMsg_CompileOrc(this, code));
+}
+
+void CsoundPerformanceThread::EvalCode(const char *code, void (*returncb)(MYFLT))
+{
+    QueueMessage(new CsPerfThreadMsg_EvalCode(this, code, returncb));
+}
+
+void CsoundPerformanceThread::RequestCallback(void (*func)(CsoundPerformanceThread *pt))
+{
+    QueueMessage(new CsPerfThreadMsg_RequestCallback(this, func));
+}
+
+
 int32_t CsoundPerformanceThread::Join()
 {
     int32_t retval;
@@ -955,6 +1064,25 @@ PUBLIC void csoundPerformanceThreadFlushMessageQueue(Cpt pt)
 {
   CsoundPerformanceThread *cpt = (CsoundPerformanceThread *)pt;
   cpt->FlushMessageQueue();
+}
+
+PUBLIC void csoundPerformanceThreadCompileOrc(Cpt pt, const char *code)
+{
+  CsoundPerformanceThread *cpt = (CsoundPerformanceThread *)pt;
+  cpt->CompileOrc(code);
+}
+
+PUBLIC void csoundPerformanceThreadEvalCode(Cpt pt, const char *code, void (*returncb)(MYFLT))
+{
+  CsoundPerformanceThread *cpt = (CsoundPerformanceThread *)pt;
+  cpt->EvalCode(code, returncb);
+}
+
+PUBLIC void csoundPerformanceThreadRequestCallback(Cpt pt, void (*func)(void *pt))
+{
+  CsoundPerformanceThread *cpt = (CsoundPerformanceThread *)pt;
+  void (*func2)(CsoundPerformanceThread*) = (void (*)(CsoundPerformanceThread*))func;
+  cpt->RequestCallback(func2);
 }
 
 } // extern "C"
