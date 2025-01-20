@@ -1790,20 +1790,6 @@ TREE* convert_statement_to_opcall(CSOUND* csound, TREE* root, TYPE_TABLE* typeTa
   }
 
   if (root->value != NULL) {
-    /* xout exp(0) */
-    if (root->left != NULL &&
-        root->left->type == T_IDENT &&
-        find_opcode(csound, root->left->value->lexeme) != NULL) {
-      TREE* top = root->left;
-      root->left = NULL;
-      top->right = root;
-      top->next = root->next;
-      root->next = NULL;
-      top->type = T_OPCALL;
-      top->right->type = T_FUNCTION;
-      return top;
-    }
-
     /* Already processed T_OPCALL, return as-is */
     return root;
   }

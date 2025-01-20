@@ -18,8 +18,15 @@ instr 1
  chnset k(1), "bla"
 endin
 
+instr 2
+ // from github issue 1964
+ // make sure we can assign to a variable that has the same name as an opcode
+ fmax:i init p4
+endin
+
 </CsInstruments>
 <CsScore>
 i 1 0 1
+i 2 0 1
 </CsScore>
 </CsoundSynthesizer>
