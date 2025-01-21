@@ -241,8 +241,14 @@ void *find_or_add_constant(CSOUND *csound, CS_HASH_TABLE *constantsPool,
 /** exclude some names 
  */
 static int32_t  check_name(const char *name) {
-  const char *exs[] = { "in", "out", "xin", "xout", "init",
-                        "fillarray", "genarray", "genarray_i", "" };
+  const char *exs[] = { "in", "out", "xin", "xout",  
+                        "instr", "endin", "opcode", "endop",
+                        "pset", "subinstr", "goto", "igoto",
+                        "cigoto", "ckgoto", "cggoto", "reinit",
+                        "timout","kgoto", "declare","setksmps",
+                        "oversample", "undersample", "create",
+                        "delete", "rigoto", "rireturn", "tigoto"
+                        ""};
   int i = 0;
   for(i = 0; *exs[i] != '\0'; i++)
     if(strcmp(exs[i], name) == 0) return NOTOK;

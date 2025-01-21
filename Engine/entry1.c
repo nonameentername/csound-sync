@@ -87,21 +87,8 @@ OENTRY opcodlst_1[] = {
   { "declare", 0,    0,            "",     "",   NULL, NULL, NULL, NULL },
   { "$label", S(LBLBLK),  0,      "",     "",   NULL, NULL, NULL, NULL },
   { "pset",   S(PVSET),   0,      "",     "m",  NULL, NULL, NULL, NULL },
-
-  /* IV - Sep 8 2002 - added entries for user defined opcodes, xin, xout */
-  /* and setksmps */
   { "##userOpcode", S(UOPCODE),0,  "", "", useropcdset, useropcd, NULL, NULL },
-  /* IV - Sep 10 2002: removed perf time routines of xin and xout */
   { "xin",  S(XIN_MAX),0,     "****************", "",  xinset,  NULL, NULL, NULL },
-  /* { "xin.64",   S(XIN_HIGH),0,
-     "****************************************************************", "",
-     xinset,  NULL, NULL },
-     { "##xin256",  S(XIN_MAX),0,
-     "****************************************************************"
-     "****************************************************************"
-     "****************************************************************"
-     "****************************************************************", "",
-     xinset,  NULL, NULL },*/
   { "xout", S(XOUT_MAX),0,    "",         "*", xoutset, NULL, NULL, NULL },
   { "setksmps", S(SETKSMPS),0,    "",   "i", setksmpsset, NULL, NULL },
   { "oversample", S(OVSMPLE),0,    "",   "ioj", oversampleset, NULL, NULL },
