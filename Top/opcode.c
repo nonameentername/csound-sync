@@ -238,6 +238,25 @@ struct oentries *find_opcode2(CSOUND *, char *);
 void *find_or_add_constant(CSOUND *csound, CS_HASH_TABLE *constantsPool,
                            const char *name, MYFLT value);
 
+/** exclude some names 
+ */
+static int32_t  check_name(const char *name) {
+  const char *exs[] = { "in", "out", "xin", "xout", "init",
+                        "fillarray", "genarray", "genarray_i", "" };
+  int i = 0;
+  for(i = 0; *exs[i] != '\0'; i++)
+    if(strcmp(exs[i], name) == 0) return NOTOK;
+  return OK;
+}
+
+/** check opcodes without any inputs
+ */
+static int32_t check_oentry(OENTRY *ep) {
+  if(ep->intypes &&
+     *(ep->intypes) != '\0') return 1; 
+    else return 0;
+}
+
 CS_VARIABLE *addGlobalVariable(CSOUND *csound, ENGINE_STATE *engineState, CS_TYPE *type,
                                char *name, void *typeArg);
 
@@ -251,12 +270,14 @@ void add_opcode_def(CSOUND *csound, OENTRY *ep) {
   const CS_TYPE *type = &CS_VAR_TYPE_OPCODEREF;
   CS_VARIABLE *var;
   name = get_opcode_short_name(csound, ep->opname);
-  if(isalpha(*name) != 0) { // only alphabetic opcode names
-    // add underscore to name 
+  if(isalpha(*name) != 0 && strlen(name) > 1
+     && check_name(name) == OK) { // 
     varName = csound->Calloc(csound, strlen(name) + 2);
-    snprintf(varName, strlen(name) + 2, "%s", name);  
+    // add underscore to opcodes with no inputs 
+    snprintf(varName, strlen(name) + 2, check_oentry(ep) ? "%s" : "_%s", name);  
     if ((var = csoundFindVariableWithName(csound, csound->engineState.varPool,
                                           varName)) == NULL) {
+      // printf("var: %s \n", varName);
       // create new variable
       var = addGlobalVariable(csound, &csound->engineState, (CS_TYPE *) type, varName,
                               NULL);

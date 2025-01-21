@@ -24,13 +24,13 @@ endop
 
 
 instr 1
-  String = toStrArray("Inline string-array get")[0]
-  prints "%s\n", String
+  String[] = toStrArray("Inline string-array get")
+  prints "%s\n", String[0]
 endin
 
 instr 2
   itestVal = 123.456
-  iresultVal = toInitArray(itestVal)[0]
+  iresultVal[] = toInitArray(itestVal)
   prints "%d\n", itestVal
 endin
 
@@ -41,8 +41,8 @@ endin
 </CsInstruments>
 <CsScore>
 i 1 0 .1
-i 2 + .
-i 3 + .
+i 2 .1 .1
+i 3 .2  .1
 </CsScore>
 </CsoundSynthesizer>
 Prints:
