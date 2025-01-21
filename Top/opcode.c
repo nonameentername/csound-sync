@@ -254,7 +254,7 @@ void add_opcode_def(CSOUND *csound, OENTRY *ep) {
   if(isalpha(*name) != 0) { // only alphabetic opcode names
     // add underscore to name 
     varName = csound->Calloc(csound, strlen(name) + 2);
-    snprintf(varName, strlen(name) + 2, "_%s", name);  
+    snprintf(varName, strlen(name) + 2, "%s", name);  
     if ((var = csoundFindVariableWithName(csound, csound->engineState.varPool,
                                           varName)) == NULL) {
       // create new variable
