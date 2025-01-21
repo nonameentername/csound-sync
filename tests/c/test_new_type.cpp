@@ -80,7 +80,7 @@ struct TUPINIT {
 };
 
 int32_t tuple_init(CSOUND *csound, TUPINIT *p) {
-  int32_t n = p->INCOUNT;
+  int32_t n = p->INOCOUNT;
   if(p->r->data == NULL)  
     p->r->data = (MYFLT *)
       csound->Calloc(csound, sizeof(MYFLT)*n);

@@ -24,13 +24,6 @@
 #include "entry1.h"             /*                      ENTRY1.C        */
 #include "interlocks.h"
 
-/* thread vals, where isub=1, ksub=2:
-   0 =     1  OR   2  (B out only)
-   1 =     1
-   2 =             2
-   3 =     1  AND  2
-*/
-
 /* inarg types include the following:
    i       irate scalar
    k       krate scalar
@@ -165,6 +158,23 @@ OENTRY opcodlst_1[] = {
   { "init.k", S(ASSIGNM),0,       "zzzzzzzzzzzzzzzzzzzzzzzz", "m", minit  },
   { "init.a", S(ASSIGNM),0,       "mmmmmmmmmmmmmmmmmmmmmmmm", "m", mainit },
   { "nstrnum",   S(IREF_NUM),0,    "i",    ":InstrDef;",   (SUBR) get_instr_num },
+  { "opcodeinfo", S(OPINFO) ,0,  "", ":OpcodeDef;", (SUBR) opcode_info},
+  { "=.opcd", S(ASSIGN), 0, ":OpcodeDef;", ":OpcodeDef;", (SUBR) copyVarGeneric},
+  { "init.opcd", S(ASSIGN), 0, ":OpcodeDef;", "S", (SUBR) opcode_ref},
+  { "opcoderef", S(ASSIGN), 0, ":OpcodeDef;", "S", (SUBR) opcode_ref},
+  { "create", S(AOP),0,  ":Opcode;", ":OpcodeDef;o", (SUBR) create_opcode_simple},
+  { "create", S(OPARRAY),0,  ":Opcode;[]", ":OpcodeDef;io", (SUBR) create_opcode_array},
+  { "delete", S(AOP),0, "", ":Opcode;", NULL, NULL, (SUBR) opcode_delete},
+  { "delete", S(AOP),0, "", ":Opcode;[]", NULL, NULL, (SUBR) opcode_delete_array},
+  { "opcodeinfo", S(OPINFO) ,0,  "", ":Opcode;", (SUBR) opcode_object_info},
+  { "=.Opcode", S(ASSIGN) ,0,  ":Opcode;", ":Opcode;", (SUBR) copy_opcode_obj,
+  (SUBR) copy_opcode_obj},
+  { "run", S(OPRUN), 0, "*", ":Opcode;*", (SUBR) opcode_object_init, (SUBR) opcode_run_perf},
+  { "run", S(OPRUN), 0, "*", ":Opcode;[]*", (SUBR) opcode_array_init, (SUBR) opcode_array_perf},
+  { "init", S(OPRUN), 0, "*", ":Opcode;*", (SUBR) opcode_object_init},
+  { "perf", S(OPRUN), 0, "*", ":Opcode;*", NULL, (SUBR) opcode_object_perf},
+  { "setp", S(AOP), 0, "", ":Opcode;k.", NULL, (SUBR) set_opcode_param },
+  { "getp", S(AOP), 0, ".", ":Opcode;k", NULL, (SUBR) get_opcode_output },
   { "init.instr", S(ASSIGN) ,0,  ":InstrDef;", ":InstrDef;", (SUBR) copyVarGenericInit},
   { "floatsize", S(ASSIGN) ,0, "i", "", myflt_size },
   /* VL 4.4.24 removing thread field:

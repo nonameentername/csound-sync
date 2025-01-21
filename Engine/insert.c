@@ -804,7 +804,7 @@ int32_t insert_midi(CSOUND *csound, int32_t insno, MCHNBLK *chn, MEVENT *mep)
     value = (MYFLT) CPSOCTL((int32) value);
     pfield->value = value;
 
-    if (UNLIKELY(O->msglevel & CS_WARNMSG)) {
+    if (UNLIKELY(O->odebug)) {
       csound->Message(csound, "  midiKeyCps:      pfield: %3d  value: %3d\n",
                       pfield_index, (int32_t) pfield->value);
     }
@@ -833,7 +833,7 @@ int32_t insert_midi(CSOUND *csound, int32_t insno, MCHNBLK *chn, MEVENT *mep)
     fraction *= 0.12;
     value = octave + fraction;
     pfield->value = value;
-    if (UNLIKELY(O->msglevel & CS_WARNMSG)) {
+    if (UNLIKELY(O->odebug)) {
       csound->Message(csound, "  midiKeyPch:      pfield: %3d  value: %3d\n",
                       pfield_index, (int32_t) pfield->value);
     }
@@ -844,7 +844,7 @@ int32_t insert_midi(CSOUND *csound, int32_t insno, MCHNBLK *chn, MEVENT *mep)
     CS_VAR_MEM* pfield = (pfields + pfield_index);
     MYFLT value = (MYFLT) ip->m_veloc;
     pfield->value = value;
-    if (UNLIKELY(O->msglevel & CS_WARNMSG)) {
+    if (UNLIKELY(O->odebug)) {
       csound->Message(csound, "  midiVelocity:    pfield: %3d  value: %3d\n",
                       pfield_index, (int32_t) pfield->value);
     }
@@ -857,7 +857,7 @@ int32_t insert_midi(CSOUND *csound, int32_t insno, MCHNBLK *chn, MEVENT *mep)
     value = value * value / FL(16239.0);
     value = value * csound->e0dbfs;
     pfield->value = value;
-    if (UNLIKELY(O->msglevel & CS_WARNMSG)) {
+    if (UNLIKELY(O->odebug)) {
       csound->Message(csound, "  midiVelocityAmp: pfield: %3d  value: %.3f\n",
                       pfield_index, pfield->value);
     }
@@ -1285,7 +1285,8 @@ int32_t csoundInitError(CSOUND *csound, const char *s, ...)
   }
   else
     snprintf(buf, 512, Str("INIT ERROR in instr %d (opcode %s) line %d: "),
-             ip->insno, csound->op, csound->ids->optext->t.linenum);
+             ip->insno, csound->ids->optext->t.oentry->opname,
+             csound->ids->optext->t.linenum);
   va_start(args, s);
   csoundErrMsgV(csound, buf, s, args);
   va_end(args);
@@ -1899,7 +1900,7 @@ int32_t subinstr(CSOUND *csound, SUBINST *p)
         CS_PDS->insdshead->pds = NULL;
         do {
           if(UNLIKELY(!ATOMIC_GET8(p->ip->actflg))){
-            memset(p->ar, 0, sizeof(MYFLT)*CS_KSMPS*p->OUTCOUNT);
+            memset(p->ar, 0, sizeof(MYFLT)*CS_KSMPS*p->OUTOCOUNT);
             goto endin;
           }
           error = (*CS_PDS->perf)(csound, CS_PDS);

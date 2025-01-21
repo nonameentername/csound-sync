@@ -28,7 +28,6 @@
 
 
 /* MEMORY COPYING FUNCTIONS */
-
 void myflt_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
                       const void* src, OPDS *ctx) {
   MYFLT* f1 = (MYFLT*)dest;
@@ -150,6 +149,35 @@ void array_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
     }
 
 }
+
+void opcodeRef_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
+                      const void* src, OPDS *ctx) {
+  OPCODEREF *p = (OPCODEREF *) dest;
+  if(!p->readonly) {
+   memcpy(dest, src, sizeof(OPCODEREF));
+   p->readonly = 0; // clear readonly flag (which is not copied)
+  }
+  else csound->Warning(csound, "%s (:OpcodeDef) is read-only: " 
+                                "cannot be redefined, ignoring assignment",
+                       get_opcode_short_name(csound, p->entries->entries[0]->opname));
+}
+
+// from opcode.c
+int32_t context_check(CSOUND* csound, OPCODEOBJ *p, OPDS *ctx);
+void opcodeObj_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
+                      const void* src, OPDS *ctx) {
+  OPCODEOBJ *p = (OPCODEOBJ *) dest;
+  OPCODEOBJ *psrc = (OPCODEOBJ *) src;
+  if(context_check(csound, psrc, ctx) != 0) 
+    csound->Warning(csound, "mismatching context: copy value bypassed");
+  if(!p->readonly) {
+   memcpy(dest, src, sizeof(OPCODEOBJ));
+   p->readonly = 0; // clear readonly flag (which is not copied)
+  }
+  else csound->Warning(csound, "opcode instance var is read-only:"
+                       " copy value bypassed");
+}
+
 
 void instrRef_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
                       const void* src, OPDS *ctx) {
@@ -286,6 +314,24 @@ CS_VARIABLE* createArray(void* csnd, void* p, OPDS *ctx) {
     return var;
 }
 
+CS_VARIABLE* createOpcodeDef(void* csnd, void* p, OPDS *ctx) {
+   CSOUND* csound = (CSOUND*)csnd;
+   CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
+   var->memBlockSize = CS_FLOAT_ALIGN(sizeof(OPCODEREF));
+   var->initializeVariableMemory = &varInitMemory;
+   return var;
+}
+
+CS_VARIABLE* createOpcode(void* csnd, void* p, OPDS *ctx) {
+   CSOUND* csound = (CSOUND*)csnd;
+   CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
+   var->memBlockSize = CS_FLOAT_ALIGN(sizeof(OPCODEOBJ));
+   var->initializeVariableMemory = &varInitMemory;
+   return var;
+}
+
+
+
 CS_VARIABLE* createInstrRef(void* csnd, void* p, OPDS *ctx) {
    CSOUND* csound = (CSOUND*)csnd;
    CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
@@ -385,6 +431,16 @@ const CS_TYPE CS_VAR_TYPE_ARRAY = {
   array_free_var_mem, NULL, 0
 };
 
+const CS_TYPE CS_VAR_TYPE_OPCODEREF = {
+  "OpcodeDef", "opcode definition reference", CS_ARG_TYPE_BOTH,
+  createOpcodeDef, opcodeRef_copy_value, NULL, NULL, 0
+};
+
+const CS_TYPE CS_VAR_TYPE_OPCODEOBJ = {
+  "Opcode", "opcode instance reference", CS_ARG_TYPE_BOTH,
+  createOpcode, opcodeObj_copy_value, NULL, NULL, 0
+};
+
 
 const CS_TYPE CS_VAR_TYPE_INSTR = {
   "InstrDef", "instrument definition reference", CS_ARG_TYPE_BOTH,
@@ -411,6 +467,8 @@ void csoundAddStandardTypes(CSOUND* csound, TYPE_POOL* pool) {
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_F);
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_B);
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_b);
+    csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_OPCODEREF);
+    csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_OPCODEOBJ);
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_ARRAY);
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_INSTR);
 }
