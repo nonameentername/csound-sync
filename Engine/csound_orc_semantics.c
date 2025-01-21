@@ -1813,13 +1813,22 @@ TREE* convert_statement_to_opcall(CSOUND* csound, TREE* root, TYPE_TABLE* typeTa
       /* i.e. ksubst init -1 */
       /* TODO - this should check if it's a var first */
       CS_VARIABLE *var = find_var_from_pools(csound, top->value->lexeme,
-        top->value->lexeme, typeTable);
+                                          top->value->lexeme, typeTable);
 
-      if (find_opcode(csound, top->value->lexeme) != NULL && var == NULL) {
+      /* but if it's an opcoderef, then it can't be in an expression */
+      if(var && var->varType == &CS_VAR_TYPE_OPCODEREF)
+        var = NULL;
+     
+      if (find_opcode(csound, top->value->lexeme) != NULL && var == NULL
+          ) {
         top->next = root->next;
         root->next = NULL;
         return top;
       }
+   
+
+        
+         
       /* i.e. outs a1 + a2 + a3, a4, + a5 + a6 */
       newTop = top->left;
       newTop->next = root->next;

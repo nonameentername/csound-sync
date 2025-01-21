@@ -247,7 +247,7 @@ static int32_t  check_name(const char *name) {
                         "cigoto", "ckgoto", "cggoto", "reinit",
                         "timout","kgoto", "declare","setksmps",
                         "oversample", "undersample", "create",
-                        "delete", "rigoto", "rireturn", "tigoto"
+                        "delete", "rigoto", "rireturn", "tigoto",
                         ""};
   int i = 0;
   for(i = 0; *exs[i] != '\0'; i++)
