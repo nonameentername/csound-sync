@@ -10,6 +10,12 @@ nchnls = 2
 
 chn_k "bla",2
 
+opcode toStrArray, S[], S
+  StringIn xin
+  SArray[] fillarray StringIn
+  xout SArray
+endop
+
 instr 1
  // from github issue 1697
  // could be parsed as either of the following, but we want the first:
@@ -26,9 +32,17 @@ instr 2
  print fmax:i
 endin
 
+instr 3
+  // found while testing github issue 1964:
+  // variable shadowing udo that returns array - we can tell the difference
+  toStrArray:i init 1
+  String = toStrArray("Inline string-array get")[0]
+  prints "%s\n", String
+endin
 </CsInstruments>
 <CsScore>
 i 1 0 1
 i 2 0 1
+i 3 0 1
 </CsScore>
 </CsoundSynthesizer>
