@@ -24,13 +24,13 @@ endop
 
 
 instr 1
-  String[] = toStrArray("Inline string-array get")
-  prints "%s\n", String[0]
+  String = toStrArray("Inline string-array get")[0]
+  prints "%s\n", Strin
 endin
 
 instr 2
   itestVal = 123.456
-  iresultVal[] = toInitArray(itestVal)
+  iresultVal = toInitArray(itestVal)[0]
   prints "%d\n", itestVal
 endin
 

@@ -330,32 +330,39 @@ char* get_arg_type2(CSOUND* csound, TREE* tree, TYPE_TABLE* typeTable)
     TREE* nodeToCheck = tree;
 
     if (tree->type == T_ARRAY) {
-      varBaseName = tree->left->value->lexeme;
-      var = find_var_from_pools(csound, varBaseName, varBaseName, typeTable);
-
-      if (var == NULL) {
+      if (tree->left->type == T_FUNCTION) {
         char *fnReturn;
-        if (tree->left->type == T_FUNCTION &&
-            (fnReturn = get_arg_type2(csound, tree->left, typeTable)) &&
+        if ((fnReturn = get_arg_type2(csound, tree->left, typeTable)) &&
             *fnReturn == '[') {
           return cs_strdup(csound, &fnReturn[1]);
         } else {
+          synterr(csound,
+                  Str("non-array type for function %s line %d\n"),
+                  tree->left->value->lexeme, tree->line);
+          do_baktrace(csound, tree->locn);
+          return NULL;
+        }
+      } else {
+        varBaseName = tree->left->value->lexeme;
+        var = find_var_from_pools(csound, varBaseName, varBaseName, typeTable);
+
+        if (var == NULL) {
           synterr(csound,
                   Str("unable to find array operator for var %s line %d\n"),
                   varBaseName, tree->line);
           do_baktrace(csound, tree->locn);
           return NULL;
+        } else {
+          if (var->varType == &CS_VAR_TYPE_ARRAY) {
+            return cs_strdup(csound, var->subType->varTypeName);
+          } else if (var->varType == &CS_VAR_TYPE_A) {
+            return cs_strdup(csound, "k");
+          }
+          synterr(csound,
+                  Str("invalid array type %s line %d\n"),
+                  var->varType->varTypeName, tree->line);
+          return NULL;
         }
-      } else {
-        if (var->varType == &CS_VAR_TYPE_ARRAY) {
-          return cs_strdup(csound, var->subType->varTypeName);
-        } else if (var->varType == &CS_VAR_TYPE_A) {
-          return cs_strdup(csound, "k");
-        }
-        synterr(csound,
-                Str("invalid array type %s line %d\n"),
-                var->varType->varTypeName, tree->line);
-        return NULL;
       }
     }
 
