@@ -614,7 +614,7 @@ char* get_arg_type2(CSOUND* csound, TREE* tree, TYPE_TABLE* typeTable)
      }
 
      if(!strcmp(tree->value->lexeme, "this")) {
-      const CS_TYPE *varType = &CS_VAR_TYPE_INSTANCE;
+      const CS_TYPE *varType = &CS_VAR_TYPE_INSTR_INSTANCE;
        // found this, return type.
        return cs_strdup(csound, varType->varTypeName);
      } 

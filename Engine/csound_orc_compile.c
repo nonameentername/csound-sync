@@ -911,7 +911,7 @@ INSTRTXT *create_instrument(CSOUND *csound, TREE *root,
   var = csoundCreateVariable(csound, csound->typePool, &CS_VAR_TYPE_INSTR,
                              "this_instr", NULL);
   csoundAddVariable(csound, ip->varPool, var);
-  var = csoundCreateVariable(csound, csound->typePool, &CS_VAR_TYPE_INSTANCE,
+  var = csoundCreateVariable(csound, csound->typePool, &CS_VAR_TYPE_INSTR_INSTANCE,
                              "this", NULL);
   csoundAddVariable(csound, ip->varPool, var);
 

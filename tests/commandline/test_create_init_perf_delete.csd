@@ -6,7 +6,7 @@
 0dbfs = 1
 
 opcode Osci(a:k,f:k):a
-xout linenr(oscili(p4,k(p5)),0.1,0.1,0.01) 
+xout linenr(oscili(a,f),0.1,0.1,0.01) 
 endop
 
 instr 1

@@ -408,7 +408,7 @@ const CS_TYPE CS_VAR_TYPE_INSTR = {
   createInstrRef, instrRef_copy_value, NULL, NULL, 0
 };
 
-const CS_TYPE CS_VAR_TYPE_INSTANCE = {
+const CS_TYPE CS_VAR_TYPE_INSTR_INSTANCE = {
   "Instr", "instrument instance reference", CS_ARG_TYPE_BOTH,
   createInstanceRef, instanceRef_copy_value, NULL, NULL, 0
 };
@@ -435,7 +435,7 @@ void csoundAddStandardTypes(CSOUND* csound, TYPE_POOL* pool) {
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_b);
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_ARRAY);
     csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_INSTR);
-    csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_INSTANCE);
+    csoundAddVariableType(csound, pool, (CS_TYPE*)&CS_VAR_TYPE_INSTR_INSTANCE);
 }
 
 
