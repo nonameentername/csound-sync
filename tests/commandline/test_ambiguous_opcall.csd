@@ -28,7 +28,6 @@ endin
 instr 3
   // found while testing github issue 1964:
   // variable shadowing udo that returns array - we can tell the difference
-  toStrArray:i init 1
   String = toStrArray("Inline string-array get")[0]
   prints "%s\n", String
 endin

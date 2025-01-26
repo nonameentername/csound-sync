@@ -25,7 +25,7 @@ endop
 
 instr 1
   String = toStrArray("Inline string-array get")[0]
-  prints "%s\n", Strin
+  prints "%s\n", String
 endin
 
 instr 2
