@@ -47,24 +47,25 @@ void varInitMemory(CSOUND *csound, CS_VARIABLE* var, MYFLT* memblock) {
 }
 
 void tupleCopyValue(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                        const void* src, OPDS *ctx) {
+                        const void* src, INSDS *ctx) {
   memcpy(dest, src, sizeof(Tuple));
 }
 
-CS_VARIABLE* createTuple(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createTuple(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*) cs;
     CS_VARIABLE* var = (CS_VARIABLE *)
       csound->Calloc(csound, sizeof(CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof(Tuple));
     var->initializeVariableMemory = &varInitMemory;
+    var->ctx = ctx;
     return var;
 }
 
 CS_TYPE CS_VAR_TYPE_TUPLE = {
    (char *) "Tuple", (char *) "Tuple", CS_ARG_TYPE_BOTH,
     createTuple, tupleCopyValue,
-    NULL, NULL, 0
+   NULL, NULL, 0
 };
 
 

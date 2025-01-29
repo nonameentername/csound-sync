@@ -13,17 +13,18 @@ static void varInitMemory(CSOUND *csound, CS_VARIABLE* var, MYFLT* memblock) {
 }
 
 static void tupleCopyValue(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                        const void* src, OPDS *ctx) {
+                        const void* src, INSDS *ctx) {
   memcpy(dest, src, sizeof(TUPLE));
 }
 
-static CS_VARIABLE* createTuple(void* cs, void* p, OPDS *ctx) {
+static CS_VARIABLE* createTuple(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*) cs;
     CS_VARIABLE* var = (CS_VARIABLE *)
       csound->Calloc(csound, sizeof(CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof(TUPLE));
     var->initializeVariableMemory = &varInitMemory;
+    var->ctx = ctx;
     return var;
 }
 

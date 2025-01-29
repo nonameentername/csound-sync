@@ -30,31 +30,31 @@
 /* MEMORY COPYING FUNCTIONS */
 
 void myflt_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                      const void* src, OPDS *ctx) {
+                      const void* src, INSDS *ctx) {
   MYFLT* f1 = (MYFLT*)dest;
   MYFLT* f2 = (MYFLT*)src;
   *f1 = *f2;
 }
 
 void asig_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                     const void* src, OPDS *ctx) {
-  int32_t ksmps = ctx ? ctx->insdshead->ksmps : csound->ksmps;
+                     const void* src, INSDS *ctx) {
+  int32_t ksmps = ctx ? ctx->ksmps : csound->ksmps;
   memcpy(dest, src, sizeof(MYFLT) * ksmps);
 }
 
 void complex_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                        const void* src, OPDS *ctx) {
+                        const void* src, INSDS *ctx) {
   memcpy(dest, src, sizeof(COMPLEXDAT));
 }
 
 void wsig_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                     const void* src, OPDS *ctx) {
+                     const void* src, INSDS *ctx) {
     memcpy(dest, src, sizeof(SPECDAT));
     //TODO - check if this needs to copy SPECDAT's DOWNDAT member and AUXCH
 }
 
 void fsig_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                     const void* src, OPDS *ctx) {
+                     const void* src, INSDS *ctx) {
     PVSDAT *fsigout = (PVSDAT*) dest;
     PVSDAT *fsigin = (PVSDAT*) src;
     int32_t N = fsigin->N;
@@ -68,7 +68,7 @@ void fsig_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
 
 
 void string_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                       const void* src, OPDS *p) {
+                       const void* src, INSDS *p) {
     STRINGDAT* sDest = (STRINGDAT*)dest;
     STRINGDAT* sSrc = (STRINGDAT*)src;
     CSOUND* cs = (CSOUND*)csound;
@@ -105,7 +105,7 @@ static size_t array_get_num_members(ARRAYDAT* aSrc) {
 }
 
 void array_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                      const void* src, OPDS *ctx) {
+                      const void* src, INSDS *ctx) {
     ARRAYDAT* aDest = (ARRAYDAT*)dest;
     ARRAYDAT* aSrc = (ARRAYDAT*)src;
     CSOUND* cs = (CSOUND*)csound;
@@ -152,7 +152,7 @@ void array_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
 }
 
 void instrRef_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                      const void* src, OPDS *ctx) {
+                      const void* src, INSDS *ctx) {
   INSTREF *p = (INSTREF *) dest;
   if(!p->readonly) {
    memcpy(dest, src, sizeof(INSTREF));
@@ -197,13 +197,13 @@ void varInitMemoryFsig(CSOUND *csound, CS_VARIABLE* var, MYFLT* memblock) {
 
 /* CREATE VAR FUNCTIONS */
 
-CS_VARIABLE* createAsig(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createAsig(void* cs, void* p, INSDS *ctx) {
     int32_t ksmps;
     CSOUND* csound = (CSOUND*)cs;
     IGN(p);
 
    if (ctx  != NULL) {
-      ksmps = ctx->insdshead->ksmps;
+      ksmps = ctx->ksmps;
    } else {
     ksmps = csound->ksmps;
     }
@@ -212,71 +212,79 @@ CS_VARIABLE* createAsig(void* cs, void* p, OPDS *ctx) {
     var->memBlockSize = CS_FLOAT_ALIGN(ksmps * sizeof (MYFLT));
     var->updateMemBlockSize = &updateAsigMemBlock;
     var->initializeVariableMemory = &varInitMemory;
+    var->ctx = ctx;
     return var;
 }
 
-CS_VARIABLE* createMyflt(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createMyflt(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*)cs;
     CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof (MYFLT));
     var->initializeVariableMemory = &varInitMemory;
+    var->ctx = ctx;
     return var;
 }
 
-CS_VARIABLE* createComplex(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createComplex(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*)cs;
     CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof(COMPLEXDAT));
     var->initializeVariableMemory = &varInitMemory;
+    var->ctx = ctx;
     return var;
 }
 
-CS_VARIABLE* createBool(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createBool(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*)cs;
     CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof (MYFLT));
     var->initializeVariableMemory = &varInitMemory;
+    var->ctx = ctx;
     return var;
 }
 
-CS_VARIABLE* createWsig(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createWsig(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*)cs;
     CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof(SPECDAT));
     var->initializeVariableMemory = &varInitMemory;
+    var->ctx = ctx;
     return var;
 }
 
-CS_VARIABLE* createFsig(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createFsig(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*)cs;
     CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof(PVSDAT));
     var->initializeVariableMemory = &varInitMemoryFsig;
+    var->ctx = ctx;
     return var;
 }
 
 
-CS_VARIABLE* createString(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createString(void* cs, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*)cs;
     CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
     IGN(p);
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof(STRINGDAT));
     var->initializeVariableMemory = &varInitMemoryString;
+    var->ctx = ctx;
     return var;
 }
 
-CS_VARIABLE* createArray(void* csnd, void* p, OPDS *ctx) {
+CS_VARIABLE* createArray(void* csnd, void* p, INSDS *ctx) {
     CSOUND* csound = (CSOUND*)csnd;
     ARRAY_VAR_INIT* state = (ARRAY_VAR_INIT*)p;
 
     CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
     var->memBlockSize = CS_FLOAT_ALIGN(sizeof(ARRAYDAT));
     var->initializeVariableMemory = &arrayInitMemory;
+    var->ctx = ctx;
 
     if (state) { // NB: this function is being called with p=NULL
       const CS_TYPE* type = state->type;
@@ -286,11 +294,12 @@ CS_VARIABLE* createArray(void* csnd, void* p, OPDS *ctx) {
     return var;
 }
 
-CS_VARIABLE* createInstrRef(void* csnd, void* p, OPDS *ctx) {
+CS_VARIABLE* createInstrRef(void* csnd, void* p, INSDS *ctx) {
    CSOUND* csound = (CSOUND*)csnd;
    CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
    var->memBlockSize = CS_FLOAT_ALIGN(sizeof(INSTREF));
    var->initializeVariableMemory = &varInitMemory;
+   var->ctx = ctx;
    return var;
 }
 
@@ -349,7 +358,7 @@ const CS_TYPE CS_VAR_TYPE_I = {
 };
 
 const CS_TYPE CS_VAR_TYPE_S = {
-    "S", "String var", CS_ARG_TYPE_BOTH, createString, string_copy_value, string_free_var_mem, NULL, 0
+  "S", "String var", CS_ARG_TYPE_BOTH, createString, string_copy_value, string_free_var_mem, NULL, 0
 };
 
 const CS_TYPE CS_VAR_TYPE_P = {
