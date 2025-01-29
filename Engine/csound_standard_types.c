@@ -163,7 +163,7 @@ void instrRef_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
 }
 
 void instanceRef_copy_value(CSOUND* csound, const CS_TYPE* cstype, void* dest,
-                      const void* src, OPDS *ctx) {
+                      const void* src, INSDS *ctx) {
   INSTANCEREF *p = (INSTANCEREF *) dest;
   if(!p->readonly) {
    memcpy(dest, src, sizeof(INSTANCEREF));
@@ -313,11 +313,12 @@ CS_VARIABLE* createInstrRef(void* csnd, void* p, INSDS *ctx) {
    return var;
 }
 
-CS_VARIABLE* createInstanceRef(void* csnd, void* p, OPDS *ctx) {
+CS_VARIABLE* createInstanceRef(void* csnd, void* p, INSDS *ctx) {
    CSOUND* csound = (CSOUND*)csnd;
    CS_VARIABLE* var = csound->Calloc(csound, sizeof (CS_VARIABLE));
    var->memBlockSize = CS_FLOAT_ALIGN(sizeof(INSTANCEREF));
    var->initializeVariableMemory = &varInitMemory;
+   var->ctx = ctx;
    return var;
 }
 
