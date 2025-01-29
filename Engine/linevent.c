@@ -681,7 +681,7 @@ int32_t instanceOpcode_(CSOUND *csound, LINEVENT2 *p, int32_t insname)
 
      /* pass in the memory to hold the instance after insertion */
     evt.pinstance = (void *) p->inst;
-
+    *((MYFLT **)evt.pinstance) = NULL;
     
     /* IV - Oct 31 2002: allow string argument */
     if (evt.pcnt > 0) {

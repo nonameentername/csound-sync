@@ -2996,6 +2996,7 @@ int32_t splice_instance(CSOUND *csound, SPLICE_INSTR *p) {
                              p->nxt->instance) :
       splice_after_instance(csound, p->in->instance,
                             p->nxt->instance));
+  else *p->out = FL(-1.);
   return OK;
 }
 
