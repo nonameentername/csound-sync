@@ -859,7 +859,7 @@ int32_t chnget_array_opcode_init_i(CSOUND* csound, CHNGETARRAY* p)
     p->arraySize = arr->sizes[0];
     p->channels = (STRINGDAT*) arr->data;
 
-    tabinit(csound, p->arrayDat, p->arraySize, &(p->h));
+    tabinit(csound, p->arrayDat, p->arraySize, p->h.insdshead);
 
     int32_t err;
     MYFLT* fp;
@@ -906,7 +906,7 @@ int32_t chnget_array_opcode_init(CSOUND* csound, CHNGETARRAY* p)
     p->arraySize = arr->sizes[0];
     p->channels = (STRINGDAT*) arr->data;
     p->channelPtrs = (MYFLT **) csound->Malloc(csound, p->arraySize*sizeof(MYFLT*)); // VL: surely an array of pointers?
-    tabinit(csound, p->arrayDat, p->arraySize,  &(p->h));
+    tabinit(csound, p->arrayDat, p->arraySize,  p->h.insdshead);
 
     int32_t err;
     int32_t channelType;
@@ -2407,7 +2407,7 @@ int32_t chn_opcode_init_ARRAY(CSOUND *csound, CHN_OPCODE_ARRAY *p)
   
     adat->arrayType = (CS_TYPE *)
       csoundGetTypeWithVarTypeName(csound->typePool, p->type->data);
-    tabinit(csound, adat, siz, &(p->h));
+    tabinit(csound, adat, siz, p->h.insdshead);
     return OK;
 }
 

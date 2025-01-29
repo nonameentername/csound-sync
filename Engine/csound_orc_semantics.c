@@ -2215,7 +2215,7 @@ void initializeStructVar(CSOUND* csound, CS_VARIABLE* var, MYFLT* mem) {
   }
 }
 
-CS_VARIABLE* createStructVar(void* cs, void* p, OPDS *ctx) {
+CS_VARIABLE* createStructVar(void* cs, void* p, INSDS *ctx) {
   CSOUND* csound = (CSOUND*)cs;
   const CS_TYPE* type = (const CS_TYPE*)p;
 
@@ -2229,13 +2229,14 @@ CS_VARIABLE* createStructVar(void* cs, void* p, OPDS *ctx) {
   var->memBlockSize = sizeof(CS_STRUCT_VAR);
   var->initializeVariableMemory = initializeStructVar;
   var->varType = type;
+  var->ctx = ctx;
 
   //FIXME - implement
   return var;
 }
 
 void copyStructVar(CSOUND* csound, const CS_TYPE* structType, void* dest, const
-                   void* src, OPDS *p) {
+                   void* src, INSDS *p) {
   CS_STRUCT_VAR* varDest = (CS_STRUCT_VAR*)dest;
   CS_STRUCT_VAR* varSrc = (CS_STRUCT_VAR*)src;
   int32_t i, count;
@@ -2244,7 +2245,7 @@ void copyStructVar(CSOUND* csound, const CS_TYPE* structType, void* dest, const
   for (i = 0; i < count; i++) {
     CS_VAR_MEM* d = varDest->members[i];
     CS_VAR_MEM* s = varSrc->members[i];
-    d->varType->copyValue(csound, d->varType, &d->value, &s->value, NULL);
+    d->varType->copyValue(csound, d->varType, &d->value, &s->value, p);
   }
 }
 

@@ -38,15 +38,15 @@ extern "C" {
 
   struct csvariable;
   struct cstype;
-  struct opds;
+  struct insds;
     
   typedef struct cstype {
     char* varTypeName;
     char* varDescription;
     int32_t argtype; // used to denote if allowed as in-arg, out-arg, or both
-    struct csvariable* (*createVariable)(void *cs, void *p, struct opds *ctx);
+    struct csvariable* (*createVariable)(void *cs, void *p, struct insds *ctx);
     void (*copyValue)(CSOUND* csound, const struct cstype* cstype, void* dest, const
-                      void* src, struct opds *ctx);
+                      void* src, struct insds *ctx);
     void (*freeVariableMemory)(void* csound, void* varMem);
     CONS_CELL* members;
     int32_t userDefinedType;
@@ -76,6 +76,7 @@ extern "C" {
     const CS_TYPE* subType;
     void (*updateMemBlockSize)(CSOUND*, struct csvariable*);
     void (*initializeVariableMemory)(CSOUND*, struct csvariable*, MYFLT*);
+    struct insds *ctx;
     CS_VAR_MEM *memBlock;
   } CS_VARIABLE;
 

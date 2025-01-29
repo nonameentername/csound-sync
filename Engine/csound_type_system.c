@@ -333,7 +333,7 @@ int32_t copyVarGeneric(CSOUND *csound, void *p) {
             "with two different types: %s : %s"),
         typeR->varTypeName, typeA->varTypeName);
     }
-    typeR->copyValue(csound, typeR, assign->r, assign->a, &(assign->h));
+    typeR->copyValue(csound, typeR, assign->r, assign->a, assign->h.insdshead);
     return OK;
 }
 
