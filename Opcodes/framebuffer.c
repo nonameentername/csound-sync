@@ -260,7 +260,8 @@ int32_t Framebuffer_initialise(CSOUND *csound, Framebuffer *self)
         array->sizes[0] = self->elementCount;
         array->dimensions = 1;
         CS_VARIABLE *var = array->arrayType->createVariable(csound,
-                                                            NULL, &(self->h));
+                                                            NULL,
+                                                            self->h.insdshead);
         array->arrayMemberSize = var->memBlockSize;
         array->data = csound->Calloc(csound,
                                      var->memBlockSize * self->elementCount);

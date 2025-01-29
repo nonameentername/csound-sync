@@ -371,7 +371,7 @@ template <typename T> class Vector : ARRAYDAT {
 public:
   /** Initialise the container
    */
-  void init(Csound *csound, int32_t size, OPDS *ctx) {
+  void init(Csound *csound, int32_t size, INSDS *ctx) {
     tabinit(csound, this, size, ctx);
   }
 

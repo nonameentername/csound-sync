@@ -29,7 +29,7 @@ typedef struct {
     MYFLT   *r, *a;
 } AEVAL;
 
-static inline void tabinit(CSOUND *csound, ARRAYDAT *p, int32_t size, OPDS *ctx)
+static inline void tabinit(CSOUND *csound, ARRAYDAT *p, int32_t size, INSDS *ctx)
 {
     size_t ss;
     if (p->dimensions==0) {
@@ -48,7 +48,6 @@ static inline void tabinit(CSOUND *csound, ARRAYDAT *p, int32_t size, OPDS *ctx)
         p->allocated = ss;
     }
     if (p->dimensions==1) p->sizes[0] = size;
-    //p->dimensions = 1;
 }
 
 static inline void tabinit_like(CSOUND *csound, ARRAYDAT *p, const ARRAYDAT *tp)
@@ -91,39 +90,9 @@ static inline int32_t tabcheck(CSOUND *csound, ARRAYDAT *p, int32_t size, OPDS *
         Str("Array too small (allocated %zu < needed %zu), but cannot "
             "allocate during performance pass. Allocate a bigger array at init time"),
         p->allocated, s);
-      return NOTOK;
     }
     p->sizes[0] = size;
     return OK;
 }
-
-#if 0
-static inline void tabensure(CSOUND *csound, ARRAYDAT *p, int32_t size)
-{
-    if (p->data==NULL || p->dimensions == 0 ||
-        (p->dimensions==1 && p->sizes[0] < size)) {
-      size_t ss;
-      if (p->data == NULL) {
-        CS_VARIABLE* var = p->arrayType->createVariable(csound, NULL);
-        p->arrayMemberSize = var->memBlockSize;
-      }
-      ss = p->arrayMemberSize*size;
-      if (p->data==NULL) {
-        p->data = (MYFLT*)csound->Calloc(csound, ss);
-        p->allocated = ss;
-      }
-      else if (ss > p->allocated) {
-        p->data = (MYFLT*) csound->ReAlloc(csound, p->data, ss);
-        p->allocated = ss;
-      }
-      if (p->dimensions==0) {
-        p->dimensions = 1;
-        p->sizes = (int32_t*)csound->Malloc(csound, sizeof(int32_t));
-      }
-      p->sizes[0] = size;
-    }
-    //p->sizes[0] = size;
-}
-#endif
 
 #endif /* end of include guard: __ARRAY_H__ */
