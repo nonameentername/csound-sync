@@ -2502,6 +2502,17 @@ int32_t csoundKillInstanceInternal(CSOUND *csound, MYFLT instr, char *instrName,
 }
 
 // Instance manipulation functions
+/**
+ * check for mismatching context
+ */
+int32_t instr_context_check(CSOUND *csound, INSDS *ip, INSDS *insdshead) {
+  // different SR always fails check
+  if(ip->esr != insdshead->esr) return NOTOK;
+  // otherwise there is no context incompatibility
+  return OK;
+}
+
+
 /** create instance 
     - allocates a new instance 
     - does not add instance to activ chain or instr act_instance
@@ -2910,12 +2921,18 @@ int32_t init_instance_opcode(CSOUND *csound, INIT_INSTANCE *p) {
 int32_t perf_instance_opcode(CSOUND *csound, PERF_INSTR *p) {
   INSDS *ip = p->in->instance; 
   if(ip != NULL) {
+    if(instr_context_check(csound, ip, p->h.insdshead) == OK){
     // check for initialisation flag, pass on any perf errors
     if (ip->init_done) 
       *p->out = FL(perf_instance(csound, ip));
     else return csound->PerfError(csound, &(p->h),  
                                   "instr %d not initialised\n",
                                   ip->insno);
+    } else {
+      return csound->PerfError(csound, &(p->h), "context mismatch, "
+                               "cannot perform instr %d instance",
+                      ip->insno);
+    }
   }
   else csound->PerfError(csound, &(p->h),  
                          "NULL instance\n");

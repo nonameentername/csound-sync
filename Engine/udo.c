@@ -818,7 +818,7 @@ int32_t useropcd1(CSOUND *csound, UOPCODE *p)
   return OK;
 }
 
-// global ksmps amd global or local sr
+// global ksmps and global or local sr
 int32_t useropcd2(CSOUND *csound, UOPCODE *p)
 {
   MYFLT   **tmp;
