@@ -5,13 +5,13 @@
  * Created on Nov 17, 2024
  */
 
-#define __BUILDING_LIBCSOUND
-
-
+#include "gtest/gtest.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "csoundCore.h"
-#include "gtest/gtest.h"
+#include "csound.h"
+#include "csound_files.h"
+#include "csdl.h"
+
 
 class SndfileTests : public ::testing::Test {
 public:
@@ -46,7 +46,6 @@ public:
 void *sfile_open(CSOUND *csound, const char *path, int32_t mode,
                  SFLIB_INFO *sfinfo) {
   FILE *fp = fopen(path, mode == SFM_READ ? "rb" : "wb");
-  printf("soundfile opened %p\n", fp);
   if (fp != NULL) {
       sfile *file = (sfile *) csound->Calloc(csound, sizeof(sfile));
       file->sfinfo = (SFLIB_INFO *) csound->Calloc(csound, sizeof(SFLIB_INFO));
@@ -87,7 +86,6 @@ int32_t sfile_close(CSOUND *csound, void *p) {
 
 int64_t sfile_write(CSOUND *csound, void *p, MYFLT *data, int64_t frames) {
   sfile *file = (sfile *) p;
-   printf("writing soundfile %p\n", p);
   return fwrite(data, sizeof(MYFLT)*file->sfinfo->channels, frames, file->fp);
 }
 
@@ -98,7 +96,6 @@ int64_t sfile_read(CSOUND *csound, void *p, MYFLT *data, int64_t frames) {
 
 int64_t sfile_write_samples(CSOUND *csound, void *p, MYFLT *data, int64_t samples) {
   sfile *file = (sfile *) p;
-  printf("writing soundfile %p\n", p);
   return fwrite(data, sizeof(MYFLT), samples, file->fp);
 }
 
@@ -160,7 +157,7 @@ TEST_F (SndfileTests, testWriteSndfile)
   ASSERT_TRUE (result == 0);
   while(!result)
     result = csoundPerformKsmps(csound);
-  csound->Free(csound, sfcbs);
+
 }
 
 TEST_F (SndfileTests, testReadSndfile)
@@ -183,5 +180,5 @@ TEST_F (SndfileTests, testReadSndfile)
   ASSERT_TRUE (result == 0);
   while(!result)
     result = csoundPerformKsmps(csound);
-  csound->Free(csound, sfcbs);
+
 }

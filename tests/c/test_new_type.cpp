@@ -5,12 +5,13 @@
  * Created on Nov 20, 2024
  */
 
-#define __BUILDING_LIBCSOUND
-
 #include <stdio.h>
 #include <stdlib.h>
-#include "csoundCore.h"
 #include "gtest/gtest.h"
+#include "csound.h"
+#include "csdl.h"
+#include "csound_type_system.h"
+
 
 class NewTypeTests : public ::testing::Test {
 public:

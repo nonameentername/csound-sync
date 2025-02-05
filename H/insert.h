@@ -58,8 +58,11 @@ typedef struct {
 
 typedef struct {
     OPDS    h;
-    MYFLT  *inst;
+    INSTANCEREF *inst;
+    MYFLT  *ktrig;
 } KILLOP;
+
+int32_t kill_instancek(CSOUND *csound, KILLOP *p);
 
 
 int32 sa_early(CSOUND *csound, AOP *p);
@@ -102,7 +105,7 @@ typedef struct {
     MYFLT   *insno;
 } DELETEIN;
 
-void    instance(CSOUND *, int32_t);
+INSDS *instance(CSOUND *, int32_t);
 
 typedef struct {
     OPDS    h;
@@ -110,5 +113,58 @@ typedef struct {
     MYFLT   *in_cvt;
     MYFLT   *out_cvt;
 } OVSMPLE;
+
+typedef struct {
+  OPDS h;
+  INSTANCEREF *out;
+  INSTREF *in;
+} CREATE_INSTANCE;
+
+typedef struct {
+  OPDS h;
+  MYFLT *err;
+  MYFLT *args[VARGMAX];
+} INIT_INSTANCE;
+
+typedef struct {
+  OPDS h;
+  MYFLT *out;
+  INSTANCEREF *in;
+} PERF_INSTR;
+
+typedef struct {
+  OPDS h;
+  INSTANCEREF *in;
+} DEL_INSTR;
+
+typedef struct {
+  OPDS h;
+  MYFLT *out;
+  INSTANCEREF *in;
+  INSTANCEREF *nxt;
+  MYFLT *mode;
+} SPLICE_INSTR;
+
+typedef struct {
+  OPDS h;
+  INSTANCEREF *in;
+  MYFLT *pause;
+} PAUSE_INSTR;
+
+typedef struct {
+  OPDS h;
+  INSTANCEREF *in;
+  MYFLT *par;
+  MYFLT *val;
+} PARM_INSTR;
+
+int32_t create_instance_opcode(CSOUND *csound, CREATE_INSTANCE *p);
+int32_t init_instance_opcode(CSOUND *csound, INIT_INSTANCE *p);
+int32_t perf_instance_opcode(CSOUND *csound, PERF_INSTR *p);
+int32_t delete_instance_opcode(CSOUND *csound, DEL_INSTR *p);
+int32_t pause_instance_opcode(CSOUND *csound, PAUSE_INSTR *p);
+int32_t set_instance_parameter(CSOUND *csound, PARM_INSTR *p);
+int32_t get_instance(CSOUND *csound, DEL_INSTR *p);
+int32_t splice_instance(CSOUND *csound, SPLICE_INSTR *p);
 
 #endif

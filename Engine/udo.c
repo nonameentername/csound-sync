@@ -327,11 +327,13 @@ int32_t useropcdset(CSOUND *csound, UOPCODE *p)
   ATOMIC_SET(p->ip->init_done, 0);
   csound->mode = 1;
   buf->iflag = 0;
-  while (csound->ids != NULL) {
+  int err = 0;
+  while (csound->ids != NULL && err == 0) {
     csound->op = csound->ids->optext->t.oentry->opname;
-    (*csound->ids->init)(csound, csound->ids);
+    err = (*csound->ids->init)(csound, csound->ids);
     csound->ids = csound->ids->nxti;
   }
+  if(err) return err; 
   csound->mode = 0;
   ATOMIC_SET(p->ip->init_done, 1);
   /* copy length related parameters back to caller instr */
@@ -816,7 +818,7 @@ int32_t useropcd1(CSOUND *csound, UOPCODE *p)
   return OK;
 }
 
-// global ksmps amd global or local sr
+// global ksmps and global or local sr
 int32_t useropcd2(CSOUND *csound, UOPCODE *p)
 {
   MYFLT   **tmp;

@@ -18,6 +18,7 @@ maxalloc 1, 1, 3
 
 <CsScore>
 i1 0 2
+i1 0 2
 e
 </CsScore>
 

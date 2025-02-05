@@ -45,7 +45,9 @@ extern "C" {
     extern const CS_TYPE CS_VAR_TYPE_B;
     extern const CS_TYPE CS_VAR_TYPE_b;
     extern const CS_TYPE CS_VAR_TYPE_ARRAY;
-    extern const CS_TYPE CS_VAR_TYPE_INSTR; 
+    extern const CS_TYPE CS_VAR_TYPE_INSTR;
+    extern const CS_TYPE CS_VAR_TYPE_INSTR_INSTANCE;
+    extern const CS_TYPE CS_VAR_TYPE_COMPLEX; 
 
     typedef struct arrayVarInit {
         int32_t dimensions;
