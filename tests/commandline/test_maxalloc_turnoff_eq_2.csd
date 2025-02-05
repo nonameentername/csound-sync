@@ -9,7 +9,7 @@ nchnls	=	2
 
 instr 1	
   aout vco2 10000, 440
-  out aout
+  out aout, aout
 endin
 
 maxalloc 1, 1, 2
@@ -17,6 +17,7 @@ maxalloc 1, 1, 2
 </CsInstruments>
 
 <CsScore>
+i1 0 2
 i1 0 2
 e
 </CsScore>

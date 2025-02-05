@@ -167,6 +167,33 @@ TEST_F (OrcCompileTests, testLineNumber)
     ASSERT_TRUE(tree != NULL);
 }
 
+TEST_F (OrcCompileTests, testStringsInEvent)
+{
+    const char* instrument = R"(
+instr One
+ S1 = p4
+ S2 = p5
+ i1 strcmp S1, "Three"
+ i2 strcmp S2, "Two"
+ if i1 != 0 && i2 != 0 then
+  exitnow(-1)
+ endif
+endin
+     )";
+
+const char* event = R"(
+    i "One" 0 1 "Three" "Two"
+   )";
+   
+   int32_t result = csoundCompileOrc(csound, instrument);
+   ASSERT_TRUE(result == 0);
+   result = csoundStart(csound);
+   ASSERT_TRUE(result == 0);
+   csoundEventString(csound, event, 0);
+   result = csoundPerformKsmps(csound);
+   ASSERT_TRUE(result == 0);
+}
+
 TEST_F (OrcCompileTests, testMaxTableSize)
 {
     const char* instrument = R"(
@@ -219,4 +246,5 @@ schedule(1,6/sr,0.5)
  
 
 }
+
 

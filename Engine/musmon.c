@@ -615,6 +615,12 @@ int32_t turnon(CSOUND *csound, TURNON *p)
     if (insno == NOT_AN_INSTRUMENT)
       return NOTOK;
   } else insno = *p->insno;
+
+    // VL prevent i-time infinite loop
+  if(*p->insno == p->h.insdshead->insno &&
+     *p->itime == 0)
+    return csound->InitError(csound, "cannot turnon self with zero delay\n");
+  
   evt.p[1] = (MYFLT) insno;
   evt.p[2] = *p->itime;
   evt.p[3] = FL(-1.0);
@@ -636,6 +642,12 @@ int32_t turnon_S(CSOUND *csound, TURNON *p)
   insno = csound->StringArg2Insno(csound, ((STRINGDAT *)p->insno)->data, 1);
   if (UNLIKELY(insno == NOT_AN_INSTRUMENT))
     return NOTOK;
+
+  // VL prevent i-time infinite loop
+  if(*p->insno == p->h.insdshead->insno &&
+     *p->itime == 0)
+    return csound->InitError(csound, "cannot turnon self with zero delay\n");
+  
   evt.p[1] = (MYFLT) insno;
   evt.p[2] = *p->itime;
   evt.p[3] = FL(-1.0);
