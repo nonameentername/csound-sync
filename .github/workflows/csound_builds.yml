@@ -118,7 +118,6 @@ jobs:
 
   ios_build_ioscross:
     name: iOS build (ioscross/vcpkg)
-    if: vars.IOSCROSS_WORKFLOW_RUN_ID
     runs-on: ubuntu-latest
     env:
       VERSION: v1
@@ -141,22 +140,13 @@ jobs:
       - name: Bootstrap VCPKG
         run: ./vcpkg/bootstrap-vcpkg.sh
 
-      - name: Download image
-        uses: actions/download-artifact@v4
-        with:
-          name: csound-ioscross-${{ env.VERSION }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ vars.IOSCROSS_WORKFLOW_RUN_ID }}
-
-      - name: Load image
-        run: |
-          docker load --input csound-ioscross-${{ env.VERSION }}.tar
-          rm csound-ioscross-${{ env.VERSION }}.tar
-
       - name: Configure Build
         uses: addnab/docker-run-action@v3
         with:
-          image: csound-ioscross:${{ env.VERSION }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          image: ghcr.io/csound/csound-ioscross:${{ env.VERSION }}
           options: -v ${{ github.workspace }}:${{ github.workspace }} --workdir ${{ github.workspace }}
           run: |
             $(eval /ioscross/arm64/ioscross_conf.sh)
@@ -171,7 +161,10 @@ jobs:
       - name: Build Csound
         uses: addnab/docker-run-action@v3
         with:
-          image: csound-ioscross:${{ env.VERSION }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          image: ghcr.io/csound/csound-ioscross:${{ env.VERSION }}
           options: -v ${{ github.workspace }}:${{ github.workspace }} --workdir ${{ github.workspace }}
           run: |
             $(eval /ioscross/arm64/ioscross_conf.sh)
@@ -487,7 +480,6 @@ jobs:
 
   android_build_vcpkg:
     name: Android build (vcpkg)
-    if: vars.ANDROID_WORKFLOW_RUN_ID
     runs-on: ubuntu-latest
     env:
       VERSION: v1
@@ -510,22 +502,13 @@ jobs:
       - name: Bootstrap VCPKG
         run: ./vcpkg/bootstrap-vcpkg.sh
 
-      - name: Download image
-        uses: actions/download-artifact@v4
-        with:
-          name: csound-android-${{ env.VERSION }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ vars.ANDROID_WORKFLOW_RUN_ID }}
-
-      - name: Load image
-        run: |
-          docker load --input csound-android-${{ env.VERSION }}.tar
-          rm csound-android-${{ env.VERSION }}.tar
-
       - name: Configure Build
         uses: addnab/docker-run-action@v3
         with:
-          image: csound-android:${{ env.VERSION }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          image: ghcr.io/csound/csound-android:${{ env.VERSION }}
           options: -v ${{ github.workspace }}:${{ github.workspace }} --workdir ${{ github.workspace }}
           run: |
             for ARCH in arm arm64 x86 x64; do
@@ -538,7 +521,10 @@ jobs:
       - name: Build Csound
         uses: addnab/docker-run-action@v3
         with:
-          image: csound-android:${{ env.VERSION }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          image: ghcr.io/csound/csound-android:${{ env.VERSION }}
           options: -v ${{ github.workspace }}:${{ github.workspace }} --workdir ${{ github.workspace }}
           run: |
             for ARCH in arm arm64 x86 x64; do
