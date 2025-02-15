@@ -121,6 +121,7 @@ def runTest():
 	["test46.csd", "if-then with expression in boolean comparison"],
 	["test47.csd", "until loop and t-variables"],
 	["test48.csd", "expected failure with variable used before defined", 1],
+    ["test_pvs_np2.csd", "test pvsanal/synth with np2 size"],
     ["test_instr_redefinition.csd", "allow instr redefinition"],
 	["test_instr0_labels.csd", "test labels in instr0 space"],
 	["test_string.csd", "test string assignment and printing"],
