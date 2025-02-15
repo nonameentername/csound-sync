@@ -262,9 +262,7 @@ int32_t pvsanalset(CSOUND *csound, PVSANAL *p)
     p->fsig->framecount = 1;
     p->fsig->format = PVS_AMP_FREQ;      /* only this, for now */
     p->fsig->sliding = 0;
-
-    if (!(N & (N - 1))) /* if pow of two use this */
-     p->setup = csound->RealFFTSetup(csound,N,FFT_FWD);
+    p->setup = csound->RealFFTSetup(csound,N,FFT_FWD);
     return OK;
 }
 
@@ -747,9 +745,6 @@ int32_t pvsynthset(CSOUND *csound, PVSYNTH *p)
 
 
     synwinhalf = (MYFLT *) (p->synwinbuf.auxp) + halfwinsize;
-
-
-
     /* synthesis windows */
     if (M <= N) {
       if (UNLIKELY(PVS_CreateWindow(csound, synwinhalf, wintype, M) != OK))
@@ -835,9 +830,7 @@ int32_t pvsynthset(CSOUND *csound, PVSYNTH *p)
     p->outptr = 0;
     p->nextOut = (MYFLT *) (p->output.auxp);
     p->buflen = buflen;
-
-    if (!(N & (N - 1))) /* if pow of two use this */
-      p->setup = csound->RealFFTSetup(csound,N,FFT_INV);
+    p->setup = csound->RealFFTSetup(csound,N,FFT_INV);
     return OK;
 }
 
