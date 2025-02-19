@@ -927,7 +927,8 @@ int32_t strupper_opcode(CSOUND *csound, STRUPPER_OP *p)
       tmp = (unsigned char) src[i];
       dst[i] = (char) (islower(tmp) ? (unsigned char) toupper(tmp) : tmp);
     }
-     p->Sdst->timestamp = kcnt;
+    dst[i] = '\0';
+    p->Sdst->timestamp = kcnt;
 
   return OK;
 }
@@ -955,8 +956,8 @@ int32_t strlower_opcode(CSOUND *csound, STRUPPER_OP *p)
       tmp = (unsigned char) src[i];
       dst[i] = (char) (isupper(tmp) ? (unsigned char) tolower(tmp) : tmp);
     }
-    
-      p->Sdst->timestamp = kcnt;
+    dst[i] = '\0';
+    p->Sdst->timestamp = kcnt;
   return OK;
 }
 
