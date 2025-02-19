@@ -518,7 +518,7 @@ int32_t pvsmaskaset(CSOUND *csound, PVSMASKA *p)
     p->wintype = p->fsrc->wintype;
     p->format  = p->fsrc->format;
     p->fftsize = N;
-    if (UNLIKELY(!(p->format==PVS_AMP_FREQ) || (p->format==PVS_AMP_PHASE)))
+    if (UNLIKELY(!((p->format==PVS_AMP_FREQ) || (p->format==PVS_AMP_PHASE))))
       return csound->InitError(csound, Str("pvsmaska: "
                               "signal format must be amp-phase or amp-freq."));
     /* setup output signal */
@@ -757,8 +757,8 @@ int32_t pvsftrset(CSOUND *csound, PVSFTR *p)
     p->ftablea   = p->ftablef = NULL;
     p->lastframe = 0;
     nbins        = p->fftsize/2 + 1;
-
-    if (UNLIKELY(!(p->format==PVS_AMP_FREQ) || (p->format==PVS_AMP_PHASE)))
+ 
+    if (UNLIKELY(!((p->format==PVS_AMP_FREQ) || (p->format==PVS_AMP_PHASE))))
       return csound->InitError(csound, Str("pvsftr: signal format must be "
                               "amp-phase or amp-freq.\n"));
     /* ifn = 0 = notused */
