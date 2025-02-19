@@ -22,7 +22,7 @@
   02110-1301 USA
 */
 
-#ifdef  HAVE_SOCKETS 
+#ifdef  HAVE_SOCKETS
 /* Haiku 'int32' etc definitions in net headers conflict with sysdep.h */
 #define __HAIKU_CONFLICT
 
@@ -477,12 +477,12 @@ static int32_t osc_send2_init(CSOUND *csound, OSCSEND2 *p)
     }
 
     if(p->INOCOUNT > 4) {
-      if(!IS_STR_ARG(p->type)) 
+      if(!IS_STR_ARG(p->type))
                return csound->InitError(csound,
                              "%s", Str("Message type is not given as a string\n"));
     }
 
-   
+
     if (UNLIKELY(p->INOCOUNT > 4 && p->INOCOUNT < (uint32_t) strlen(p->type->data) + 4))
        return csound->InitError(csound,
                              "%s", Str("insufficient number of arguments for "
@@ -515,7 +515,7 @@ static int32_t osc_send2_init(CSOUND *csound, OSCSEND2 *p)
     STRINGDAT *s;
     ARRAYDAT *ar;
     FUNC *ft;
-    int32_t j;   
+    int32_t j;
     if (p->types.auxp == NULL || strlen(p->type->data) > p->types.size)
       /* allocate space for the types buffer */
       csound->AuxAlloc(csound, strlen(p->type->data), &p->types);
@@ -527,7 +527,7 @@ static int32_t osc_send2_init(CSOUND *csound, OSCSEND2 *p)
      return csound->InitError(csound,
                      "not enough args: had %lu, needed %lu\n",
                       nargs, iarg);
-    
+
     for(i=0,iarg=0; i < p->type->size-1; i++) {
       switch(p->type->data[i]){
       case 't':
@@ -626,7 +626,7 @@ static int32_t osc_send2(CSOUND *csound, OSCSEND2 *p)
       const struct sockaddr *to = (const struct sockaddr *) (&p->server_addr);
 
       int32_t buffersize = 0, i, size;
-      size_t bsize = p->aux.size; 
+      size_t bsize = p->aux.size;
       char *out = (char *) p->aux.auxp;
       p->fstime = 0;
 
@@ -929,6 +929,8 @@ static int32_t oscbundle_init(CSOUND *csound, OSCBUNDLE *p) {
                           Str("Bundle msg exceeded max packet size, not sent\n")); \
           return OK; }
 
+#define MAX_TYPEY_PER_BUNDLED_MESSAGE 1024
+
 static int32_t oscbundle_perf(CSOUND *csound, OSCBUNDLE *p){
     if(*p->kwhen != p->last) {
       int32_t i, n, size = 0, tstrs,
@@ -936,7 +938,7 @@ static int32_t oscbundle_perf(CSOUND *csound, OSCBUNDLE *p){
       STRINGDAT *dest, *type;
       float fdata;
       int32_t idata, cols;
-      char tstr[64], *dstr;
+      char tstr[MAX_TYPEY_PER_BUNDLED_MESSAGE], *dstr;
       char *buff = (char *) p->aux.auxp;
       const struct sockaddr *to = (const struct sockaddr *) (&p->server_addr);
       memset(buff, 0, p->mtu);
@@ -955,8 +957,8 @@ static int32_t oscbundle_perf(CSOUND *csound, OSCBUNDLE *p){
         dstrs = (int32_t) strlen(dstr)+1;
         size += ceil((dstrs)/4.)*4;
         tstr[0] = ',';
-        strncpy(tstr+1, type[i].data, 62);
-        tstr[63]='\0';
+        strncpy(tstr+1, type[i].data, MAX_TYPEY_PER_BUNDLED_MESSAGE-2);
+        tstr[MAX_TYPEY_PER_BUNDLED_MESSAGE-1]='\0';
         tstrs = (int32_t) strlen(tstr)+1;
         size += ceil((tstrs)/4.)*4;
         msize = tstrs - 2; /* tstrs-2 is the number of ints or floats in msg */
@@ -1011,7 +1013,7 @@ static int32_t oscbundle_perf(CSOUND *csound, OSCBUNDLE *p){
 
 static int32_t oscbundle_deinit(CSOUND *csound, OSCBUNDLE *p)
 {
-    
+
 #if defined(WIN32)
     closesocket((SOCKET)p->sock);
     WSACleanup();
