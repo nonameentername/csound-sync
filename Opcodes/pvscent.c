@@ -59,20 +59,24 @@ static int32_t pvscent(CSOUND *csound, PVSCENT *p)
         c += fin[i].re*j;
         d += fin[i].re;
       }
+      *p->ans = (d==FL(0.0) ? FL(0.0) : c/d);
     }
     else {
       float *fin = (float *) p->fin->frame.auxp;
       if (p->lastframe < p->fin->framecount) {
-        //printf("N=%d binsize=%f\n", N, binsize);
+        // printf("N=%d binsize=%f\n", N, binsize);
         for (i=0,j=FL(0.5)*binsize; i<N+2; i+=2, j += binsize) {
           c += fin[i]*j;         /* This ignores phase */
           d += fin[i];
           //printf("%d (%f) sig=%f c=%f d=%f\n", i,j,fin[i],c,d);
         }
         p->lastframe = p->fin->framecount;
+        p->old = (d==FL(0.0) ? FL(0.0) : c/d);
       }
+      *p->ans = p->old;
     }
-    *p->ans = (d==FL(0.0) ? FL(0.0) : c/d);
+
+
     return OK;
 }
 
@@ -151,6 +155,7 @@ static int32_t pvsbandw(CSOUND *csound, PVSCENT *p)
       for (i=0,j=FL(0.5)*binsize; i<N+2; i+=2, j += binsize) {
         c += fin[i].re*(j - cd)*(j - cd);
       }
+      *p->ans = SQRT(c);
     }
     else {
       float *fin = (float *) p->fin->frame.auxp;
@@ -167,9 +172,10 @@ static int32_t pvsbandw(CSOUND *csound, PVSCENT *p)
           c += fin[i]*(j - cd)*(j - cd);
         }
         p->lastframe = p->fin->framecount;
+        p->old = *p->ans = SQRT(c);
       }
+      *p->ans = p->old;
     }
-    *p->ans = SQRT(c);
     return OK;
 }
 
